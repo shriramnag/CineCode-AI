@@ -7,8 +7,8 @@ import com.shriram.cinecode.data.preferences.AuthPreferences
 import com.jcraft.jsch.ChannelExec
 import com.jcraft.jsch.JSch
 import com.jcraft.jsch.Session
-import com.shriram.cinecode.terminal.TerminalSession
-import com.shriram.cinecode.terminal.TerminalSessionClient
+import com.termux.terminal.TerminalSession
+import com.termux.terminal.TerminalSessionClient
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -822,7 +822,7 @@ class LocalPtySession(
 
             val sessionField = emulator.javaClass.getDeclaredField("mSession")
             sessionField.isAccessible = true
-            val sshOutput = object : com.shriram.cinecode.terminal.TerminalOutput() {
+            val sshOutput = object : com.termux.terminal.TerminalOutput() {
                 override fun write(data: ByteArray, offset: Int, count: Int) {
                     val preview =
                         String(data.copyOfRange(offset, offset + count), Charsets.ISO_8859_1).replace("\n", "\\n")

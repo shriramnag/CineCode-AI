@@ -5,11 +5,11 @@ import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.Typeface;
 
-import com.shriram.cinecode.terminal.TerminalBuffer;
-import com.shriram.cinecode.terminal.TerminalEmulator;
-import com.shriram.cinecode.terminal.TerminalRow;
-import com.shriram.cinecode.terminal.TextStyle;
-import com.shriram.cinecode.terminal.WcWidth;
+import com.termux.terminal.TerminalBuffer;
+import com.termux.terminal.TerminalEmulator;
+import com.termux.terminal.TerminalRow;
+import com.termux.terminal.TextStyle;
+import com.termux.terminal.WcWidth;
 
 /**
  * Renderer of a {@link TerminalEmulator} into a {@link Canvas}.

@@ -5,7 +5,7 @@ import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 
-import com.shriram.cinecode.terminal.TerminalSession;
+import com.termux.terminal.TerminalSession;
 
 /**
  * The interface for communication between {@link TerminalView} and its client. It allows for getting

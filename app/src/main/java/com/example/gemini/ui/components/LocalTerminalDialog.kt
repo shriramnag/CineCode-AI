@@ -50,8 +50,8 @@ import com.shriram.cinecode.data.local.LocalPtySession
 import com.shriram.cinecode.data.local.LocalTerminalManager
 import com.shriram.cinecode.data.preferences.AuthPreferences
 import com.shriram.cinecode.theme.*
-import com.shriram.cinecode.terminal.KeyHandler
-import com.shriram.cinecode.terminal.TerminalSession
+import com.termux.terminal.KeyHandler
+import com.termux.terminal.TerminalSession
 import com.shriram.cinecode.view.TerminalView
 import com.shriram.cinecode.view.TerminalViewClient
 import kotlinx.coroutines.delay

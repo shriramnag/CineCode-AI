@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.shriram.cinecode.data.local.LocalPtySession
 import com.shriram.cinecode.theme.ClaudeTerracotta
-import com.shriram.cinecode.terminal.TerminalSession
+import com.termux.terminal.TerminalSession
 import com.shriram.cinecode.view.TerminalView
 import com.shriram.cinecode.view.TerminalViewClient
 import java.util.UUID

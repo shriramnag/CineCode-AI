@@ -33,7 +33,7 @@ import com.shriram.cinecode.data.local.LocalServerManager
 import com.shriram.cinecode.data.local.LocalServerStatus
 import com.shriram.cinecode.data.preferences.AuthPreferences
 import com.shriram.cinecode.theme.*
-import com.shriram.cinecode.terminal.TerminalSession
+import com.termux.terminal.TerminalSession
 import com.shriram.cinecode.view.TerminalView
 import com.shriram.cinecode.view.TerminalViewClient
 import kotlin.math.roundToInt

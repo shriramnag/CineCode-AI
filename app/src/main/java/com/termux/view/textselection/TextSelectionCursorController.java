@@ -19,8 +19,8 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 
-import com.shriram.cinecode.terminal.TerminalBuffer;
-import com.shriram.cinecode.terminal.WcWidth;
+import com.termux.terminal.TerminalBuffer;
+import com.termux.terminal.WcWidth;
 import com.shriram.cinecode.R;
 import com.shriram.cinecode.view.TerminalView;
 

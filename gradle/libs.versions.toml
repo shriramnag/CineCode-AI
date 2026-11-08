@@ -18,6 +18,15 @@ kotlinxSerializationJson = "1.7.3"
 datastore = "1.1.1"
 wire = "7.0.4"
 androidxWebkit = "1.17.1"
+coil = "2.6.0"
+jsch = "0.1.55"
+sora = "0.23.4"
+commonsCompress = "1.26.0"
+xz = "1.9"
+jsoup = "1.17.2"
+jlatexmath = "0.2.0"
+work = "2.9.1"
+telemetrydeck = "7.3.1"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidxCore" }
@@ -49,6 +58,18 @@ wire-grpc-client = { module = "com.squareup.wire:wire-grpc-client", version.ref 
 androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "nav3Core" }
 androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "nav3Core" }
 androidx-lifecycle-viewmodel-navigation3 = { module = "androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "lifecycleViewmodelNav3" }
+coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil" }
+coil-svg = { module = "io.coil-kt:coil-svg", version.ref = "coil" }
+jsch = { module = "com.jcraft:jsch", version.ref = "jsch" }
+sora-editor = { module = "io.github.Rosemoe.sora-editor:editor", version.ref = "sora" }
+sora-language-java = { module = "io.github.Rosemoe.sora-editor:language-java", version.ref = "sora" }
+commons-compress = { module = "org.apache.commons:commons-compress", version.ref = "commonsCompress" }
+tukaani-xz = { module = "org.tukaani:xz", version.ref = "xz" }
+jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
+jlatexmath = { module = "ru.noties:jlatexmath-android", version.ref = "jlatexmath" }
+androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
+telemetrydeck = { module = "com.telemetrydeck:kotlin-sdk", version.ref = "telemetrydeck" }
+termux-terminal-emulator = { module = "com.github.termux.termux-app:terminal-emulator", version = "v0.118.0" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "androidGradlePlugin" }

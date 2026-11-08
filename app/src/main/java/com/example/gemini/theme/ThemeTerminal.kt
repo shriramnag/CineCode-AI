@@ -27,7 +27,7 @@ object ThemeTerminal {
             p["background"] = hex(c.terminalBg)
             p["cursor"] = hex(c.terminalCursor)
             c.ansi.forEachIndexed { i, v -> p["color$i"] = "#%06X".format(v and 0xFFFFFF) }
-            com.shriram.cinecode.terminal.TerminalColors.COLOR_SCHEME.updateWith(p)
+            com.termux.terminal.TerminalColors.COLOR_SCHEME.updateWith(p)
             com.shriram.cinecode.data.local.LocalTerminalManager.sessions.value.forEach { s ->
                 runCatching { s.terminalSession.emulator?.mColors?.reset() }
             }
