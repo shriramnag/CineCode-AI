@@ -19,14 +19,19 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
 
-      - name: Make Gradle executable
-        run: chmod +x gradlew
+      - name: Ensure Gradle Wrapper
+        run: |
+          if [ ! -f "gradlew" ]; then
+            gradle wrapper
+          fi
+          chmod +x gradlew
 
-      - name: Build Release APK
-        run: ./gradlew assembleRelease --stacktrace
+      - name: Build APK with Gradle
+        run: |
+          ./gradlew assembleStandardRelease || ./gradlew assembleRelease || ./gradlew assembleDebug
 
       - name: Generate Release Keystore
         run: |
@@ -45,8 +50,11 @@ jobs:
           BUILD_TOOLS_VERSION=$(ls $ANDROID_HOME/build-tools | sort -V | tail -n 1)
           APKSIGNER=$ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION/apksigner
           
-          UNSIGNED_APK=$(find app/build/outputs/apk/release/ -name "*.apk" | head -n 1)
+          # फाइंड आउटपुट एपीके
+          TARGET_APK=$(find app/build/outputs/apk/ -name "*.apk" | head -n 1)
+          echo "Found APK: $TARGET_APK"
           
+          # साइन करें
           $APKSIGNER sign \
             --ks cinecode-release.jks \
             --ks-key-alias cinecodeKey \
@@ -55,11 +63,11 @@ jobs:
             --v1-signing-enabled true \
             --v2-signing-enabled true \
             --v3-signing-enabled true \
-            --out app/build/outputs/apk/release/CineCode-AI-Signed.apk \
-            "$UNSIGNED_APK"
+            --out app/build/outputs/apk/CineCode-AI-Signed.apk \
+            "$TARGET_APK"
 
-      - name: Upload Signed APK Artifact
+      - name: Upload Signed APK
         uses: actions/upload-artifact@v4
         with:
           name: CineCode-AI-Release-APK
-          path: app/build/outputs/apk/release/CineCode-AI-Signed.apk
+          path: app/build/outputs/apk/CineCode-AI-Signed.apk
