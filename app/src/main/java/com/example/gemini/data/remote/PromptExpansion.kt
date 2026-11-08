@@ -1,7 +1,7 @@
-package com.example.gemini.data.remote
+package com.shriram.cinecode.data.remote
 
-import com.example.gemini.ui.browser.BrowserExtension
-import com.example.gemini.ui.browser.BrowserExtensionManager
+import com.shriram.cinecode.ui.browser.BrowserExtension
+import com.shriram.cinecode.ui.browser.BrowserExtensionManager
 
 /**
  * Turns `/plu:<plugin>[:<skill>]` and custom slash commands into instructions for the model when a message is sent.

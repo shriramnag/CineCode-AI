@@ -1,8 +1,8 @@
-package com.example.gemini.data.files
+package com.shriram.cinecode.data.files
 
-import com.example.gemini.data.daemon.IdeApiClient
-import com.example.gemini.data.daemon.ProjectItem
-import com.example.gemini.data.daemon.TermuxDaemonManager
+import com.shriram.cinecode.data.daemon.IdeApiClient
+import com.shriram.cinecode.data.daemon.ProjectItem
+import com.shriram.cinecode.data.daemon.TermuxDaemonManager
 
 /** Opens bridge files and folders in the IDE, with the size and file-type checks the editor needs. */
 object IdeFileLauncher {

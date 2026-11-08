@@ -1,4 +1,4 @@
-package com.example.gemini.theme
+package com.shriram.cinecode.theme
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -27,8 +27,8 @@ object ThemeTerminal {
             p["background"] = hex(c.terminalBg)
             p["cursor"] = hex(c.terminalCursor)
             c.ansi.forEachIndexed { i, v -> p["color$i"] = "#%06X".format(v and 0xFFFFFF) }
-            com.termux.terminal.TerminalColors.COLOR_SCHEME.updateWith(p)
-            com.example.gemini.data.local.LocalTerminalManager.sessions.value.forEach { s ->
+            com.shriram.cinecode.terminal.TerminalColors.COLOR_SCHEME.updateWith(p)
+            com.shriram.cinecode.data.local.LocalTerminalManager.sessions.value.forEach { s ->
                 runCatching { s.terminalSession.emulator?.mColors?.reset() }
             }
         }

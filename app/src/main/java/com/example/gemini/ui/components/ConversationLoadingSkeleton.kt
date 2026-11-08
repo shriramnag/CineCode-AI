@@ -1,4 +1,4 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
@@ -26,7 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gemini.theme.ClaudeTerracotta
+import com.shriram.cinecode.theme.ClaudeTerracotta
 
 @Composable
 fun EngineWarmingUpView(
@@ -446,13 +446,13 @@ fun NewChatOfflinePromptCard(
                 modifier = Modifier
                     .size(36.dp)
                     .clip(CircleShape)
-                    .background(com.example.gemini.theme.AppColors.danger.copy(alpha = 0.12f)),
+                    .background(com.shriram.cinecode.theme.AppColors.danger.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.CloudOff,
                     contentDescription = null,
-                    tint = com.example.gemini.theme.AppColors.danger,
+                    tint = com.shriram.cinecode.theme.AppColors.danger,
                     modifier = Modifier.size(18.dp)
                 )
             }

@@ -1,8 +1,8 @@
-package com.example.gemini.data.remote.services
+package com.shriram.cinecode.data.remote.services
 
-import com.example.gemini.data.preferences.AuthPreferences
-import com.example.gemini.data.remote.core.AgyCsrfManager
-import com.example.gemini.data.remote.core.AgyOkHttpClient
+import com.shriram.cinecode.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.remote.core.AgyCsrfManager
+import com.shriram.cinecode.data.remote.core.AgyOkHttpClient
 import com.squareup.wire.GrpcClient
 import exa.language_server_pb.GrpcLanguageServerServiceClient
 import exa.language_server_pb.LanguageServerServiceClient

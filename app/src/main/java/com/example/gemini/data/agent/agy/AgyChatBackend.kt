@@ -1,4 +1,4 @@
-package com.example.gemini.data.agent.agy
+package com.shriram.cinecode.data.agent.agy
 
 import android.app.Application
 import android.content.Context
@@ -8,17 +8,17 @@ import android.net.NetworkCapabilities
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.gemini.data.preferences.AuthPreferences
-import com.example.gemini.data.remote.AgyHubClient
-import com.example.gemini.data.remote.AntigravityApiService
-import com.example.gemini.data.remote.GoogleOAuthManager
-import com.example.gemini.data.remote.StreamEvent
-import com.example.gemini.domain.model.AiModel
-import com.example.gemini.domain.model.ChatMessage
-import com.example.gemini.domain.model.ChatAttachment
-import com.example.gemini.domain.model.Conversation
-import com.example.gemini.domain.model.MessageRole
-import com.example.gemini.domain.model.ModelQuota
+import com.shriram.cinecode.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.remote.AgyHubClient
+import com.shriram.cinecode.data.remote.AntigravityApiService
+import com.shriram.cinecode.data.remote.GoogleOAuthManager
+import com.shriram.cinecode.data.remote.StreamEvent
+import com.shriram.cinecode.domain.model.AiModel
+import com.shriram.cinecode.domain.model.ChatMessage
+import com.shriram.cinecode.domain.model.ChatAttachment
+import com.shriram.cinecode.domain.model.Conversation
+import com.shriram.cinecode.domain.model.MessageRole
+import com.shriram.cinecode.domain.model.ModelQuota
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -34,10 +34,10 @@ import kotlinx.serialization.encodeToString
 import android.util.Log
 import org.json.JSONObject
 import java.util.UUID
-import com.example.gemini.data.agent.AgentChatBackend
-import com.example.gemini.domain.model.AgentKind
-import com.example.gemini.data.agent.ChatSessionStore
-import com.example.gemini.ui.chat.PendingToolApproval
+import com.shriram.cinecode.data.agent.AgentChatBackend
+import com.shriram.cinecode.domain.model.AgentKind
+import com.shriram.cinecode.data.agent.ChatSessionStore
+import com.shriram.cinecode.ui.chat.PendingToolApproval
 import kotlinx.coroutines.CoroutineScope
 
 /**
@@ -73,12 +73,12 @@ class AgyChatBackend(
 
     private fun isNetworkConnected(): Boolean = isNetworkConnectedProvider()
 
-    val agyBridgeService = com.example.gemini.data.remote.AgyBridgeService.instance
-    val systemConnectionState: StateFlow<com.example.gemini.data.remote.SystemConnectionState> = agyBridgeService.systemConnectionState
-    val hubStatus: StateFlow<com.example.gemini.data.remote.AgyHubStatus> = agyBridgeService.hubStatus
-    val agyHubClient = com.example.gemini.data.remote.AgyHubClient()
-    val trajectoryEngine = com.example.gemini.domain.chat.TrajectoryEngine()
-    val speechManager = com.example.gemini.data.audio.AgyAudioTranscriptionManager(agyHubClient) {
+    val agyBridgeService = com.shriram.cinecode.data.remote.AgyBridgeService.instance
+    val systemConnectionState: StateFlow<com.shriram.cinecode.data.remote.SystemConnectionState> = agyBridgeService.systemConnectionState
+    val hubStatus: StateFlow<com.shriram.cinecode.data.remote.AgyHubStatus> = agyBridgeService.hubStatus
+    val agyHubClient = com.shriram.cinecode.data.remote.AgyHubClient()
+    val trajectoryEngine = com.shriram.cinecode.domain.chat.TrajectoryEngine()
+    val speechManager = com.shriram.cinecode.data.audio.AgyAudioTranscriptionManager(agyHubClient) {
         AuthPreferences.currentHubUrl
     }
 
@@ -88,12 +88,12 @@ class AgyChatBackend(
     private val _isConversationsLoading = MutableStateFlow(true)
     val isConversationsLoading: StateFlow<Boolean> = _isConversationsLoading.asStateFlow()
 
-    val artifacts: StateFlow<List<com.example.gemini.domain.model.ArtifactSnapshot>> = trajectoryEngine.artifacts
+    val artifacts: StateFlow<List<com.shriram.cinecode.domain.model.ArtifactSnapshot>> = trajectoryEngine.artifacts
 
     val pendingApprovals: StateFlow<List<PendingToolApproval>> = _messages.map { msgs ->
-        msgs.filter { it.role == com.example.gemini.domain.model.MessageRole.ASSISTANT }
+        msgs.filter { it.role == com.shriram.cinecode.domain.model.MessageRole.ASSISTANT }
             .flatMap { msg ->
-                msg.toolCalls.filter { it.status == "PENDING_APPROVAL" && it.toolType != com.example.gemini.domain.model.ToolType.ASK_CHOICE }
+                msg.toolCalls.filter { it.status == "PENDING_APPROVAL" && it.toolType != com.shriram.cinecode.domain.model.ToolType.ASK_CHOICE }
                     .distinctBy { it.stepIndex }
                     .map { PendingToolApproval(it, msg.id) }
             }
@@ -124,8 +124,8 @@ class AgyChatBackend(
     private val _quotas = MutableStateFlow<List<ModelQuota>>(emptyList())
     val quotas: StateFlow<List<ModelQuota>> = _quotas.asStateFlow()
 
-    private val _quotaSummary = MutableStateFlow<com.example.gemini.domain.model.QuotaSummaryResponse?>(null)
-    val quotaSummary: StateFlow<com.example.gemini.domain.model.QuotaSummaryResponse?> = _quotaSummary.asStateFlow()
+    private val _quotaSummary = MutableStateFlow<com.shriram.cinecode.domain.model.QuotaSummaryResponse?>(null)
+    val quotaSummary: StateFlow<com.shriram.cinecode.domain.model.QuotaSummaryResponse?> = _quotaSummary.asStateFlow()
 
     private val _isLoadingConversation = MutableStateFlow(true)
     override val isLoadingConversation: StateFlow<Boolean> = _isLoadingConversation.asStateFlow()
@@ -196,13 +196,13 @@ class AgyChatBackend(
     fun checkBridgeHealth() {
         backendScope.launch(Dispatchers.IO) {
             val bridgeUrl = authPrefs.agyBridgeHttpUrl.firstOrNull() ?: AuthPreferences.currentBridgeHttpUrl
-            val reachable = com.example.gemini.data.remote.AgyBridgeService.instance.checkServerHealth(bridgeUrl)
+            val reachable = com.shriram.cinecode.data.remote.AgyBridgeService.instance.checkServerHealth(bridgeUrl)
             _isBridgeOnline.value = reachable
         }
     }
 
-    private val _agyAuthInfo = MutableStateFlow(com.example.gemini.data.remote.AgyHubClient.AgyAuthInfo(status = com.example.gemini.data.remote.AgyHubClient.AgyAuthStatus.CHECKING))
-    val agyAuthInfo: StateFlow<com.example.gemini.data.remote.AgyHubClient.AgyAuthInfo> = _agyAuthInfo.asStateFlow()
+    private val _agyAuthInfo = MutableStateFlow(com.shriram.cinecode.data.remote.AgyHubClient.AgyAuthInfo(status = com.shriram.cinecode.data.remote.AgyHubClient.AgyAuthStatus.CHECKING))
+    val agyAuthInfo: StateFlow<com.shriram.cinecode.data.remote.AgyHubClient.AgyAuthInfo> = _agyAuthInfo.asStateFlow()
 
     private val _isAuthBusy = MutableStateFlow(false)
     val isAuthBusy: StateFlow<Boolean> = _isAuthBusy.asStateFlow()
@@ -260,7 +260,7 @@ class AgyChatBackend(
             if (!isNetworkConnected()) {
                 android.util.Log.d("ChatViewModel", "Skipping auth status check: device is offline.")
                 _agyAuthInfo.value = _agyAuthInfo.value.copy(
-                    status = com.example.gemini.data.remote.AgyHubClient.AgyAuthStatus.OFFLINE,
+                    status = com.shriram.cinecode.data.remote.AgyHubClient.AgyAuthStatus.OFFLINE,
                     isOffline = true
                 )
                 _isAuthBusy.value = false
@@ -305,7 +305,7 @@ class AgyChatBackend(
                 }
             } else {
                 _agyAuthInfo.value = _agyAuthInfo.value.copy(
-                    status = com.example.gemini.data.remote.AgyHubClient.AgyAuthStatus.OFFLINE,
+                    status = com.shriram.cinecode.data.remote.AgyHubClient.AgyAuthStatus.OFFLINE,
                     isOffline = true
                 )
                 // Retain current auth state; only clear the isChecking flag on network/RPC failure
@@ -420,8 +420,8 @@ class AgyChatBackend(
             val hubUrl = AuthPreferences.currentHubUrl
             try {
                 agyHubClient.authLogout(hubUrl)
-                _agyAuthInfo.value = com.example.gemini.data.remote.AgyHubClient.AgyAuthInfo(
-                    status = com.example.gemini.data.remote.AgyHubClient.AgyAuthStatus.UNAUTHENTICATED,
+                _agyAuthInfo.value = com.shriram.cinecode.data.remote.AgyHubClient.AgyAuthInfo(
+                    status = com.shriram.cinecode.data.remote.AgyHubClient.AgyAuthStatus.UNAUTHENTICATED,
                     isLoggedIn = false
                 )
                 agyBridgeService.updateAuthState(isAuth = false, isChecking = false)
@@ -435,8 +435,8 @@ class AgyChatBackend(
         }
     }
 
-    private val _activeInstances = MutableStateFlow<List<com.example.gemini.data.remote.AgyActiveInstance>>(emptyList())
-    val activeInstances: StateFlow<List<com.example.gemini.data.remote.AgyActiveInstance>> = _activeInstances.asStateFlow()
+    private val _activeInstances = MutableStateFlow<List<com.shriram.cinecode.data.remote.AgyActiveInstance>>(emptyList())
+    val activeInstances: StateFlow<List<com.shriram.cinecode.data.remote.AgyActiveInstance>> = _activeInstances.asStateFlow()
 
     val isAnyGenerationOrTaskActive: StateFlow<Boolean> = combine(
         _activeInstances,
@@ -495,21 +495,21 @@ class AgyChatBackend(
     .stateIn(backendScope, SharingStarted.Eagerly, false)
 
     // ---- queued messages (sent while the agent was working; the daemon delivers them when it is done)
-    private val _queuedMessages = MutableStateFlow<List<com.example.gemini.domain.model.QueuedMessage>>(emptyList())
-    val queuedMessages: StateFlow<List<com.example.gemini.domain.model.QueuedMessage>> = _queuedMessages.asStateFlow()
+    private val _queuedMessages = MutableStateFlow<List<com.shriram.cinecode.domain.model.QueuedMessage>>(emptyList())
+    val queuedMessages: StateFlow<List<com.shriram.cinecode.domain.model.QueuedMessage>> = _queuedMessages.asStateFlow()
     // queued sends from this app the daemon's queue does not list yet: chat id → (client tag → entry)
-    private val localQueued = java.util.concurrent.ConcurrentHashMap<String, LinkedHashMap<String, com.example.gemini.domain.model.QueuedMessage>>()
+    private val localQueued = java.util.concurrent.ConcurrentHashMap<String, LinkedHashMap<String, com.shriram.cinecode.domain.model.QueuedMessage>>()
     // server queue entries removed here, hidden until the daemon's queue drops them
     private val hiddenQueuedIds = java.util.Collections.synchronizedSet(mutableSetOf<String>())
 
-    val connectionState: StateFlow<com.example.gemini.data.remote.BridgeConnectionState> = combine(_isServerOnline, isCurrentChatActivelyRunning) { online, streaming ->
+    val connectionState: StateFlow<com.shriram.cinecode.data.remote.BridgeConnectionState> = combine(_isServerOnline, isCurrentChatActivelyRunning) { online, streaming ->
         when {
-            online == false -> com.example.gemini.data.remote.BridgeConnectionState.OFFLINE_ERROR
-            streaming -> com.example.gemini.data.remote.BridgeConnectionState.STREAMING
-            online == true -> com.example.gemini.data.remote.BridgeConnectionState.CONNECTED_READY
-            else -> com.example.gemini.data.remote.BridgeConnectionState.CONNECTING
+            online == false -> com.shriram.cinecode.data.remote.BridgeConnectionState.OFFLINE_ERROR
+            streaming -> com.shriram.cinecode.data.remote.BridgeConnectionState.STREAMING
+            online == true -> com.shriram.cinecode.data.remote.BridgeConnectionState.CONNECTED_READY
+            else -> com.shriram.cinecode.data.remote.BridgeConnectionState.CONNECTING
         }
-    }.stateIn(backendScope, SharingStarted.Eagerly, com.example.gemini.data.remote.BridgeConnectionState.CONNECTING)
+    }.stateIn(backendScope, SharingStarted.Eagerly, com.shriram.cinecode.data.remote.BridgeConnectionState.CONNECTING)
 
     private var currentConvPage = 1
     private var hasMoreConversations = false
@@ -535,7 +535,7 @@ class AgyChatBackend(
                     val wsUrl = AuthPreferences.currentBridgeWsUrl
                     agyBridgeService.monitorHubStatus(wsUrl).collect { status ->
                         // the bridge answers: learn its version (the app warns when it differs from the app's)
-                        com.example.gemini.data.remote.BridgeInfo.refreshVersionIfUnknown()
+                        com.shriram.cinecode.data.remote.BridgeInfo.refreshVersionIfUnknown()
                         when (status.status) {
                             "online" -> {
                                 _isServerOnline.value = true
@@ -579,7 +579,7 @@ class AgyChatBackend(
                     _isServerOnline.value = false
                     _isBridgeOnline.value = false
                     agyBridgeService.resetState()
-                    com.example.gemini.data.remote.BridgeInfo.reset()
+                    com.shriram.cinecode.data.remote.BridgeInfo.reset()
                     delay(1000)
                 }
             }
@@ -712,7 +712,7 @@ class AgyChatBackend(
 
                         val sortedConvs = currentMap.values.sortedByDescending { it.updatedAt }
                         _conversations.value = sortedConvs
-                        com.example.gemini.data.daemon.TermuxDaemonManager.loadProjects(sortedConvs)
+                        com.shriram.cinecode.data.daemon.TermuxDaemonManager.loadProjects(sortedConvs)
 
                         // Automatically synchronize active conversation title and metadata from daemon
                         if (activeId != null) {
@@ -752,7 +752,7 @@ class AgyChatBackend(
                         }
                         _conversationError.value = null
                         _isConversationsLoading.value = false
-                        if (!_agyAuthInfo.value.isLoggedIn || _agyAuthInfo.value.status == com.example.gemini.data.remote.AgyHubClient.AgyAuthStatus.OFFLINE || _agyAuthInfo.value.status == com.example.gemini.data.remote.AgyHubClient.AgyAuthStatus.CHECKING) {
+                        if (!_agyAuthInfo.value.isLoggedIn || _agyAuthInfo.value.status == com.shriram.cinecode.data.remote.AgyHubClient.AgyAuthStatus.OFFLINE || _agyAuthInfo.value.status == com.shriram.cinecode.data.remote.AgyHubClient.AgyAuthStatus.CHECKING) {
                             checkAgyAuthStatus(userInitiated = false)
                         }
                     }
@@ -809,7 +809,7 @@ class AgyChatBackend(
         checkBridgeHealth()
         checkAgyAuthStatus()
         backendScope.launch {
-            com.example.gemini.data.daemon.TermuxDaemonManager.checkHealthAndReconnect(isSilent = false)
+            com.shriram.cinecode.data.daemon.TermuxDaemonManager.checkHealthAndReconnect(isSilent = false)
         }
     }
 
@@ -832,10 +832,10 @@ class AgyChatBackend(
                 startPersistentStream(conv.id)
             }
             refreshQuotas()
-            if (!_agyAuthInfo.value.isLoggedIn || _agyAuthInfo.value.status == com.example.gemini.data.remote.AgyHubClient.AgyAuthStatus.CHECKING) {
+            if (!_agyAuthInfo.value.isLoggedIn || _agyAuthInfo.value.status == com.shriram.cinecode.data.remote.AgyHubClient.AgyAuthStatus.CHECKING) {
                 checkAgyAuthStatus(userInitiated = false)
             }
-            com.example.gemini.data.daemon.TermuxDaemonManager.checkHealthAndReconnect(isSilent = true)
+            com.shriram.cinecode.data.daemon.TermuxDaemonManager.checkHealthAndReconnect(isSilent = true)
         }
     }
 
@@ -885,11 +885,11 @@ class AgyChatBackend(
         _queuedMessages.value = emptyList()
 
         val modelToUse = if (_selectedModelId.value.isNotBlank()) {
-            com.example.gemini.data.remote.AgyHubClient.resolveModelEnum(_selectedModelId.value)
+            com.shriram.cinecode.data.remote.AgyHubClient.resolveModelEnum(_selectedModelId.value)
         } else {
             (_enabledModels.value.firstOrNull()?.id ?: "")
         }
-        val defaultProjPath = com.example.gemini.data.daemon.TermuxDaemonManager.activeProject.value?.path ?: ""
+        val defaultProjPath = com.shriram.cinecode.data.daemon.TermuxDaemonManager.activeProject.value?.path ?: ""
         val defaultWorkspaceUri = if (defaultProjPath.isNotBlank()) {
             if (defaultProjPath.startsWith("file://")) defaultProjPath else "file://$defaultProjPath"
         } else ""
@@ -902,8 +902,8 @@ class AgyChatBackend(
         )
         _currentConversation.value = newConv
         trajectoryEngine.reset(newConv.id, force = true)
-        com.example.gemini.ui.components.ToolCallExpansionCache.setChat(newConv.id)
-        com.example.gemini.ui.components.CodeBlockExpansionCache.setChat(newConv.id)
+        com.shriram.cinecode.ui.components.ToolCallExpansionCache.setChat(newConv.id)
+        com.shriram.cinecode.ui.components.CodeBlockExpansionCache.setChat(newConv.id)
         _messages.value = emptyList()
         _isLoadingConversation.value = false
         _conversationError.value = null
@@ -926,8 +926,8 @@ class AgyChatBackend(
         hasStartedRunning = false
         hasSeenTurnActivity = false
         trajectoryEngine.reset(id, force = true)
-        com.example.gemini.ui.components.ToolCallExpansionCache.setChat(id)
-        com.example.gemini.ui.components.CodeBlockExpansionCache.setChat(id)
+        com.shriram.cinecode.ui.components.ToolCallExpansionCache.setChat(id)
+        com.shriram.cinecode.ui.components.CodeBlockExpansionCache.setChat(id)
         currentTrajectoryId = ""
         _isStreaming.value = false
         _bridgeStatusMessage.value = null
@@ -1036,16 +1036,16 @@ class AgyChatBackend(
 
                             _messages.value = msgs
                             if (msgs.isNotEmpty()) {
-                                com.example.gemini.ui.chat.ChatFeedCache.prewarm(msgs)
+                                com.shriram.cinecode.ui.chat.ChatFeedCache.prewarm(msgs)
 
                                 msgs.flatMap { it.toolCalls }.filter {
-                                    it.toolType == com.example.gemini.domain.model.ToolType.GENERATE_IMAGE && it.output.isNotBlank()
+                                    it.toolType == com.shriram.cinecode.domain.model.ToolType.GENERATE_IMAGE && it.output.isNotBlank()
                                 }.forEach { tc ->
-                                    com.example.gemini.data.remote.HubMediaResolver.resolveMediaUri(application, tc.output, agyHubClient, hubUrl)
+                                    com.shriram.cinecode.data.remote.HubMediaResolver.resolveMediaUri(application, tc.output, agyHubClient, hubUrl)
                                 }
                                 msgs.flatMap { it.attachments }.filter { it.isImage && it.path.isNotBlank() }.forEach { att ->
                                     val rawUri = if (att.path.startsWith("file://") || att.path.startsWith("http")) att.path else "file://${att.path}"
-                                    com.example.gemini.data.remote.HubMediaResolver.resolveMediaUri(application, rawUri, agyHubClient, hubUrl)
+                                    com.shriram.cinecode.data.remote.HubMediaResolver.resolveMediaUri(application, rawUri, agyHubClient, hubUrl)
                                 }
                             }
                         }
@@ -1148,7 +1148,7 @@ class AgyChatBackend(
             local.values.toList()
         }
         _queuedMessages.value = server.filter { it.id !in hiddenQueuedIds }.map { e ->
-            com.example.gemini.domain.model.QueuedMessage(
+            com.shriram.cinecode.domain.model.QueuedMessage(
                 id = e.id,
                 text = e.text,
                 attachmentCount = e.media.size,
@@ -1176,7 +1176,7 @@ class AgyChatBackend(
         }
         if (updated) {
             _messages.value = list
-            com.example.gemini.ui.chat.ChatFeedCache.prewarm(list)
+            com.shriram.cinecode.ui.chat.ChatFeedCache.prewarm(list)
         }
     }
 
@@ -1258,12 +1258,12 @@ class AgyChatBackend(
         val state = systemConnectionState.value
         if (!state.canSend) {
             val reason = when (state.status) {
-                com.example.gemini.data.remote.SystemStatus.OFFLINE -> "Server is offline. Please start the server."
-                com.example.gemini.data.remote.SystemStatus.STARTING -> "Server is starting up. Please wait..."
-                com.example.gemini.data.remote.SystemStatus.ACQUIRING_CSRF -> "Acquiring security token. Please wait..."
-                com.example.gemini.data.remote.SystemStatus.CHECKING_AUTH -> "Verifying authentication. Please wait..."
-                com.example.gemini.data.remote.SystemStatus.UNAUTHENTICATED -> "Please sign in to send messages."
-                com.example.gemini.data.remote.SystemStatus.ERROR -> "Server error. Please check server logs."
+                com.shriram.cinecode.data.remote.SystemStatus.OFFLINE -> "Server is offline. Please start the server."
+                com.shriram.cinecode.data.remote.SystemStatus.STARTING -> "Server is starting up. Please wait..."
+                com.shriram.cinecode.data.remote.SystemStatus.ACQUIRING_CSRF -> "Acquiring security token. Please wait..."
+                com.shriram.cinecode.data.remote.SystemStatus.CHECKING_AUTH -> "Verifying authentication. Please wait..."
+                com.shriram.cinecode.data.remote.SystemStatus.UNAUTHENTICATED -> "Please sign in to send messages."
+                com.shriram.cinecode.data.remote.SystemStatus.ERROR -> "Server error. Please check server logs."
                 else -> "Cannot send message right now."
             }
             android.widget.Toast.makeText(application, reason, android.widget.Toast.LENGTH_SHORT).show()
@@ -1288,7 +1288,7 @@ class AgyChatBackend(
         val isFirstUserMsg = _messages.value.none { it.role == MessageRole.USER }
         val isGenericTitle = updatedConv.title == "New Chat" || updatedConv.title == "Antigravity Chat" || updatedConv.title.isBlank()
         if (isGenericTitle || isFirstUserMsg) {
-            val firstLine = com.example.gemini.data.remote.PromptExpansion.collapse(finalPrompt).trim().lines().firstOrNull { it.isNotBlank() } ?: "Chat"
+            val firstLine = com.shriram.cinecode.data.remote.PromptExpansion.collapse(finalPrompt).trim().lines().firstOrNull { it.isNotBlank() } ?: "Chat"
             val cleanTitle = firstLine.take(40) + if (firstLine.length > 40) "..." else ""
             updatedConv = updatedConv.copy(title = cleanTitle)
         }
@@ -1301,12 +1301,12 @@ class AgyChatBackend(
         // background work vanished until then)
         val queued = isCurrentChatActivelyRunning.value || isCurrentChatBackgroundActive.value
         val clientMessageId = UUID.randomUUID().toString()
-        val clientTag = com.example.gemini.data.remote.services.AgyChatService.clientMsgTag(clientMessageId)
+        val clientTag = com.shriram.cinecode.data.remote.services.AgyChatService.clientMsgTag(clientMessageId)
         val updatedList: List<ChatMessage>
         if (queued) {
             val entries = localQueued.getOrPut(conv.id) { LinkedHashMap() }
             synchronized(entries) {
-                entries[clientTag] = com.example.gemini.domain.model.QueuedMessage(
+                entries[clientTag] = com.shriram.cinecode.domain.model.QueuedMessage(
                     id = clientTag,
                     text = finalPrompt,
                     attachmentCount = currentAtts.size,
@@ -1322,7 +1322,7 @@ class AgyChatBackend(
             trajectoryEngine.submitUserPrompt(finalPrompt, currentAtts, conv.id)
             updatedList = trajectoryEngine.toChatMessages(conv.id)
             _messages.value = updatedList
-            com.example.gemini.ui.chat.ChatFeedCache.prewarm(updatedList)
+            com.shriram.cinecode.ui.chat.ChatFeedCache.prewarm(updatedList)
         }
 
         backendScope.launch {
@@ -1335,7 +1335,7 @@ class AgyChatBackend(
             _conversations.value = newConversations.sortedByDescending { it.updatedAt }
 
             // Prepare media payload for all attachments (images, audio, files)
-            val mediaList = mutableListOf<com.example.gemini.data.remote.AgyHubClient.AgyMediaItem>()
+            val mediaList = mutableListOf<com.shriram.cinecode.data.remote.AgyHubClient.AgyMediaItem>()
             val hubUrl = AuthPreferences.currentHubUrl
 
             for (att in currentAtts) {
@@ -1379,7 +1379,7 @@ class AgyChatBackend(
                 val isImageOrAudio = resolvedMime.startsWith("image/") || resolvedMime.startsWith("audio/")
                 if (!b64.isNullOrBlank() || hostPath.isNotBlank()) {
                     mediaList.add(
-                        com.example.gemini.data.remote.AgyHubClient.AgyMediaItem(
+                        com.shriram.cinecode.data.remote.AgyHubClient.AgyMediaItem(
                             mimeType = resolvedMime,
                             base64 = if (isImageOrAudio) (b64 ?: "") else "",
                             durationSeconds = att.durationSeconds,
@@ -1409,7 +1409,7 @@ class AgyChatBackend(
         val conv = _currentConversation.value ?: return
         val entry = trajectoryEngine.queuedMessages().find { it.id == id } ?: return
         val clientMessageId = UUID.randomUUID().toString()
-        startOptimisticSend(conv.id, com.example.gemini.data.remote.services.AgyChatService.clientMsgTag(clientMessageId))
+        startOptimisticSend(conv.id, com.shriram.cinecode.data.remote.services.AgyChatService.clientMsgTag(clientMessageId))
         hiddenQueuedIds.add(id)
         refreshQueuedMessages(conv.id)
         backendScope.launch(Dispatchers.IO) {
@@ -1455,7 +1455,7 @@ class AgyChatBackend(
 
     /** Model, thinking budget and command auto-execution policy a prompt is sent with. */
     private suspend fun promptSettings(): Triple<String, Int, String> {
-        val modelEnum = com.example.gemini.data.remote.AgyHubClient.resolveModelEnum(_selectedModelId.value)
+        val modelEnum = com.shriram.cinecode.data.remote.AgyHubClient.resolveModelEnum(_selectedModelId.value)
         val selectedModel = _enabledModels.value.find { it.id == modelEnum }
         val supportsThinking = selectedModel?.supportsThinking ?: (modelEnum.contains("thinking", ignoreCase = true) || modelEnum.contains("flash", ignoreCase = true) || modelEnum.contains("pro", ignoreCase = true))
         val policy = authPrefs.commandAutoExecutionPolicy.firstOrNull() ?: "CASCADE_COMMANDS_AUTO_EXECUTION_EAGER"
@@ -1578,11 +1578,11 @@ class AgyChatBackend(
             knownDaemonCascadeIds.remove(conv.id)
             activeStreamConversationId = null
             val modelToUse = if (_selectedModelId.value.isNotBlank()) {
-                com.example.gemini.data.remote.AgyHubClient.resolveModelEnum(_selectedModelId.value)
+                com.shriram.cinecode.data.remote.AgyHubClient.resolveModelEnum(_selectedModelId.value)
             } else {
                 (_enabledModels.value.firstOrNull()?.id ?: "")
             }
-            val defaultProjPath = com.example.gemini.data.daemon.TermuxDaemonManager.activeProject.value?.path ?: ""
+            val defaultProjPath = com.shriram.cinecode.data.daemon.TermuxDaemonManager.activeProject.value?.path ?: ""
             val defaultWorkspaceUri = if (defaultProjPath.isNotBlank()) {
                 if (defaultProjPath.startsWith("file://")) defaultProjPath else "file://$defaultProjPath"
             } else ""
@@ -1597,7 +1597,7 @@ class AgyChatBackend(
 
         backendScope.launch(Dispatchers.IO) {
             val hubUrl = AuthPreferences.currentHubUrl
-            val modelEnum = com.example.gemini.data.remote.AgyHubClient.resolveModelEnum(_selectedModelId.value)
+            val modelEnum = com.shriram.cinecode.data.remote.AgyHubClient.resolveModelEnum(_selectedModelId.value)
             val res = agyHubClient.revertUserMessage(conv.id, modelEnum, targetMsg.stepIndex, hubUrl)
             if (res.isSuccess) {
                 val targetStep = res.getOrThrow()
@@ -1630,9 +1630,9 @@ class AgyChatBackend(
         currentHistory: List<ChatMessage>,
         isRetryAfterRefresh: Boolean = false,
         existingAssistantMsgId: String? = null,
-        existingToolCalls: List<com.example.gemini.domain.model.ToolCall> = emptyList(),
+        existingToolCalls: List<com.shriram.cinecode.domain.model.ToolCall> = emptyList(),
         priorTextPrefix: String = "",
-        mediaItems: List<com.example.gemini.data.remote.AgyHubClient.AgyMediaItem> = emptyList(),
+        mediaItems: List<com.shriram.cinecode.data.remote.AgyHubClient.AgyMediaItem> = emptyList(),
         // the text to send; null = the last user message of [currentHistory]
         promptText: String? = null,
         // queued for after the current work: no reply placeholder, it shows in the queued-messages card
@@ -1643,7 +1643,7 @@ class AgyChatBackend(
 
         val assistantMsgId = if (queued) (currentAssistantMsgId ?: "") else existingAssistantMsgId ?: UUID.randomUUID().toString()
         if (!queued) currentAssistantMsgId = assistantMsgId
-        val clientTag = clientMessageId?.let { com.example.gemini.data.remote.services.AgyChatService.clientMsgTag(it) }
+        val clientTag = clientMessageId?.let { com.shriram.cinecode.data.remote.services.AgyChatService.clientMsgTag(it) }
 
         // a queued message that could not be sent: out of the queue card, and say so
         suspend fun failQueued(err: String) = withContext(Dispatchers.Main) {
@@ -1683,7 +1683,7 @@ class AgyChatBackend(
         val userPrompt = promptText ?: currentHistory.lastOrNull { it.role == MessageRole.USER }?.content ?: ""
         val deliveryStrategy = if (queued) exa.language_server_pb.MessageDeliveryStrategy.MESSAGE_DELIVERY_STRATEGY_WHEN_IDLE
             else exa.language_server_pb.MessageDeliveryStrategy.MESSAGE_DELIVERY_STRATEGY_NEXT_INVOCATION
-        val modelEnum = com.example.gemini.data.remote.AgyHubClient.resolveModelEnum(_selectedModelId.value)
+        val modelEnum = com.shriram.cinecode.data.remote.AgyHubClient.resolveModelEnum(_selectedModelId.value)
         val selectedModel = _enabledModels.value.find { it.id == modelEnum }
         val supportsThinking = selectedModel?.supportsThinking ?: (modelEnum.contains("thinking", ignoreCase = true) || modelEnum.contains("flash", ignoreCase = true) || modelEnum.contains("pro", ignoreCase = true))
         val thinkingBudget = if (supportsThinking) 8192 else 0
@@ -1900,9 +1900,9 @@ class AgyChatBackend(
         content: String,
         thought: String? = null,
         thoughtDuration: Long? = null,
-        toolCalls: List<com.example.gemini.domain.model.ToolCall> = emptyList(),
+        toolCalls: List<com.shriram.cinecode.domain.model.ToolCall> = emptyList(),
         isStreaming: Boolean,
-        tokenUsage: com.example.gemini.domain.model.TokenUsage? = null,
+        tokenUsage: com.shriram.cinecode.domain.model.TokenUsage? = null,
         rawPayload: String? = null,
         forceImmediate: Boolean = false
     ) {
@@ -1957,7 +1957,7 @@ class AgyChatBackend(
             }
         }
         if (!isStreaming) {
-            com.example.gemini.ui.chat.ChatFeedCache.prewarm(_messages.value)
+            com.shriram.cinecode.ui.chat.ChatFeedCache.prewarm(_messages.value)
         }
     }
 
@@ -1986,7 +1986,7 @@ class AgyChatBackend(
         }
     }
 
-    fun applyQuotaSummary(summary: com.example.gemini.domain.model.QuotaSummaryResponse) {
+    fun applyQuotaSummary(summary: com.shriram.cinecode.domain.model.QuotaSummaryResponse) {
         _quotaSummary.value = summary
         val geminiGroup = summary.groups.find {
             it.groupId == "gemini" || it.groupName.contains("gemini", ignoreCase = true)
@@ -1996,9 +1996,9 @@ class AgyChatBackend(
         }
 
         val updatedQuotas = _availableModels.value.map { model ->
-            val isClaude = model.family == com.example.gemini.domain.model.ModelFamily.CLAUDE
+            val isClaude = model.family == com.shriram.cinecode.domain.model.ModelFamily.CLAUDE
             val group = if (isClaude) claudeGroup else geminiGroup
-            com.example.gemini.domain.model.ModelQuota(
+            com.shriram.cinecode.domain.model.ModelQuota(
                 modelId = model.id,
                 remainingFraction = group?.fiveHour?.remainingFraction,
                 resetTime = group?.fiveHour?.resetTime,
@@ -2027,7 +2027,7 @@ class AgyChatBackend(
                 if (modelsRes.isSuccess) {
                     val models = modelsRes.getOrThrow()
                     if (models.isNotEmpty()) {
-                        com.example.gemini.data.remote.AgyHubClient.updateModelRegistry(models)
+                        com.shriram.cinecode.data.remote.AgyHubClient.updateModelRegistry(models)
                         _availableModels.value = models
                         val currentSelected = _selectedModelId.value
                         val existingValidModel = if (currentSelected.isNotBlank()) {
@@ -2103,7 +2103,7 @@ class AgyChatBackend(
     }
 
     fun approveAndExecuteTerminalTool(
-        toolCall: com.example.gemini.domain.model.ToolCall,
+        toolCall: com.shriram.cinecode.domain.model.ToolCall,
         messageId: String,
         scope: String? = null
     ) {
@@ -2113,7 +2113,7 @@ class AgyChatBackend(
             ?: trajectoryEngine.trajectoryId
 
         trajectoryEngine.markStepResponded(stepIndex)
-        trajectoryEngine.optimisticUpdateStepStatus(stepIndex, com.example.gemini.data.remote.dto.CortexStepStatuses.RUNNING)
+        trajectoryEngine.optimisticUpdateStepStatus(stepIndex, com.shriram.cinecode.data.remote.dto.CortexStepStatuses.RUNNING)
         _messages.value = trajectoryEngine.toChatMessages(conv.id)
 
         backendScope.launch {
@@ -2138,13 +2138,13 @@ class AgyChatBackend(
 
                 // Roll back optimistic state on failure so UI accurately reflects reality
                 trajectoryEngine.unmarkStepResponded(stepIndex)
-                trajectoryEngine.optimisticUpdateStepStatus(stepIndex, com.example.gemini.data.remote.dto.CortexStepStatuses.WAITING)
+                trajectoryEngine.optimisticUpdateStepStatus(stepIndex, com.shriram.cinecode.data.remote.dto.CortexStepStatuses.WAITING)
                 _messages.value = trajectoryEngine.toChatMessages(conv.id)
             }
         }
     }
 
-    fun rejectTerminalTool(toolCall: com.example.gemini.domain.model.ToolCall, messageId: String, reason: String? = null) {
+    fun rejectTerminalTool(toolCall: com.shriram.cinecode.domain.model.ToolCall, messageId: String, reason: String? = null) {
         val conv = _currentConversation.value ?: return
         val stepIndex = toolCall.stepIndex ?: return
         val trajectoryId = toolCall.trajectoryId?.takeIf { it.isNotBlank() }
@@ -2152,7 +2152,7 @@ class AgyChatBackend(
 
         val denyInstruction = reason ?: "User rejected this command."
         trajectoryEngine.markStepResponded(stepIndex)
-        trajectoryEngine.optimisticUpdateStepStatus(stepIndex, com.example.gemini.data.remote.dto.CortexStepStatuses.CANCELED, output = denyInstruction)
+        trajectoryEngine.optimisticUpdateStepStatus(stepIndex, com.shriram.cinecode.data.remote.dto.CortexStepStatuses.CANCELED, output = denyInstruction)
         _messages.value = trajectoryEngine.toChatMessages(conv.id)
         _isStreaming.value = false
 
@@ -2176,7 +2176,7 @@ class AgyChatBackend(
 
                 // Roll back optimistic state on failure so UI accurately reflects reality
                 trajectoryEngine.unmarkStepResponded(stepIndex)
-                trajectoryEngine.optimisticUpdateStepStatus(stepIndex, com.example.gemini.data.remote.dto.CortexStepStatuses.WAITING)
+                trajectoryEngine.optimisticUpdateStepStatus(stepIndex, com.shriram.cinecode.data.remote.dto.CortexStepStatuses.WAITING)
                 _messages.value = trajectoryEngine.toChatMessages(conv.id)
             }
         }
@@ -2194,14 +2194,14 @@ class AgyChatBackend(
         }
     }
 
-    fun terminateRunningTerminalTool(toolCall: com.example.gemini.domain.model.ToolCall, messageId: String) {
+    fun terminateRunningTerminalTool(toolCall: com.shriram.cinecode.domain.model.ToolCall, messageId: String) {
         val conv = _currentConversation.value ?: return
         val stepIndex = toolCall.stepIndex ?: return
 
         // Optimistically mark this specific step terminated so UI responds instantaneously
         trajectoryEngine.optimisticUpdateStepStatus(
             stepIndex = stepIndex,
-            status = com.example.gemini.data.remote.dto.CortexStepStatuses.CANCELED,
+            status = com.shriram.cinecode.data.remote.dto.CortexStepStatuses.CANCELED,
             output = "Command terminated by user."
         )
         _messages.value = trajectoryEngine.toChatMessages(conv.id)
@@ -2220,7 +2220,7 @@ class AgyChatBackend(
         }
     }
 
-    fun proceedAfterTermination(toolCall: com.example.gemini.domain.model.ToolCall, messageId: String, userInstructions: String?) {
+    fun proceedAfterTermination(toolCall: com.shriram.cinecode.domain.model.ToolCall, messageId: String, userInstructions: String?) {
         _terminatedToolDialog.value = null
         val conv = _currentConversation.value ?: return
         val msg = _messages.value.find { it.id == messageId } ?: return
@@ -2252,9 +2252,9 @@ class AgyChatBackend(
     }
 
     fun submitUserChoices(
-        toolCall: com.example.gemini.domain.model.ToolCall,
+        toolCall: com.shriram.cinecode.domain.model.ToolCall,
         messageId: String,
-        responses: List<com.example.gemini.data.remote.dto.AskQuestionResponseItemDto>,
+        responses: List<com.shriram.cinecode.data.remote.dto.AskQuestionResponseItemDto>,
         summaryDisplay: String
     ) {
         val conv = _currentConversation.value ?: return
@@ -2264,7 +2264,7 @@ class AgyChatBackend(
             trajectoryEngine.markStepResponded(stepIndex)
             trajectoryEngine.optimisticUpdateStepStatus(
                 stepIndex = stepIndex,
-                status = com.example.gemini.data.remote.dto.CortexStepStatuses.DONE,
+                status = com.shriram.cinecode.data.remote.dto.CortexStepStatuses.DONE,
                 output = summaryDisplay
             )
             _messages.value = trajectoryEngine.toChatMessages(conv.id)
@@ -2305,9 +2305,9 @@ class AgyChatBackend(
     }
 
     fun skipUserChoices(
-        toolCall: com.example.gemini.domain.model.ToolCall,
+        toolCall: com.shriram.cinecode.domain.model.ToolCall,
         messageId: String,
-        responses: List<com.example.gemini.data.remote.dto.AskQuestionResponseItemDto> = emptyList()
+        responses: List<com.shriram.cinecode.data.remote.dto.AskQuestionResponseItemDto> = emptyList()
     ) {
         val conv = _currentConversation.value ?: return
         val stepIndex = toolCall.stepIndex
@@ -2317,7 +2317,7 @@ class AgyChatBackend(
             trajectoryEngine.markStepResponded(stepIndex)
             trajectoryEngine.optimisticUpdateStepStatus(
                 stepIndex = stepIndex,
-                status = com.example.gemini.data.remote.dto.CortexStepStatuses.DONE,
+                status = com.shriram.cinecode.data.remote.dto.CortexStepStatuses.DONE,
                 output = skipSummary
             )
             _messages.value = trajectoryEngine.toChatMessages(conv.id)
@@ -2348,9 +2348,9 @@ class AgyChatBackend(
                 } else {
                     val questionnaire = toolCall.questionnaire
                     questionnaire?.questions?.map { q ->
-                        com.example.gemini.data.remote.dto.AskQuestionResponseItemDto(
+                        com.shriram.cinecode.data.remote.dto.AskQuestionResponseItemDto(
                             question = q.prompt,
-                            options = q.options.map { com.example.gemini.data.remote.dto.AskQuestionOptionDto(id = it.id, text = it.label) },
+                            options = q.options.map { com.shriram.cinecode.data.remote.dto.AskQuestionOptionDto(id = it.id, text = it.label) },
                             isMultiSelect = if (q.isMultiSelect) true else null,
                             skipped = true
                         )
@@ -2371,7 +2371,7 @@ class AgyChatBackend(
         }
     }
 
-    fun cancelUserChoices(toolCall: com.example.gemini.domain.model.ToolCall, messageId: String) {
+    fun cancelUserChoices(toolCall: com.shriram.cinecode.domain.model.ToolCall, messageId: String) {
         val conv = _currentConversation.value ?: return
         val stepIndex = toolCall.stepIndex
         val hubUrl = AuthPreferences.currentHubUrl
@@ -2380,7 +2380,7 @@ class AgyChatBackend(
             trajectoryEngine.markStepResponded(stepIndex)
             trajectoryEngine.optimisticUpdateStepStatus(
                 stepIndex = stepIndex,
-                status = com.example.gemini.data.remote.dto.CortexStepStatuses.CANCELED,
+                status = com.shriram.cinecode.data.remote.dto.CortexStepStatuses.CANCELED,
                 output = "Questionnaire cancelled by user."
             )
             _messages.value = trajectoryEngine.toChatMessages(conv.id)

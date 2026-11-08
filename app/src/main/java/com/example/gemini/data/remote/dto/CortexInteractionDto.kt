@@ -1,4 +1,4 @@
-package com.example.gemini.data.remote.dto
+package com.shriram.cinecode.data.remote.dto
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement

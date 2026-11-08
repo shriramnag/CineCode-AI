@@ -1,4 +1,4 @@
-package com.example.gemini.data.audio
+package com.shriram.cinecode.data.audio
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow

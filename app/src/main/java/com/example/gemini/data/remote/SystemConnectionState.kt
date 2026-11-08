@@ -1,7 +1,7 @@
-package com.example.gemini.data.remote
+package com.shriram.cinecode.data.remote
 
 import androidx.compose.ui.graphics.Color
-import com.example.gemini.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.preferences.AuthPreferences
 
 /**
  * Unified system connection state enum.

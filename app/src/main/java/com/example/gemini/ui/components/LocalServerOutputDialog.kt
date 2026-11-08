@@ -1,4 +1,4 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -29,13 +29,13 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.example.gemini.data.local.LocalServerManager
-import com.example.gemini.data.local.LocalServerStatus
-import com.example.gemini.data.preferences.AuthPreferences
-import com.example.gemini.theme.*
-import com.termux.terminal.TerminalSession
-import com.termux.view.TerminalView
-import com.termux.view.TerminalViewClient
+import com.shriram.cinecode.data.local.LocalServerManager
+import com.shriram.cinecode.data.local.LocalServerStatus
+import com.shriram.cinecode.data.preferences.AuthPreferences
+import com.shriram.cinecode.theme.*
+import com.shriram.cinecode.terminal.TerminalSession
+import com.shriram.cinecode.view.TerminalView
+import com.shriram.cinecode.view.TerminalViewClient
 import kotlin.math.roundToInt
 
 @Composable
@@ -80,10 +80,10 @@ fun LocalServerOutputDialog(
         }
     }
 
-    val dialogBg = com.example.gemini.theme.AppColors.editorBg
-    val dialogBorder = BorderStroke(1.dp, com.example.gemini.theme.AppColors.editorBorder)
-    val consoleBg = com.example.gemini.theme.AppColors.terminalBg
-    val textPrimary = com.example.gemini.theme.AppColors.editorText
+    val dialogBg = com.shriram.cinecode.theme.AppColors.editorBg
+    val dialogBorder = BorderStroke(1.dp, com.shriram.cinecode.theme.AppColors.editorBorder)
+    val consoleBg = com.shriram.cinecode.theme.AppColors.terminalBg
+    val textPrimary = com.shriram.cinecode.theme.AppColors.editorText
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -121,12 +121,12 @@ fun LocalServerOutputDialog(
                     ) {
                         // Static Status Dot (no animation/blinking)
                         val dotColor = when (status) {
-                            is LocalServerStatus.Running -> com.example.gemini.theme.AppColors.success
-                            is LocalServerStatus.Starting -> com.example.gemini.theme.AppColors.warning
-                            is LocalServerStatus.Stopping -> com.example.gemini.theme.AppColors.warning
-                            is LocalServerStatus.Stopped -> com.example.gemini.theme.AppColors.editorMuted
-                            is LocalServerStatus.Error -> com.example.gemini.theme.AppColors.danger
-                            is LocalServerStatus.Idle -> com.example.gemini.theme.AppColors.editorMuted
+                            is LocalServerStatus.Running -> com.shriram.cinecode.theme.AppColors.success
+                            is LocalServerStatus.Starting -> com.shriram.cinecode.theme.AppColors.warning
+                            is LocalServerStatus.Stopping -> com.shriram.cinecode.theme.AppColors.warning
+                            is LocalServerStatus.Stopped -> com.shriram.cinecode.theme.AppColors.editorMuted
+                            is LocalServerStatus.Error -> com.shriram.cinecode.theme.AppColors.danger
+                            is LocalServerStatus.Idle -> com.shriram.cinecode.theme.AppColors.editorMuted
                         }
 
                         Box(
@@ -189,7 +189,7 @@ fun LocalServerOutputDialog(
                                 Icon(
                                     imageVector = Icons.Default.Stop,
                                     contentDescription = "Stop Server",
-                                    tint = com.example.gemini.theme.AppColors.danger,
+                                    tint = com.shriram.cinecode.theme.AppColors.danger,
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
@@ -219,7 +219,7 @@ fun LocalServerOutputDialog(
                         .weight(1f)
                         .clip(RoundedCornerShape(12.dp)),
                     color = consoleBg,
-                    border = BorderStroke(1.dp, com.example.gemini.theme.AppColors.editorBorder)
+                    border = BorderStroke(1.dp, com.shriram.cinecode.theme.AppColors.editorBorder)
                 ) {
                     val currentSession = serverSession
                     if (currentSession != null) {
@@ -303,11 +303,11 @@ fun LocalServerOutputDialog(
                         )
                     } else if (AuthPreferences.currentRemoteMode) {
                         // the bridge runs on the server: show its log, read over SSH
-                        val remoteLog by com.example.gemini.data.remote.RemoteServerManager.log.collectAsState()
-                        val sshState by com.example.gemini.data.remote.RemoteServerManager.sshState.collectAsState()
+                        val remoteLog by com.shriram.cinecode.data.remote.RemoteServerManager.log.collectAsState()
+                        val sshState by com.shriram.cinecode.data.remote.RemoteServerManager.sshState.collectAsState()
                         LaunchedEffect(Unit) {
                             while (true) {
-                                com.example.gemini.data.remote.RemoteServerManager.refreshLog(context)
+                                com.shriram.cinecode.data.remote.RemoteServerManager.refreshLog(context)
                                 kotlinx.coroutines.delay(3000)
                             }
                         }
@@ -323,7 +323,7 @@ fun LocalServerOutputDialog(
                                 fontFamily = FontFamily.Monospace,
                                 fontSize = 10.sp,
                                 lineHeight = 13.sp,
-                                color = com.example.gemini.theme.AppColors.editorText
+                                color = com.shriram.cinecode.theme.AppColors.editorText
                             )
                         }
                     } else {
@@ -338,7 +338,7 @@ fun LocalServerOutputDialog(
                                 text = "No bridge process running.\nTap 'Restart' above to run agy_ide_bridge",
                                 fontFamily = FontFamily.Monospace,
                                 fontSize = 12.sp,
-                                color = com.example.gemini.theme.AppColors.editorMuted,
+                                color = com.shriram.cinecode.theme.AppColors.editorMuted,
                                 lineHeight = 18.sp
                             )
                         }

@@ -1,4 +1,4 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animate

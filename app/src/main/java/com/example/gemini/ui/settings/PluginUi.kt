@@ -1,4 +1,4 @@
-package com.example.gemini.ui.settings
+package com.shriram.cinecode.ui.settings
 
 import android.content.ContentValues
 import android.content.Context
@@ -28,8 +28,8 @@ import androidx.compose.ui.window.DialogProperties
 import coil.compose.SubcomposeAsyncImage
 import coil.decode.SvgDecoder
 import coil.request.ImageRequest
-import com.example.gemini.ui.browser.PluginVersions
-import com.example.gemini.ui.components.MarkdownContent
+import com.shriram.cinecode.ui.browser.PluginVersions
+import com.shriram.cinecode.ui.components.MarkdownContent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

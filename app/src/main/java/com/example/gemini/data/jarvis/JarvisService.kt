@@ -1,4 +1,4 @@
-package com.example.gemini.data.jarvis
+package com.shriram.cinecode.data.jarvis
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -16,8 +16,8 @@ import android.os.PowerManager
 import android.view.KeyEvent
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import com.example.gemini.MainActivity
-import com.example.gemini.R
+import com.shriram.cinecode.MainActivity
+import com.shriram.cinecode.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -181,9 +181,9 @@ class JarvisService : Service() {
     companion object {
         private const val CHANNEL = "jarvis_hands_free"
         private const val NOTIF_ID = 7712
-        const val ACTION_TALK = "com.example.gemini.jarvis.TALK"
-        const val ACTION_SEND = "com.example.gemini.jarvis.SEND"
-        const val ACTION_STOP = "com.example.gemini.jarvis.STOP"
+        const val ACTION_TALK = "com.shriram.cinecode.jarvis.TALK"
+        const val ACTION_SEND = "com.shriram.cinecode.jarvis.SEND"
+        const val ACTION_STOP = "com.shriram.cinecode.jarvis.STOP"
 
         fun start(context: Context) {
             ContextCompat.startForegroundService(context, Intent(context, JarvisService::class.java))

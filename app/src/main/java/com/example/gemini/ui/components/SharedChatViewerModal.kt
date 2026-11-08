@@ -1,4 +1,4 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.example.gemini.theme.ClaudeTerracotta
+import com.shriram.cinecode.theme.ClaudeTerracotta
 
 @Composable
 fun SharedChatViewerModal(

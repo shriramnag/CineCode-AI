@@ -1,4 +1,4 @@
-package com.example.gemini.data.updater
+package com.shriram.cinecode.data.updater
 
 import android.content.Context
 import android.content.Intent
@@ -7,7 +7,7 @@ import android.os.Build
 import android.provider.Settings
 import android.util.Log
 import androidx.core.content.FileProvider
-import com.example.gemini.BuildConfig
+import com.shriram.cinecode.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -97,8 +97,8 @@ class AppUpdateManager(private val context: Context) {
             }
 
             val flavorType = when {
-                currentPkg == "com.termux" && isSharedUser -> "termux-shared"
-                currentPkg == "com.termux" -> "termux"
+                currentPkg == "com.shriram.cinecode" && isSharedUser -> "termux-shared"
+                currentPkg == "com.shriram.cinecode" -> "termux"
                 else -> "standard"
             }
             val downloadUrl = "https://github.com/santoshkurmi/antigem/releases/download/v$remoteVersionName/antiGem-$flavorType-v$remoteVersionName-release.apk"

@@ -1,10 +1,10 @@
-package com.example.gemini.data.receiver
+package com.shriram.cinecode.data.receiver
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
-import com.example.gemini.data.local.TermuxStorageSetupManager
+import com.shriram.cinecode.data.local.TermuxStorageSetupManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -15,7 +15,7 @@ open class TermuxSystemReceiver : BroadcastReceiver() {
         val action = intent?.action ?: return
 
         when {
-            action.endsWith(".app.request_storage_permissions") || action == "com.termux.app.request_storage_permissions" -> {
+            action.endsWith(".app.request_storage_permissions") || action == "com.shriram.cinecode.app.request_storage_permissions" -> {
                 if (TermuxStorageSetupManager.hasStoragePermission(context)) {
                     CoroutineScope(Dispatchers.IO).launch {
                         val success = TermuxStorageSetupManager.setupStorageSymlinks(context)
@@ -31,7 +31,7 @@ open class TermuxSystemReceiver : BroadcastReceiver() {
                     TermuxStorageSetupManager.requestStoragePermission(context)
                 }
             }
-            action.endsWith(".app.reload_style") || action == "com.termux.app.reload_style" -> {
+            action.endsWith(".app.reload_style") || action == "com.shriram.cinecode.app.reload_style" -> {
                 if (TermuxStorageSetupManager.hasStoragePermission(context)) {
                     CoroutineScope(Dispatchers.IO).launch {
                         val success = TermuxStorageSetupManager.setupStorageSymlinks(context)

@@ -1,4 +1,4 @@
-package com.example.gemini.data.preferences
+package com.shriram.cinecode.data.preferences
 
 import android.content.Context
 import androidx.datastore.preferences.core.edit
@@ -140,9 +140,9 @@ class AuthPreferences(private val context: Context) {
         val currentFramedHeader: String
             get() = buildFramedHeader(currentSecurityToken)
 
-        // per app (see the build flavors): com.antigem uses other ports than com.termux so both can run together
-        val DEFAULT_HUB_URL = "http://127.0.0.1:${com.example.gemini.BuildConfig.HUB_PORT}"
-        val DEFAULT_BRIDGE_HTTP_URL = "http://127.0.0.1:${com.example.gemini.BuildConfig.BRIDGE_PORT}"
+        // per app (see the build flavors): com.antigem uses other ports than com.shriram.cinecode so both can run together
+        val DEFAULT_HUB_URL = "http://127.0.0.1:${com.shriram.cinecode.BuildConfig.HUB_PORT}"
+        val DEFAULT_BRIDGE_HTTP_URL = "http://127.0.0.1:${com.shriram.cinecode.BuildConfig.BRIDGE_PORT}"
 
         /** The defaults every install used before ports became per app; a saved copy of them follows the new default. */
         private const val LEGACY_HUB_URL = "http://127.0.0.1:1235"
@@ -253,8 +253,8 @@ class AuthPreferences(private val context: Context) {
         if (!savedBridgeHttp.isNullOrBlank()) currentBridgeHttpUrl = migrateBridgeUrl(savedBridgeHttp)
         val inspectorOn = syncPrefs.getBoolean("is_network_inspector_enabled", false)
         val inspectorFloating = syncPrefs.getBoolean("is_floating_network_inspector_enabled", false)
-        com.example.gemini.data.remote.inspector.NetworkInspectorManager.isEnabled = inspectorOn
-        com.example.gemini.data.remote.inspector.NetworkInspectorManager.isFloatingBubbleEnabled = inspectorFloating
+        com.shriram.cinecode.data.remote.inspector.NetworkInspectorManager.isEnabled = inspectorOn
+        com.shriram.cinecode.data.remote.inspector.NetworkInspectorManager.isFloatingBubbleEnabled = inspectorFloating
 
         currentRemoteMode = syncPrefs.getBoolean("remote_mode", false)
         currentSshPrivateKey = syncPrefs.getString("ssh_private_key", "") ?: ""
@@ -887,7 +887,7 @@ class AuthPreferences(private val context: Context) {
     fun getNetworkInspectorEnabledSync(): Boolean = syncPrefs.getBoolean("is_network_inspector_enabled", false)
 
     fun saveNetworkInspectorEnabledSync(enabled: Boolean) {
-        com.example.gemini.data.remote.inspector.NetworkInspectorManager.isEnabled = enabled
+        com.shriram.cinecode.data.remote.inspector.NetworkInspectorManager.isEnabled = enabled
         syncPrefs.edit().putBoolean("is_network_inspector_enabled", enabled).commit()
     }
 
@@ -910,7 +910,7 @@ class AuthPreferences(private val context: Context) {
     fun getFloatingNetworkInspectorEnabledSync(): Boolean = syncPrefs.getBoolean("is_floating_network_inspector_enabled", false)
 
     fun saveFloatingNetworkInspectorEnabledSync(enabled: Boolean) {
-        com.example.gemini.data.remote.inspector.NetworkInspectorManager.isFloatingBubbleEnabled = enabled
+        com.shriram.cinecode.data.remote.inspector.NetworkInspectorManager.isFloatingBubbleEnabled = enabled
         syncPrefs.edit().putBoolean("is_floating_network_inspector_enabled", enabled).commit()
     }
 
@@ -942,10 +942,10 @@ class AuthPreferences(private val context: Context) {
     }
 
     fun getDefaultBridgeBinaryPath(): String =
-        if (context.packageName == "com.termux") DEFAULT_BRIDGE_BINARY_PATH else DEFAULT_UBUNTU_BRIDGE_BINARY_PATH
+        if (context.packageName == "com.shriram.cinecode") DEFAULT_BRIDGE_BINARY_PATH else DEFAULT_UBUNTU_BRIDGE_BINARY_PATH
 
     fun getDefaultAgyBinaryPath(): String =
-        if (context.packageName == "com.termux") DEFAULT_AGY_BINARY_PATH else DEFAULT_UBUNTU_AGY_BINARY_PATH
+        if (context.packageName == "com.shriram.cinecode") DEFAULT_AGY_BINARY_PATH else DEFAULT_UBUNTU_AGY_BINARY_PATH
 
     val agyBridgeBinaryPath: Flow<String> = context.dataStore.data.map {
         it[AGY_BRIDGE_BINARY_PATH] ?: getAgyBridgeBinaryPathSync()
@@ -974,7 +974,7 @@ class AuthPreferences(private val context: Context) {
     }
 
     fun getDefaultClaudeBinaryPath(): String =
-        if (context.packageName == "com.termux") DEFAULT_CLAUDE_BINARY_PATH else DEFAULT_UBUNTU_CLAUDE_BINARY_PATH
+        if (context.packageName == "com.shriram.cinecode") DEFAULT_CLAUDE_BINARY_PATH else DEFAULT_UBUNTU_CLAUDE_BINARY_PATH
 
     fun getClaudeBinaryPathSync(): String =
         syncPrefs.getString("claude_binary_path", getDefaultClaudeBinaryPath()) ?: getDefaultClaudeBinaryPath()

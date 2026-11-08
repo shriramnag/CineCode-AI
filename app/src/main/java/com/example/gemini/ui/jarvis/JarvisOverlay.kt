@@ -1,4 +1,4 @@
-package com.example.gemini.ui.jarvis
+package com.shriram.cinecode.ui.jarvis
 
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -66,10 +66,10 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gemini.data.jarvis.JarvisController
-import com.example.gemini.data.jarvis.JarvisController.Phase
-import com.example.gemini.data.jarvis.JarvisPreferences
-import com.example.gemini.data.jarvis.JarvisTasks
+import com.shriram.cinecode.data.jarvis.JarvisController
+import com.shriram.cinecode.data.jarvis.JarvisController.Phase
+import com.shriram.cinecode.data.jarvis.JarvisPreferences
+import com.shriram.cinecode.data.jarvis.JarvisTasks
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.PI
@@ -345,7 +345,7 @@ private fun ActivityCard(
  */
 @Composable
 private fun SendMeter(progress: Float, holding: Boolean, auto: Boolean) {
-    val phrase = remember { com.example.gemini.data.jarvis.JarvisPhrases.exampleSend() }
+    val phrase = remember { com.shriram.cinecode.data.jarvis.JarvisPhrases.exampleSend() }
     val hint = when {
         holding -> if (phrase != null) "Waiting · say “$phrase” or tap Send" else "Waiting for you · tap Send"
         auto -> if (phrase != null) "Pause to send · or say “$phrase”" else "Pause to send"

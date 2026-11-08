@@ -1,4 +1,4 @@
-package com.example.gemini.ui.jarvis
+package com.shriram.cinecode.ui.jarvis
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -35,10 +35,10 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gemini.data.jarvis.JarvisController
-import com.example.gemini.data.jarvis.JarvisController.Phase
-import com.example.gemini.data.jarvis.JarvisPreferences
-import com.example.gemini.data.jarvis.JarvisTasks
+import com.shriram.cinecode.data.jarvis.JarvisController
+import com.shriram.cinecode.data.jarvis.JarvisController.Phase
+import com.shriram.cinecode.data.jarvis.JarvisPreferences
+import com.shriram.cinecode.data.jarvis.JarvisTasks
 import kotlinx.coroutines.launch
 
 /**

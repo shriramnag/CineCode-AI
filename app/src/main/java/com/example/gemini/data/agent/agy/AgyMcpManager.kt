@@ -1,4 +1,4 @@
-package com.example.gemini.data.agent.agy
+package com.shriram.cinecode.data.agent.agy
 
 import android.app.Application
 import android.content.Context
@@ -8,17 +8,17 @@ import android.net.NetworkCapabilities
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.gemini.data.preferences.AuthPreferences
-import com.example.gemini.data.remote.AgyHubClient
-import com.example.gemini.data.remote.AntigravityApiService
-import com.example.gemini.data.remote.GoogleOAuthManager
-import com.example.gemini.data.remote.StreamEvent
-import com.example.gemini.domain.model.AiModel
-import com.example.gemini.domain.model.ChatMessage
-import com.example.gemini.domain.model.ChatAttachment
-import com.example.gemini.domain.model.Conversation
-import com.example.gemini.domain.model.MessageRole
-import com.example.gemini.domain.model.ModelQuota
+import com.shriram.cinecode.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.remote.AgyHubClient
+import com.shriram.cinecode.data.remote.AntigravityApiService
+import com.shriram.cinecode.data.remote.GoogleOAuthManager
+import com.shriram.cinecode.data.remote.StreamEvent
+import com.shriram.cinecode.domain.model.AiModel
+import com.shriram.cinecode.domain.model.ChatMessage
+import com.shriram.cinecode.domain.model.ChatAttachment
+import com.shriram.cinecode.domain.model.Conversation
+import com.shriram.cinecode.domain.model.MessageRole
+import com.shriram.cinecode.domain.model.ModelQuota
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -34,7 +34,7 @@ import kotlinx.serialization.encodeToString
 import android.util.Log
 import org.json.JSONObject
 import java.util.UUID
-import com.example.gemini.data.agent.ChatSessionStore
+import com.shriram.cinecode.data.agent.ChatSessionStore
 import kotlinx.coroutines.CoroutineScope
 
 /** Antigravity MCP servers and the Cascade MCP plugin marketplace. Moved out of ChatViewModel unchanged. */
@@ -43,8 +43,8 @@ class AgyMcpManager(
     private val agyHubClient: AgyHubClient
 ) {
 
-    private val _mcpServers = MutableStateFlow<List<com.example.gemini.domain.model.McpServerState>>(emptyList())
-    val mcpServers: StateFlow<List<com.example.gemini.domain.model.McpServerState>> = _mcpServers.asStateFlow()
+    private val _mcpServers = MutableStateFlow<List<com.shriram.cinecode.domain.model.McpServerState>>(emptyList())
+    val mcpServers: StateFlow<List<com.shriram.cinecode.domain.model.McpServerState>> = _mcpServers.asStateFlow()
 
     private val _isMcpLoading = MutableStateFlow(false)
     val isMcpLoading: StateFlow<Boolean> = _isMcpLoading.asStateFlow()
@@ -66,8 +66,8 @@ class AgyMcpManager(
         _mcpErrorMessage.value = null
     }
 
-    private val _availableCascadePlugins = MutableStateFlow<List<com.example.gemini.data.remote.dto.AvailableCascadePluginDto>>(emptyList())
-    val availableCascadePlugins: StateFlow<List<com.example.gemini.data.remote.dto.AvailableCascadePluginDto>> = _availableCascadePlugins.asStateFlow()
+    private val _availableCascadePlugins = MutableStateFlow<List<com.shriram.cinecode.data.remote.dto.AvailableCascadePluginDto>>(emptyList())
+    val availableCascadePlugins: StateFlow<List<com.shriram.cinecode.data.remote.dto.AvailableCascadePluginDto>> = _availableCascadePlugins.asStateFlow()
 
     private val _isCascadePluginsLoading = MutableStateFlow(false)
     val isCascadePluginsLoading: StateFlow<Boolean> = _isCascadePluginsLoading.asStateFlow()
@@ -93,7 +93,7 @@ class AgyMcpManager(
                 val liveList = liveResult.getOrDefault(emptyList()).toMutableList()
 
                 // 2. Read persistent config from mcp_config.json to ensure any unstarted / disabled servers are also represented
-                val configRaw = com.example.gemini.data.daemon.IdeApiClient.getMcpConfig()
+                val configRaw = com.shriram.cinecode.data.daemon.IdeApiClient.getMcpConfig()
                 if (!configRaw.isNullOrBlank()) {
                     try {
                         val cfgJson = org.json.JSONObject(configRaw)
@@ -130,7 +130,7 @@ class AgyMcpManager(
                                 }
                                 val cwd = sObj.optString("cwd", "")
 
-                                val parsedSpec = com.example.gemini.domain.model.McpServerSpec(
+                                val parsedSpec = com.shriram.cinecode.domain.model.McpServerSpec(
                                     serverName = serverName,
                                     command = command,
                                     args = argsList,
@@ -143,7 +143,7 @@ class AgyMcpManager(
 
                                 if (existing == null) {
                                     liveList.add(
-                                        com.example.gemini.domain.model.McpServerState(
+                                        com.shriram.cinecode.domain.model.McpServerState(
                                             name = serverName,
                                             spec = parsedSpec,
                                             status = if (disabled) "DISABLED" else "MCP_SERVER_STATUS_STOPPED",
@@ -232,13 +232,13 @@ class AgyMcpManager(
 
             // 2. Persist disabled state in mcp_config.json
             try {
-                val rawConfig = com.example.gemini.data.daemon.IdeApiClient.getMcpConfig() ?: "{}"
+                val rawConfig = com.shriram.cinecode.data.daemon.IdeApiClient.getMcpConfig() ?: "{}"
                 val json = if (rawConfig.trim().startsWith("{")) org.json.JSONObject(rawConfig) else org.json.JSONObject()
                 val mcpServers = json.optJSONObject("mcpServers") ?: org.json.JSONObject().also { json.put("mcpServers", it) }
                 val targetServer = mcpServers.optJSONObject(serverName)
                 if (targetServer != null) {
                     targetServer.put("disabled", !enabled)
-                    com.example.gemini.data.daemon.IdeApiClient.saveMcpConfig(json.toString(2))
+                    com.shriram.cinecode.data.daemon.IdeApiClient.saveMcpConfig(json.toString(2))
                 }
             } catch (e: Exception) {
                 Log.w("ChatViewModel", "Failed to update disabled flag in mcp_config.json: ${e.message}")
@@ -259,13 +259,13 @@ class AgyMcpManager(
         }
     }
 
-    fun saveMcpServer(spec: com.example.gemini.domain.model.McpServerSpec, rawJsonString: String? = null) {
+    fun saveMcpServer(spec: com.shriram.cinecode.domain.model.McpServerSpec, rawJsonString: String? = null) {
         backendScope.launch {
             _isMcpLoading.value = true
             _mcpErrorMessage.value = null
             _mcpStatusMessage.value = null
             try {
-                val rawConfig = com.example.gemini.data.daemon.IdeApiClient.getMcpConfig() ?: "{}"
+                val rawConfig = com.shriram.cinecode.data.daemon.IdeApiClient.getMcpConfig() ?: "{}"
                 val json = if (rawConfig.trim().startsWith("{")) org.json.JSONObject(rawConfig) else org.json.JSONObject()
                 val serversObj = json.optJSONObject("mcpServers") ?: org.json.JSONObject().also { json.put("mcpServers", it) }
 
@@ -295,10 +295,10 @@ class AgyMcpManager(
                             // A server runs the MCP on its own Linux: those Termux paths would break it there.
                             if (!AuthPreferences.currentRemoteMode) {
                                 if (!envMap.containsKey("LD_PRELOAD")) {
-                                    envMap["LD_PRELOAD"] = "/data/data/com.termux/files/usr/lib/libtermux-exec.so"
+                                    envMap["LD_PRELOAD"] = "/data/data/com.shriram.cinecode/files/usr/lib/libtermux-exec.so"
                                 }
                                 if (!envMap.containsKey("PATH")) {
-                                    envMap["PATH"] = "/data/data/com.termux/files/home/.local/bin:/data/data/com.termux/files/usr/bin:/system/bin"
+                                    envMap["PATH"] = "/data/data/com.shriram.cinecode/files/home/.local/bin:/data/data/com.shriram.cinecode/files/usr/bin:/system/bin"
                                 }
                             }
                             if (envMap.isNotEmpty()) {
@@ -314,7 +314,7 @@ class AgyMcpManager(
                 }
                 serversObj.put(spec.serverName, serverObj)
 
-                val success = com.example.gemini.data.daemon.IdeApiClient.saveMcpConfig(json.toString(2))
+                val success = com.shriram.cinecode.data.daemon.IdeApiClient.saveMcpConfig(json.toString(2))
                 if (!success) {
                     _mcpErrorMessage.value = "Failed to save configuration to mcp_config.json"
                 } else {
@@ -341,12 +341,12 @@ class AgyMcpManager(
                 // Instantly remove from local list for snappy UI
                 _mcpServers.value = _mcpServers.value.filterNot { it.name.equals(serverName, ignoreCase = true) }
 
-                val rawConfig = com.example.gemini.data.daemon.IdeApiClient.getMcpConfig() ?: "{}"
+                val rawConfig = com.shriram.cinecode.data.daemon.IdeApiClient.getMcpConfig() ?: "{}"
                 val json = if (rawConfig.trim().startsWith("{")) org.json.JSONObject(rawConfig) else org.json.JSONObject()
                 val serversObj = json.optJSONObject("mcpServers")
                 if (serversObj != null && serversObj.has(serverName)) {
                     serversObj.remove(serverName)
-                    com.example.gemini.data.daemon.IdeApiClient.saveMcpConfig(json.toString(2))
+                    com.shriram.cinecode.data.daemon.IdeApiClient.saveMcpConfig(json.toString(2))
                 }
 
                 val hubUrl = AuthPreferences.currentHubUrl
@@ -380,7 +380,7 @@ class AgyMcpManager(
         }
     }
 
-    fun installCascadeMcpPlugin(plugin: com.example.gemini.data.remote.dto.AvailableCascadePluginDto) {
+    fun installCascadeMcpPlugin(plugin: com.shriram.cinecode.data.remote.dto.AvailableCascadePluginDto) {
         backendScope.launch {
             _installingCascadePluginId.value = plugin.id
             _mcpErrorMessage.value = null

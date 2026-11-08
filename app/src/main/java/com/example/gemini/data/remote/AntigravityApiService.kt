@@ -1,11 +1,11 @@
-package com.example.gemini.data.remote
+package com.shriram.cinecode.data.remote
 
 import android.os.Build
 import android.util.Log
-import com.example.gemini.data.remote.dto.*
-import com.example.gemini.domain.model.ChatMessage
-import com.example.gemini.domain.model.MessageRole
-import com.example.gemini.domain.model.ModelQuota
+import com.shriram.cinecode.data.remote.dto.*
+import com.shriram.cinecode.domain.model.ChatMessage
+import com.shriram.cinecode.domain.model.MessageRole
+import com.shriram.cinecode.domain.model.ModelQuota
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit
 sealed class StreamEvent {
     data class TextChunk(val text: String) : StreamEvent()
     data class ThoughtChunk(val thought: String) : StreamEvent()
-    data class Completed(val tokenUsage: com.example.gemini.domain.model.TokenUsage?, val rawPayload: String? = null) : StreamEvent()
+    data class Completed(val tokenUsage: com.shriram.cinecode.domain.model.TokenUsage?, val rawPayload: String? = null) : StreamEvent()
     data class Error(val message: String) : StreamEvent()
 }
 
@@ -106,7 +106,7 @@ class AntigravityApiService(
     }
 
     data class AvailableModelsResult(
-        val models: List<com.example.gemini.domain.model.AiModel>,
+        val models: List<com.shriram.cinecode.domain.model.AiModel>,
         val quotas: List<ModelQuota>
     )
 
@@ -129,12 +129,12 @@ class AntigravityApiService(
                 Log.d(TAG, "[API] fetchAvailableModels response code: ${response.code}")
                 if (response.isSuccessful) {
                     val parsed = json.decodeFromString<FetchAvailableModelsResponse>(text)
-                    val modelList = mutableListOf<com.example.gemini.domain.model.AiModel>()
+                    val modelList = mutableListOf<com.shriram.cinecode.domain.model.AiModel>()
                     val quotaList = mutableListOf<ModelQuota>()
 
                     parsed.models.forEach { (modelId, detail) ->
                         modelList.add(
-                            com.example.gemini.domain.model.AiModel.fromApi(
+                            com.shriram.cinecode.domain.model.AiModel.fromApi(
                                 id = modelId,
                                 displayName = detail.displayName
                             )
@@ -325,7 +325,7 @@ class AntigravityApiService(
 
         val inputCharsCount = jsonBody.length
         var outputCharsCount = 0
-        var lastUsageMetadata: com.example.gemini.data.remote.dto.UsageMetadataDto? = null
+        var lastUsageMetadata: com.shriram.cinecode.data.remote.dto.UsageMetadataDto? = null
         val streamStartTime = System.currentTimeMillis()
 
         val endpoints = listOf(ENDPOINT_PROD, ENDPOINT_DAILY)
@@ -408,7 +408,7 @@ class AntigravityApiService(
                     val cached = lastUsageMetadata.cachedContentTokenCount ?: lastUsageMetadata.cacheReadInputTokens ?: 0
                     val cacheCreation = lastUsageMetadata.cacheCreationInputTokens ?: 0
                     val total = lastUsageMetadata.totalTokenCount ?: (prompt + output)
-                    com.example.gemini.domain.model.TokenUsage(
+                    com.shriram.cinecode.domain.model.TokenUsage(
                         promptTokens = prompt,
                         outputTokens = output,
                         cachedTokens = cached,
@@ -421,7 +421,7 @@ class AntigravityApiService(
                     // Fallback heuristic tokenizer (~3.8 characters per token)
                     val estimatedPrompt = (inputCharsCount / 3.8).toInt().coerceAtLeast(1)
                     val estimatedOutput = (outputCharsCount / 3.8).toInt().coerceAtLeast(chunkCount)
-                    com.example.gemini.domain.model.TokenUsage(
+                    com.shriram.cinecode.domain.model.TokenUsage(
                         promptTokens = estimatedPrompt,
                         outputTokens = estimatedOutput,
                         cachedTokens = 0,

@@ -1,4 +1,4 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -20,10 +20,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.example.gemini.domain.model.ChatMessage
-import com.example.gemini.domain.model.Conversation
-import com.example.gemini.domain.model.MessageRole
-import com.example.gemini.theme.*
+import com.shriram.cinecode.domain.model.ChatMessage
+import com.shriram.cinecode.domain.model.Conversation
+import com.shriram.cinecode.domain.model.MessageRole
+import com.shriram.cinecode.theme.*
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -101,9 +101,9 @@ fun ChatTelemetryDialog(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
-                    val inputColor = if (isDark) com.example.gemini.theme.AppColors.info else com.example.gemini.theme.AppColors.info
-                    val outputColor = if (isDark) com.example.gemini.theme.AppColors.success else com.example.gemini.theme.AppColors.success
-                    val cacheColor = com.example.gemini.theme.AppColors.warning
+                    val inputColor = if (isDark) com.shriram.cinecode.theme.AppColors.info else com.shriram.cinecode.theme.AppColors.info
+                    val outputColor = if (isDark) com.shriram.cinecode.theme.AppColors.success else com.shriram.cinecode.theme.AppColors.success
+                    val cacheColor = com.shriram.cinecode.theme.AppColors.warning
 
                     // Total Token Metric Grid
                     Row(

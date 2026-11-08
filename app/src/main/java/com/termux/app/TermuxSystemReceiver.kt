@@ -1,8 +1,8 @@
-package com.termux.app
+package com.shriram.cinecode.app
 
-import com.example.gemini.data.receiver.TermuxSystemReceiver as CoreSystemReceiver
+import com.shriram.cinecode.data.receiver.TermuxSystemReceiver as CoreSystemReceiver
 
 /**
- * Direct com.termux.app.TermuxSystemReceiver implementation for storage and style reloads.
+ * Direct com.shriram.cinecode.app.TermuxSystemReceiver implementation for storage and style reloads.
  */
 class TermuxSystemReceiver : CoreSystemReceiver()

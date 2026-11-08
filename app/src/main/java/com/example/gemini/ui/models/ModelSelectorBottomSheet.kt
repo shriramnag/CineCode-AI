@@ -1,4 +1,4 @@
-package com.example.gemini.ui.models
+package com.shriram.cinecode.ui.models
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
@@ -6,7 +6,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import com.example.gemini.theme.isAppInDarkTheme
+import com.shriram.cinecode.theme.isAppInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -33,10 +33,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gemini.domain.model.AiModel
-import com.example.gemini.domain.model.ModelFamily
-import com.example.gemini.domain.model.ModelQuota
-import com.example.gemini.theme.*
+import com.shriram.cinecode.domain.model.AiModel
+import com.shriram.cinecode.domain.model.ModelFamily
+import com.shriram.cinecode.domain.model.ModelQuota
+import com.shriram.cinecode.theme.*
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 
@@ -51,7 +51,7 @@ fun ModelSelectorBottomSheet(
     selectedModelId: String,
     availableModels: List<AiModel>,
     quotas: List<ModelQuota>,
-    quotaSummary: com.example.gemini.domain.model.QuotaSummaryResponse? = null,
+    quotaSummary: com.shriram.cinecode.domain.model.QuotaSummaryResponse? = null,
     isRefreshing: Boolean = false,
     onRefresh: () -> Unit = {},
     onSelectModel: (String) -> Unit,
@@ -261,7 +261,7 @@ private fun MainCategoryListView(
     geminiModelsCount: Int,
     availableModelsCount: Int,
     quotas: List<ModelQuota>,
-    quotaSummary: com.example.gemini.domain.model.QuotaSummaryResponse? = null,
+    quotaSummary: com.shriram.cinecode.domain.model.QuotaSummaryResponse? = null,
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
     onSelectCategory: (CategoryType) -> Unit,
@@ -273,8 +273,8 @@ private fun MainCategoryListView(
             .padding(bottom = 20.dp)
     ) {
         // Agent header (same as the Claude Code picker)
-        com.example.gemini.ui.agents.AgentSheetHeader(
-            agent = com.example.gemini.domain.model.AgentKind.AGY,
+        com.shriram.cinecode.ui.agents.AgentSheetHeader(
+            agent = com.shriram.cinecode.domain.model.AgentKind.AGY,
             title = "Select model",
             detail = if (availableModelsCount > 0) "$availableModelsCount models" else "no models loaded",
             refreshing = isRefreshing,
@@ -560,9 +560,9 @@ private fun TieredModelGroupCard(
 
     val isDark = isAppInDarkTheme()
     val cardBg = if (isAnyVariantSelected) {
-        com.example.gemini.theme.AppColors.card
+        com.shriram.cinecode.theme.AppColors.card
     } else {
-        com.example.gemini.theme.AppColors.card.copy(alpha = if (isDark) 0.65f else 0.85f)
+        com.shriram.cinecode.theme.AppColors.card.copy(alpha = if (isDark) 0.65f else 0.85f)
     }
 
     Surface(
@@ -673,7 +673,7 @@ private fun CategoryNavigationTile(
             .defaultMinSize(minHeight = 88.dp)
             .clip(RoundedCornerShape(14.dp))
             .clickable { onClick() },
-        color = com.example.gemini.theme.AppColors.card,
+        color = com.shriram.cinecode.theme.AppColors.card,
         shape = RoundedCornerShape(14.dp)
     ) {
         Row(
@@ -776,9 +776,9 @@ private fun ModelRowItem(
 
     val isDark = isAppInDarkTheme()
     val cardBg = if (isSelected) {
-        com.example.gemini.theme.AppColors.card
+        com.shriram.cinecode.theme.AppColors.card
     } else {
-        com.example.gemini.theme.AppColors.card.copy(alpha = if (isDark) 0.65f else 0.85f)
+        com.shriram.cinecode.theme.AppColors.card.copy(alpha = if (isDark) 0.65f else 0.85f)
     }
 
     Surface(

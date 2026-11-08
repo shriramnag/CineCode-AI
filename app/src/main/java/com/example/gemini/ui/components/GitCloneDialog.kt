@@ -1,4 +1,4 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -30,11 +30,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.example.gemini.data.daemon.ProjectItem
-import com.example.gemini.data.local.LocalEnvironmentManager
-import com.example.gemini.theme.ClaudeTerracotta
-import com.example.gemini.theme.GeminiBlue
-import com.example.gemini.theme.QuotaGreen
+import com.shriram.cinecode.data.daemon.ProjectItem
+import com.shriram.cinecode.data.local.LocalEnvironmentManager
+import com.shriram.cinecode.theme.ClaudeTerracotta
+import com.shriram.cinecode.theme.GeminiBlue
+import com.shriram.cinecode.theme.QuotaGreen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
@@ -96,8 +96,8 @@ fun GitCloneDialog(
             val startedAt = System.currentTimeMillis()
             // Remote mode: the repository is cloned by the bridge on the server, not by a script on the phone
             val runClone: suspend ((String) -> Unit) -> Pair<Int, Long> = { sink ->
-                if (com.example.gemini.data.preferences.AuthPreferences.currentRemoteMode) {
-                    val code = com.example.gemini.data.remote.AgyBridgeService.instance
+                if (com.shriram.cinecode.data.preferences.AuthPreferences.currentRemoteMode) {
+                    val code = com.shriram.cinecode.data.remote.AgyBridgeService.instance
                         .cloneRepository(trimmedUrl, projectName.trim(), onLine = sink)
                     code to (System.currentTimeMillis() - startedAt)
                 } else {
@@ -266,8 +266,8 @@ fun GitCloneDialog(
                     // Terminal output container
                     Surface(
                         shape = RoundedCornerShape(10.dp),
-                        color = com.example.gemini.theme.AppColors.terminalBg,
-                        border = BorderStroke(1.dp, com.example.gemini.theme.AppColors.editorBorder),
+                        color = com.shriram.cinecode.theme.AppColors.terminalBg,
+                        border = BorderStroke(1.dp, com.shriram.cinecode.theme.AppColors.editorBorder),
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f)
@@ -281,11 +281,11 @@ fun GitCloneDialog(
                             items(logs) { line ->
                                 val cleanLine = line.replace(Regex("\u001B\\[[;\\d]*m"), "")
                                 val lineColor = when {
-                                    cleanLine.startsWith("❌") || cleanLine.startsWith("fatal:") || cleanLine.startsWith("error:") -> com.example.gemini.theme.AppColors.danger
-                                    cleanLine.startsWith("✅") -> com.example.gemini.theme.AppColors.success
-                                    cleanLine.startsWith("⚠️") || cleanLine.startsWith("warning:") -> com.example.gemini.theme.AppColors.warning
-                                    cleanLine.startsWith("=") || cleanLine.startsWith("[") -> com.example.gemini.theme.AppColors.info
-                                    else -> com.example.gemini.theme.AppColors.editorText
+                                    cleanLine.startsWith("❌") || cleanLine.startsWith("fatal:") || cleanLine.startsWith("error:") -> com.shriram.cinecode.theme.AppColors.danger
+                                    cleanLine.startsWith("✅") -> com.shriram.cinecode.theme.AppColors.success
+                                    cleanLine.startsWith("⚠️") || cleanLine.startsWith("warning:") -> com.shriram.cinecode.theme.AppColors.warning
+                                    cleanLine.startsWith("=") || cleanLine.startsWith("[") -> com.shriram.cinecode.theme.AppColors.info
+                                    else -> com.shriram.cinecode.theme.AppColors.editorText
                                 }
                                 Text(
                                     text = cleanLine,
@@ -313,7 +313,7 @@ fun GitCloneDialog(
                                     logs.add("🛑 Clone cancelled by user.")
                                 },
                                 shape = RoundedCornerShape(8.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = com.example.gemini.theme.AppColors.danger)
+                                colors = ButtonDefaults.buttonColors(containerColor = com.shriram.cinecode.theme.AppColors.danger)
                             ) {
                                 Icon(Icons.Default.Stop, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))

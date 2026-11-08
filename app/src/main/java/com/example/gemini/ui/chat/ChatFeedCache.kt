@@ -1,12 +1,12 @@
-package com.example.gemini.ui.chat
+package com.shriram.cinecode.ui.chat
 
 import androidx.compose.runtime.Immutable
-import com.example.gemini.domain.model.ChatMessage
-import com.example.gemini.domain.model.MessageRole
-import com.example.gemini.ui.components.MarkdownBlock
-import com.example.gemini.ui.components.parseMarkdownBlocks
-import com.example.gemini.ui.components.CodeBlockCache
-import com.example.gemini.ui.components.MarkdownTextCache
+import com.shriram.cinecode.domain.model.ChatMessage
+import com.shriram.cinecode.domain.model.MessageRole
+import com.shriram.cinecode.ui.components.MarkdownBlock
+import com.shriram.cinecode.ui.components.parseMarkdownBlocks
+import com.shriram.cinecode.ui.components.CodeBlockCache
+import com.shriram.cinecode.ui.components.MarkdownTextCache
 import java.util.concurrent.ConcurrentHashMap
 
 @Immutable
@@ -45,7 +45,7 @@ object ChatFeedCache {
             }
             MessageRole.USER -> {
                 // Show the slash command the user typed, not the instructions it expanded to
-                val shown = com.example.gemini.data.remote.PromptExpansion.collapse(msg.content)
+                val shown = com.shriram.cinecode.data.remote.PromptExpansion.collapse(msg.content)
                 msgItems.add(ChatFeedItem.User(if (shown === msg.content) msg else msg.copy(content = shown)))
             }
             MessageRole.ASSISTANT -> {

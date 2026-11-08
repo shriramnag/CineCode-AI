@@ -1,4 +1,4 @@
-package com.example.gemini.ui.ide
+package com.shriram.cinecode.ui.ide
 
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Canvas
@@ -29,7 +29,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import com.example.gemini.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.preferences.AuthPreferences
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -133,8 +133,8 @@ fun ImageAssetViewer(
             .background(
                 when (bgMode) {
                     1 -> Color.White
-                    2 -> com.example.gemini.theme.AppColors.editorBg
-                    else -> com.example.gemini.theme.AppColors.editorBg
+                    2 -> com.shriram.cinecode.theme.AppColors.editorBg
+                    else -> com.shriram.cinecode.theme.AppColors.editorBg
                 }
             )
     ) {
@@ -210,7 +210,7 @@ fun ImageAssetViewer(
                 .padding(12.dp)
                 .fillMaxWidth(0.92f),
             shape = RoundedCornerShape(10.dp),
-            color = com.example.gemini.theme.AppColors.editorPanel.copy(alpha = 0.93f),
+            color = com.shriram.cinecode.theme.AppColors.editorPanel.copy(alpha = 0.93f),
             tonalElevation = 6.dp
         ) {
             Row(
@@ -329,8 +329,8 @@ private fun CheckerboardCanvas(modifier: Modifier = Modifier) {
         val squareSize = 16.dp.toPx()
         val cols = (size.width / squareSize).toInt() + 1
         val rows = (size.height / squareSize).toInt() + 1
-        val dark = com.example.gemini.theme.AppColors.editorPanel
-        val light = com.example.gemini.theme.AppColors.editorLine
+        val dark = com.shriram.cinecode.theme.AppColors.editorPanel
+        val light = com.shriram.cinecode.theme.AppColors.editorLine
 
         for (c in 0 until cols) {
             for (r in 0 until rows) {

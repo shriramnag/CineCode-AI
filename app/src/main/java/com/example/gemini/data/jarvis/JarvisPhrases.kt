@@ -1,4 +1,4 @@
-package com.example.gemini.data.jarvis
+package com.shriram.cinecode.data.jarvis
 
 /**
  * Spoken commands that end a capture: send phrases ("send it", "send kar do") send what was said before them at once,

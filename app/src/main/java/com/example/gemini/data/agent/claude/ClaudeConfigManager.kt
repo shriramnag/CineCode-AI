@@ -1,4 +1,4 @@
-package com.example.gemini.data.agent.claude
+package com.shriram.cinecode.data.agent.claude
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay

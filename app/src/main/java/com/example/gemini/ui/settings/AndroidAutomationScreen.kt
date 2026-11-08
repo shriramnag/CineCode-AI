@@ -1,6 +1,6 @@
-package com.example.gemini.ui.settings
+package com.shriram.cinecode.ui.settings
 
-import com.example.gemini.ui.components.bouncyVerticalScroll
+import com.shriram.cinecode.ui.components.bouncyVerticalScroll
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
@@ -23,9 +23,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gemini.data.adb.AdbConnectManager
-import com.example.gemini.data.automation.AndroidAutomation
-import com.example.gemini.theme.QuotaGreen
+import com.shriram.cinecode.data.adb.AdbConnectManager
+import com.shriram.cinecode.data.automation.AndroidAutomation
+import com.shriram.cinecode.theme.QuotaGreen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 

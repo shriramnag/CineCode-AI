@@ -1,4 +1,4 @@
-package com.example.gemini.data.preferences
+package com.shriram.cinecode.data.preferences
 
 import android.content.ComponentName
 import android.content.Context
@@ -12,13 +12,13 @@ object TerminalLauncherManager {
     private const val TAG = "TerminalLauncherMgr"
 
     fun getAntiTermComponent(context: Context): ComponentName =
-        ComponentName(context.packageName, "com.example.gemini.TermuxAntiTermAlias")
+        ComponentName(context.packageName, "com.shriram.cinecode.TermuxAntiTermAlias")
 
     fun getTermuxClassicComponent(context: Context): ComponentName =
-        ComponentName(context.packageName, "com.example.gemini.TermuxClassicAlias")
+        ComponentName(context.packageName, "com.shriram.cinecode.TermuxClassicAlias")
 
     fun getDirectActivityComponent(context: Context): ComponentName =
-        ComponentName(context.packageName, "com.example.gemini.TermuxActivity")
+        ComponentName(context.packageName, "com.shriram.cinecode.TermuxActivity")
 
     /**
      * Inspects the Android PackageManager directly to determine if any standalone terminal launcher alias/activity is enabled.

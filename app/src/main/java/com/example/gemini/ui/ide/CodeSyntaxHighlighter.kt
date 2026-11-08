@@ -1,4 +1,4 @@
-package com.example.gemini.ui.ide
+package com.shriram.cinecode.ui.ide
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
@@ -12,7 +12,7 @@ import java.util.regex.Pattern
 
 /** The IDE's syntax colors: the app theme's syntax tokens, so the editor follows the theme. */
 object CodeSyntaxColors {
-    private val c get() = com.example.gemini.theme.AppColors
+    private val c get() = com.shriram.cinecode.theme.AppColors
     val Keyword: Color get() = c.syntaxKeyword
     val ControlKeyword: Color get() = c.syntaxControl
     val Type: Color get() = c.syntaxType

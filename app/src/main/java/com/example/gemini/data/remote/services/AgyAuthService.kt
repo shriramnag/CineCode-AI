@@ -1,9 +1,9 @@
-package com.example.gemini.data.remote.services
+package com.shriram.cinecode.data.remote.services
 
 import android.util.Log
-import com.example.gemini.data.preferences.AuthPreferences
-import com.example.gemini.data.remote.AgyHubClient.AgyAuthInfo
-import com.example.gemini.data.remote.AgyHubClient.AgyAuthStatus
+import com.shriram.cinecode.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.remote.AgyHubClient.AgyAuthInfo
+import com.shriram.cinecode.data.remote.AgyHubClient.AgyAuthStatus
 import exa.language_server_pb.AuthLogoutRequest
 import exa.language_server_pb.AuthResult
 import exa.language_server_pb.GetAuthStatusRequest

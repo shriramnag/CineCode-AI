@@ -1,8 +1,8 @@
-package com.example.gemini
+package com.shriram.cinecode
 
 import androidx.compose.runtime.Composable
-import com.example.gemini.ui.chat.ChatScreen
-import com.example.gemini.ui.chat.ChatViewModel
+import com.shriram.cinecode.ui.chat.ChatScreen
+import com.shriram.cinecode.ui.chat.ChatViewModel
 
 @Composable
 fun MainNavigation(viewModel: ChatViewModel? = null) {

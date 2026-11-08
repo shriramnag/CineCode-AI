@@ -1,4 +1,4 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import android.Manifest
 import android.content.Context
@@ -45,7 +45,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import com.example.gemini.theme.*
+import com.shriram.cinecode.theme.*
 
 object PermissionUtils {
 

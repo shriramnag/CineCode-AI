@@ -1,4 +1,4 @@
-package com.example.gemini.theme
+package com.shriram.cinecode.theme
 
 import android.content.Context
 import android.content.SharedPreferences
@@ -178,7 +178,7 @@ object ThemeManager {
     /** The app's theme mode: "SYSTEM", "LIGHT" or "DARK" (the same setting as Settings → Appearance). */
     fun setMode(mode: String) {
         val ctx = appContext ?: return
-        io.launch { runCatching { com.example.gemini.data.preferences.AuthPreferences(ctx).saveThemeMode(mode) } }
+        io.launch { runCatching { com.shriram.cinecode.data.preferences.AuthPreferences(ctx).saveThemeMode(mode) } }
     }
 
     /**
@@ -200,7 +200,7 @@ object ThemeManager {
         }
     }
 
-    fun mode(): String = appContext?.let { runCatching { com.example.gemini.data.preferences.AuthPreferences(it).getThemeModeSync() }.getOrNull() } ?: "DARK"
+    fun mode(): String = appContext?.let { runCatching { com.shriram.cinecode.data.preferences.AuthPreferences(it).getThemeModeSync() }.getOrNull() } ?: "DARK"
 
     /** Adds or replaces a custom theme. */
     fun saveCustom(theme: AppTheme): AppTheme {

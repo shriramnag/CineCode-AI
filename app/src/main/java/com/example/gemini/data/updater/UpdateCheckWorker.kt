@@ -1,4 +1,4 @@
-package com.example.gemini.data.updater
+package com.shriram.cinecode.data.updater
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -15,7 +15,7 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.example.gemini.R
+import com.shriram.cinecode.R
 import java.util.concurrent.TimeUnit
 
 private const val WORK_NAME = "app_update_check"

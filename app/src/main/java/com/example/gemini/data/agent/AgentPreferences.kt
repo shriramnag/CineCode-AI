@@ -1,7 +1,7 @@
-package com.example.gemini.data.agent
+package com.shriram.cinecode.data.agent
 
 import android.content.Context
-import com.example.gemini.domain.model.AgentKind
+import com.shriram.cinecode.domain.model.AgentKind
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

@@ -1,4 +1,4 @@
-package com.example.gemini.data.jarvis
+package com.shriram.cinecode.data.jarvis
 
 import android.content.Context
 import android.media.AudioAttributes

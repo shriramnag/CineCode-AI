@@ -1,4 +1,4 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -30,8 +30,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.example.gemini.theme.ClaudeTerracotta
-import com.example.gemini.theme.GeminiBlue
+import com.shriram.cinecode.theme.ClaudeTerracotta
+import com.shriram.cinecode.theme.GeminiBlue
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date

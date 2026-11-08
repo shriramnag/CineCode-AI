@@ -1,11 +1,11 @@
-package com.example.gemini.data.remote
+package com.shriram.cinecode.data.remote
 
 import android.content.Context
 import android.util.Log
-import com.example.gemini.data.local.LocalServerManager
-import com.example.gemini.data.local.LocalServerStatus
-import com.example.gemini.data.preferences.AuthPreferences
-import com.example.gemini.data.ssh.SshSessionFactory
+import com.shriram.cinecode.data.local.LocalServerManager
+import com.shriram.cinecode.data.local.LocalServerStatus
+import com.shriram.cinecode.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.ssh.SshSessionFactory
 import com.jcraft.jsch.ChannelExec
 import com.jcraft.jsch.ChannelSftp
 import com.jcraft.jsch.Session
@@ -199,7 +199,7 @@ object RemoteServerManager {
         }
 
         // local: the app talks to the browser-plugin host that runs on the server
-        val hostPort = com.example.gemini.ui.browser.BrowserExtensionManager.instance.hostPort()
+        val hostPort = com.shriram.cinecode.ui.browser.BrowserExtensionManager.instance.hostPort()
         try { s.delPortForwardingL("127.0.0.1", hostPort) } catch (_: Exception) {}
         try {
             s.setPortForwardingL("127.0.0.1", hostPort, "127.0.0.1", hostPort)
@@ -288,12 +288,12 @@ object RemoteServerManager {
         val (bp, hp, bind) = prefs.getRemoteListenSync()
         val bu = runCatching { java.net.URI(AuthPreferences.currentBridgeHttpUrl) }.getOrNull()
         val hu = runCatching { java.net.URI(AuthPreferences.currentHubUrl) }.getOrNull()
-        val bridgeDirect = isDirect(bu, com.example.gemini.BuildConfig.BRIDGE_PORT)
-        val hubDirect = isDirect(hu, com.example.gemini.BuildConfig.HUB_PORT)
+        val bridgeDirect = isDirect(bu, com.shriram.cinecode.BuildConfig.BRIDGE_PORT)
+        val hubDirect = isDirect(hu, com.shriram.cinecode.BuildConfig.HUB_PORT)
         val bridgePort = bp.toIntOrNull()
-            ?: if (bridgeDirect) bu!!.port else com.example.gemini.BuildConfig.BRIDGE_PORT
+            ?: if (bridgeDirect) bu!!.port else com.shriram.cinecode.BuildConfig.BRIDGE_PORT
         val hubPort = hp.toIntOrNull()
-            ?: if (hubDirect) hu!!.port else com.example.gemini.BuildConfig.HUB_PORT
+            ?: if (hubDirect) hu!!.port else com.shriram.cinecode.BuildConfig.HUB_PORT
         return Plan(bridgePort, hubPort, bind.ifBlank { if (bridgeDirect) "0.0.0.0" else "127.0.0.1" })
     }
 
@@ -380,9 +380,9 @@ object RemoteServerManager {
         val installDir = bin.substringBeforeLast('/')
         val p = plan(context)
         val tz = java.util.TimeZone.getDefault().getOffset(System.currentTimeMillis()) / 1000
-        val enabledAgents = com.example.gemini.data.agent.AgentPreferences.enabledSync(context)
-        val claudeEnabled = com.example.gemini.domain.model.AgentKind.CLAUDE in enabledAgents
-        val agyEnabled = com.example.gemini.domain.model.AgentKind.AGY in enabledAgents
+        val enabledAgents = com.shriram.cinecode.data.agent.AgentPreferences.enabledSync(context)
+        val claudeEnabled = com.shriram.cinecode.domain.model.AgentKind.CLAUDE in enabledAgents
+        val agyEnabled = com.shriram.cinecode.domain.model.AgentKind.AGY in enabledAgents
         val core = buildString {
             append(q(bin)).append(" -f --token ").append(AuthPreferences.currentSecurityToken)
             append(" -p ").append(p.bridgePort)
@@ -391,7 +391,7 @@ object RemoteServerManager {
             append(" --tz-offset ").append(tz)
             if (agyEnabled && agyPath != null) append(" --bin ").append(q(agyPath))
             if (claudeEnabled && claudePath != null) append(" --claude-bin ").append(q(claudePath))
-            append(com.example.gemini.data.agent.AgentPreferences.bridgeFlags(context))
+            append(com.shriram.cinecode.data.agent.AgentPreferences.bridgeFlags(context))
         }
         val log = "$installDir/bridge.log"
         val pathExport = "export PATH=\"\$HOME/.local/bin:\$HOME/.gemini/bin:\$HOME/.antigravity/bin:/usr/local/bin:\$PATH\"; "
@@ -501,7 +501,7 @@ object RemoteServerManager {
                 // check everything first, so a Restart with a missing binary does not stop a working bridge
                 val home = serverHome(s)
                 val bin = ensureBridgeBinary(context, s, home)
-                val enabledAgents = com.example.gemini.data.agent.AgentPreferences.enabledSync(context)
+                val enabledAgents = com.shriram.cinecode.data.agent.AgentPreferences.enabledSync(context)
                 val agyPath = agentPathOrNull(s, expandHome(effectiveAgyBin(prefs), home))
                 val claudePath = agentPathOrNull(s, expandHome(effectiveClaudeBin(prefs), home))
 
@@ -683,7 +683,7 @@ object RemoteServerManager {
     suspend fun ensureExtensionHost(context: Context) = extLock.withLock { withContext(Dispatchers.IO) {
         extensionHostReady = false
         appContext = context.applicationContext
-        val hostPort = com.example.gemini.ui.browser.BrowserExtensionManager.instance.hostPort()
+        val hostPort = com.shriram.cinecode.ui.browser.BrowserExtensionManager.instance.hostPort()
         val mcpPort = AndroidLocalBridgeServer.DEFAULT_PORT
         val deviceId = android.provider.Settings.Secure.getString(context.contentResolver, android.provider.Settings.Secure.ANDROID_ID).orEmpty()
         val s = session()

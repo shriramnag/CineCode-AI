@@ -1,4 +1,4 @@
-package com.example.gemini.data.jarvis
+package com.shriram.cinecode.data.jarvis
 
 import android.content.Context
 import android.content.Intent
@@ -8,7 +8,7 @@ import android.os.Looper
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
-import com.example.gemini.data.audio.SpeechTranscriber
+import com.shriram.cinecode.data.audio.SpeechTranscriber
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

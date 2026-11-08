@@ -1,9 +1,9 @@
-package com.example.gemini.domain.chat
+package com.shriram.cinecode.domain.chat
 
-import com.example.gemini.domain.model.MessageRole
-import com.example.gemini.domain.model.ToolType
-import com.example.gemini.ui.components.MarkdownBlock
-import com.example.gemini.ui.components.parseMarkdownBlocks
+import com.shriram.cinecode.domain.model.MessageRole
+import com.shriram.cinecode.domain.model.ToolType
+import com.shriram.cinecode.ui.components.MarkdownBlock
+import com.shriram.cinecode.ui.components.parseMarkdownBlocks
 import exa.language_server_pb.*
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull

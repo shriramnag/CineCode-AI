@@ -1,4 +1,4 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import android.content.Context
 import android.view.KeyEvent
@@ -46,14 +46,14 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.PopupProperties
-import com.example.gemini.data.local.LocalPtySession
-import com.example.gemini.data.local.LocalTerminalManager
-import com.example.gemini.data.preferences.AuthPreferences
-import com.example.gemini.theme.*
-import com.termux.terminal.KeyHandler
-import com.termux.terminal.TerminalSession
-import com.termux.view.TerminalView
-import com.termux.view.TerminalViewClient
+import com.shriram.cinecode.data.local.LocalPtySession
+import com.shriram.cinecode.data.local.LocalTerminalManager
+import com.shriram.cinecode.data.preferences.AuthPreferences
+import com.shriram.cinecode.theme.*
+import com.shriram.cinecode.terminal.KeyHandler
+import com.shriram.cinecode.terminal.TerminalSession
+import com.shriram.cinecode.view.TerminalView
+import com.shriram.cinecode.view.TerminalViewClient
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
@@ -86,7 +86,7 @@ fun LocalTerminalContent(
     onClose: () -> Unit,
     customSession: LocalPtySession? = null,
     showFloatingPill: Boolean = true,
-    backgroundColor: Color = com.example.gemini.theme.AppColors.terminalBg,
+    backgroundColor: Color = com.shriram.cinecode.theme.AppColors.terminalBg,
     isMaximized: Boolean = true,
     onToggleMaximize: (() -> Unit)? = null,
     onDragDelta: ((Float) -> Unit)? = null,
@@ -183,14 +183,14 @@ fun LocalTerminalContent(
 
     var currentTerminalView by remember { mutableStateOf<TerminalView?>(null) }
     // a theme change repaints the terminal in its new colors
-    val terminalThemeVersion = com.example.gemini.theme.ThemeTerminal.version
+    val terminalThemeVersion = com.shriram.cinecode.theme.ThemeTerminal.version
     LaunchedEffect(terminalThemeVersion) { currentTerminalView?.onScreenUpdated() }
     val focusCoordinator = LocalAppFocusCoordinator.current
     val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
 
     DisposableEffect(focusCoordinator, currentTerminalView) {
         focusCoordinator.registerScreen(
-            mode = com.example.gemini.AppViewMode.TERMINAL,
+            mode = com.shriram.cinecode.AppViewMode.TERMINAL,
             onRequestFocus = {
                 val tv = currentTerminalView
                 if (tv != null) {
@@ -205,7 +205,7 @@ fun LocalTerminalContent(
             }
         )
         onDispose {
-            focusCoordinator.unregisterScreen(com.example.gemini.AppViewMode.TERMINAL)
+            focusCoordinator.unregisterScreen(com.shriram.cinecode.AppViewMode.TERMINAL)
         }
     }
 
@@ -351,7 +351,7 @@ fun LocalTerminalContent(
                                 modifier = Modifier
                                     .size(8.dp)
                                     .clip(CircleShape)
-                                    .background(if (isSessExited) com.example.gemini.theme.AppColors.danger else com.example.gemini.theme.AppColors.success)
+                                    .background(if (isSessExited) com.shriram.cinecode.theme.AppColors.danger else com.shriram.cinecode.theme.AppColors.success)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
@@ -386,7 +386,7 @@ fun LocalTerminalContent(
                                     Icon(
                                         imageVector = Icons.Default.Refresh,
                                         contentDescription = "Retry",
-                                        tint = com.example.gemini.theme.AppColors.success,
+                                        tint = com.shriram.cinecode.theme.AppColors.success,
                                         modifier = Modifier.size(18.dp)
                                     )
                                 }
@@ -407,7 +407,7 @@ fun LocalTerminalContent(
                         }
                     }
                 }
-                HorizontalDivider(color = com.example.gemini.theme.AppColors.editorText.copy(alpha = 0.1f), thickness = 0.5.dp)
+                HorizontalDivider(color = com.shriram.cinecode.theme.AppColors.editorText.copy(alpha = 0.1f), thickness = 0.5.dp)
             }
 
             // NATIVE TERMUX TERMINAL VIEW (Full Screen, spans from the very top pixel)
@@ -738,9 +738,9 @@ fun LocalTerminalContent(
                     .align(Alignment.TopCenter)
                     .background(
                         Brush.verticalGradient(
-                            0.0f to com.example.gemini.theme.AppColors.terminalBg.copy(alpha = 0.85f),
-                            0.7f to com.example.gemini.theme.AppColors.terminalBg.copy(alpha = 0.53f),
-                            1.0f to com.example.gemini.theme.AppColors.terminalBg.copy(alpha = 0f)
+                            0.0f to com.shriram.cinecode.theme.AppColors.terminalBg.copy(alpha = 0.85f),
+                            0.7f to com.shriram.cinecode.theme.AppColors.terminalBg.copy(alpha = 0.53f),
+                            1.0f to com.shriram.cinecode.theme.AppColors.terminalBg.copy(alpha = 0f)
                         )
                     )
             )
@@ -762,8 +762,8 @@ fun LocalTerminalContent(
                         }
                     },
                 shape = RoundedCornerShape(20.dp),
-                color = com.example.gemini.theme.AppColors.editorPanel.copy(alpha = 0.95f),
-                border = BorderStroke(1.dp, com.example.gemini.theme.AppColors.editorText.copy(alpha = 0.22f)),
+                color = com.shriram.cinecode.theme.AppColors.editorPanel.copy(alpha = 0.95f),
+                border = BorderStroke(1.dp, com.shriram.cinecode.theme.AppColors.editorText.copy(alpha = 0.22f)),
                 shadowElevation = 8.dp
             ) {
             Row(
@@ -803,7 +803,7 @@ fun LocalTerminalContent(
                             dismissOnClickOutside = true,
                             dismissOnBackPress = true
                         ),
-                        modifier = Modifier.background(com.example.gemini.theme.AppColors.editorPanel)
+                        modifier = Modifier.background(com.shriram.cinecode.theme.AppColors.editorPanel)
                     ) {
                         sessions.forEach { sess ->
                             val isSelected = sess.id == activeSession.id
@@ -819,7 +819,7 @@ fun LocalTerminalContent(
                                             modifier = Modifier
                                                 .size(6.dp)
                                                 .clip(CircleShape)
-                                                .background(if (sessExited) com.example.gemini.theme.AppColors.danger else QuotaGreen)
+                                                .background(if (sessExited) com.shriram.cinecode.theme.AppColors.danger else QuotaGreen)
                                         )
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Text(
@@ -852,7 +852,7 @@ fun LocalTerminalContent(
                             )
                         }
 
-                        HorizontalDivider(thickness = 0.5.dp, color = com.example.gemini.theme.AppColors.editorText.copy(alpha = 0.2f))
+                        HorizontalDivider(thickness = 0.5.dp, color = com.shriram.cinecode.theme.AppColors.editorText.copy(alpha = 0.2f))
 
                         Surface(
                             color = Color.Transparent,
@@ -889,7 +889,7 @@ fun LocalTerminalContent(
                                     )
                                     Text(
                                         text = "Long-press to force Bash shell",
-                                        color = com.example.gemini.theme.AppColors.editorText.copy(alpha = 0.53f),
+                                        color = com.shriram.cinecode.theme.AppColors.editorText.copy(alpha = 0.53f),
                                         fontSize = 10.sp
                                     )
                                 }
@@ -933,20 +933,20 @@ fun LocalTerminalContent(
             AlertDialog(
                 onDismissRequest = { sessionToClose = null },
                 shape = RoundedCornerShape(18.dp),
-                containerColor = com.example.gemini.theme.AppColors.editorBg,
+                containerColor = com.shriram.cinecode.theme.AppColors.editorBg,
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             modifier = Modifier
                                 .size(32.dp)
                                 .clip(CircleShape)
-                                .background(com.example.gemini.theme.AppColors.danger.copy(alpha = 0.13f)),
+                                .background(com.shriram.cinecode.theme.AppColors.danger.copy(alpha = 0.13f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = null,
-                                tint = com.example.gemini.theme.AppColors.danger,
+                                tint = com.shriram.cinecode.theme.AppColors.danger,
                                 modifier = Modifier.size(16.dp)
                             )
                         }
@@ -963,7 +963,7 @@ fun LocalTerminalContent(
                     Text(
                         text = "Are you sure you want to close \"$sessTitle\"?\nAny process running in this session will be terminated.",
                         fontSize = 13.sp,
-                        color = com.example.gemini.theme.AppColors.editorText,
+                        color = com.shriram.cinecode.theme.AppColors.editorText,
                         lineHeight = 18.sp
                     )
                 },
@@ -974,7 +974,7 @@ fun LocalTerminalContent(
                             sessionToClose = null
                             LocalTerminalManager.closeSession(idToClose)
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = com.example.gemini.theme.AppColors.danger),
+                        colors = ButtonDefaults.buttonColors(containerColor = com.shriram.cinecode.theme.AppColors.danger),
                         shape = RoundedCornerShape(10.dp),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                     ) {
@@ -1052,7 +1052,7 @@ private fun TermuxKey(
     }
 
     val backgroundColor = when {
-        isPressed -> com.example.gemini.theme.AppColors.editorLine
+        isPressed -> com.shriram.cinecode.theme.AppColors.editorLine
         isLocked -> ClaudeTerracotta.copy(alpha = 0.5f)
         isActive -> ClaudeTerracotta.copy(alpha = 0.25f)
         else -> Color.Transparent
@@ -1062,7 +1062,7 @@ private fun TermuxKey(
         isPressed -> Color.White
         isLocked -> Color.White
         isActive -> ClaudeTerracotta
-        else -> com.example.gemini.theme.AppColors.editorText
+        else -> com.shriram.cinecode.theme.AppColors.editorText
     }
 
     val border = when {

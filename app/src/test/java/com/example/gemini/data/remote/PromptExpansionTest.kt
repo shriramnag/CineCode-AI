@@ -1,7 +1,7 @@
-package com.example.gemini.data.remote
+package com.shriram.cinecode.data.remote
 
-import com.example.gemini.ui.browser.BrowserExtension
-import com.example.gemini.ui.browser.BrowserExtensionManager
+import com.shriram.cinecode.ui.browser.BrowserExtension
+import com.shriram.cinecode.ui.browser.BrowserExtensionManager
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -19,7 +19,7 @@ class PromptExpansionTest {
         val dir = temporary.newFolder(id)
         File(dir, "skills").mkdirs()
         File(dir, "skills/upload.md").writeText("# Upload")
-        val skill = com.example.gemini.ui.browser.ExtensionSkill("upload", "Upload", "", File(dir, "skills/upload.md").absolutePath, null)
+        val skill = com.shriram.cinecode.ui.browser.ExtensionSkill("upload", "Upload", "", File(dir, "skills/upload.md").absolutePath, null)
         BrowserExtensionManager.instance.extensions.add(BrowserExtension(id, id, "1", "", toolCount = tools, skillCount = 1, dirPath = dir.absolutePath, skills = listOf(skill)))
         return dir
     }

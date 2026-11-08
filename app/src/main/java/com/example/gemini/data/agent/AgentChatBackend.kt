@@ -1,8 +1,8 @@
-package com.example.gemini.data.agent
+package com.shriram.cinecode.data.agent
 
-import com.example.gemini.domain.model.AgentKind
-import com.example.gemini.domain.model.ChatMessage
-import com.example.gemini.domain.model.Conversation
+import com.shriram.cinecode.domain.model.AgentKind
+import com.shriram.cinecode.domain.model.ChatMessage
+import com.shriram.cinecode.domain.model.Conversation
 import kotlinx.coroutines.flow.StateFlow
 
 /** Chat lifecycle every agent backend (Antigravity, Claude Code) implements. */

@@ -1,6 +1,6 @@
-package com.example.gemini.data.remote.core
+package com.shriram.cinecode.data.remote.core
 
-import com.example.gemini.data.daemon.IdeApiClient
+import com.shriram.cinecode.data.daemon.IdeApiClient
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

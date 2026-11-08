@@ -1,4 +1,4 @@
-package com.example.gemini.data.jarvis
+package com.shriram.cinecode.data.jarvis
 
 import android.annotation.SuppressLint
 import android.app.PendingIntent
@@ -6,7 +6,7 @@ import android.content.Intent
 import android.os.Build
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
-import com.example.gemini.MainActivity
+import com.shriram.cinecode.MainActivity
 
 /**
  * The "Jarvis" Quick Settings tile: one tap talks to Jarvis from anywhere. While hands-free mode runs it starts
@@ -46,6 +46,6 @@ class JarvisTileService : TileService() {
 
     companion object {
         /** MainActivity starts listening when it is opened with this extra. */
-        const val EXTRA_TALK = "com.example.gemini.jarvis.EXTRA_TALK"
+        const val EXTRA_TALK = "com.shriram.cinecode.jarvis.EXTRA_TALK"
     }
 }

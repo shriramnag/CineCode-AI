@@ -1,4 +1,4 @@
-package com.example.gemini.ui.settings
+package com.shriram.cinecode.ui.settings
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
@@ -28,7 +28,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gemini.theme.ThemeManager
+import com.shriram.cinecode.theme.ThemeManager
 
 /**
  * A floating theme picker (opened from the sidebar). It covers only the bottom of the screen and takes no touches

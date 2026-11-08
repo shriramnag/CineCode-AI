@@ -1,4 +1,4 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import android.content.ContentValues
 import android.content.Context
@@ -14,8 +14,8 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.core.content.FileProvider
-import com.example.gemini.data.remote.HubMediaResolver
-import com.example.gemini.domain.model.ArtifactSnapshot
+import com.shriram.cinecode.data.remote.HubMediaResolver
+import com.shriram.cinecode.domain.model.ArtifactSnapshot
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -187,9 +187,9 @@ object ArtifactDownloadHelper {
         // 4. Remote HTTP URL
         if (source.startsWith("http://") || source.startsWith("https://")) {
             return try {
-                val fixedSource = com.example.gemini.data.preferences.AuthPreferences.rebaseBridgeUrl(source)
-                val client = if (com.example.gemini.data.preferences.AuthPreferences.isBridgeUrl(fixedSource))
-                    com.example.gemini.data.remote.AgyBridgeService.instance.client else OkHttpClient()
+                val fixedSource = com.shriram.cinecode.data.preferences.AuthPreferences.rebaseBridgeUrl(source)
+                val client = if (com.shriram.cinecode.data.preferences.AuthPreferences.isBridgeUrl(fixedSource))
+                    com.shriram.cinecode.data.remote.AgyBridgeService.instance.client else OkHttpClient()
                 val req = Request.Builder().url(fixedSource).get().build()
                 client.newCall(req).execute().use { resp ->
                     if (resp.isSuccessful) resp.body?.bytes() else null

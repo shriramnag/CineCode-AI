@@ -1,8 +1,8 @@
-package com.example.gemini.data.jarvis
+package com.shriram.cinecode.data.jarvis
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.example.gemini.domain.model.AgentKind
+import com.shriram.cinecode.domain.model.AgentKind
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 

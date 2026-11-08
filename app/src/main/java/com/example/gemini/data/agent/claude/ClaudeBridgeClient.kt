@@ -1,7 +1,7 @@
-package com.example.gemini.data.agent.claude
+package com.shriram.cinecode.data.agent.claude
 
-import com.example.gemini.data.preferences.AuthPreferences
-import com.example.gemini.data.remote.AgyBridgeService
+import com.shriram.cinecode.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.remote.AgyBridgeService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.awaitClose
@@ -273,7 +273,7 @@ object BridgeStartup {
     fun isStartingUp(): Boolean {
         if (reached) return false
         val elapsed = System.currentTimeMillis() - appStart
-        val serverStarting = com.example.gemini.data.local.LocalServerManager.status.value is com.example.gemini.data.local.LocalServerStatus.Starting
+        val serverStarting = com.shriram.cinecode.data.local.LocalServerManager.status.value is com.shriram.cinecode.data.local.LocalServerStatus.Starting
         return elapsed < 20_000 || (serverStarting && elapsed < 60_000)
     }
 }

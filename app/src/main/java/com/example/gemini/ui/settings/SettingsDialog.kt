@@ -1,7 +1,7 @@
-package com.example.gemini.ui.settings
+package com.shriram.cinecode.ui.settings
 
-import com.example.gemini.ui.components.bouncyVerticalScroll
-import com.example.gemini.ui.components.ClaudeAccent
+import com.shriram.cinecode.ui.components.bouncyVerticalScroll
+import com.shriram.cinecode.ui.components.ClaudeAccent
 import android.Manifest
 import android.content.ComponentName
 import android.content.Context
@@ -17,7 +17,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import com.example.gemini.theme.isAppInDarkTheme
+import com.shriram.cinecode.theme.isAppInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
@@ -45,20 +45,20 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import com.example.gemini.domain.model.AiModel
-import com.example.gemini.domain.model.ModelQuota
-import com.example.gemini.data.preferences.AuthPreferences
-import com.example.gemini.data.local.LocalEnvironmentManager
-import com.example.gemini.theme.*
+import com.shriram.cinecode.domain.model.AiModel
+import com.shriram.cinecode.domain.model.ModelQuota
+import com.shriram.cinecode.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.local.LocalEnvironmentManager
+import com.shriram.cinecode.theme.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.example.gemini.BuildConfig
-import com.example.gemini.data.updater.AppUpdateManager
-import com.example.gemini.data.updater.AppUpdateInfo
-import com.example.gemini.ui.updater.AppUpdateDialog
-import com.example.gemini.data.local.LocalServerManager
+import com.shriram.cinecode.BuildConfig
+import com.shriram.cinecode.data.updater.AppUpdateManager
+import com.shriram.cinecode.data.updater.AppUpdateInfo
+import com.shriram.cinecode.ui.updater.AppUpdateDialog
+import com.shriram.cinecode.data.local.LocalServerManager
 import android.app.DownloadManager
 import android.widget.Toast
 import java.io.File
@@ -72,16 +72,16 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import android.util.Log
-import com.example.gemini.data.admin.AntiGemDeviceAdminReceiver
+import com.shriram.cinecode.data.admin.AntiGemDeviceAdminReceiver
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.zip.ZipFile
 import org.json.JSONObject
 import org.json.JSONArray
-import com.example.gemini.data.daemon.ProjectItem
-import com.example.gemini.data.daemon.TermuxDaemonManager
-import com.example.gemini.data.daemon.IdeApiClient
+import com.shriram.cinecode.data.daemon.ProjectItem
+import com.shriram.cinecode.data.daemon.TermuxDaemonManager
+import com.shriram.cinecode.data.daemon.IdeApiClient
 
 enum class SettingsSection(val title: String, val subtitle: String) {
     MAIN("Settings & Preferences", "Configure your AntiGem experience"),
@@ -119,17 +119,17 @@ enum class SettingsSection(val title: String, val subtitle: String) {
     ABOUT("About & Info", "App version, package details, and bridge export");
 
     /** The Jarvis section this page shows (Settings → Jarvis → …), or null. */
-    val jarvisPage: com.example.gemini.ui.jarvis.JarvisSettingsPage? get() = when (this) {
-        JARVIS_AGENT -> com.example.gemini.ui.jarvis.JarvisSettingsPage.AGENT
-        JARVIS_PERSONALITY -> com.example.gemini.ui.jarvis.JarvisSettingsPage.PERSONALITY
-        JARVIS_SETUP -> com.example.gemini.ui.jarvis.JarvisSettingsPage.SETUP
-        JARVIS_WAKE -> com.example.gemini.ui.jarvis.JarvisSettingsPage.WAKE
-        JARVIS_LISTEN -> com.example.gemini.ui.jarvis.JarvisSettingsPage.LISTEN
-        JARVIS_VOICE -> com.example.gemini.ui.jarvis.JarvisSettingsPage.VOICE
-        JARVIS_TASKS -> com.example.gemini.ui.jarvis.JarvisSettingsPage.TASKS
-        JARVIS_APPROVALS -> com.example.gemini.ui.jarvis.JarvisSettingsPage.APPROVALS
-        JARVIS_SCREEN -> com.example.gemini.ui.jarvis.JarvisSettingsPage.SCREEN
-        JARVIS_CHAT -> com.example.gemini.ui.jarvis.JarvisSettingsPage.CHAT
+    val jarvisPage: com.shriram.cinecode.ui.jarvis.JarvisSettingsPage? get() = when (this) {
+        JARVIS_AGENT -> com.shriram.cinecode.ui.jarvis.JarvisSettingsPage.AGENT
+        JARVIS_PERSONALITY -> com.shriram.cinecode.ui.jarvis.JarvisSettingsPage.PERSONALITY
+        JARVIS_SETUP -> com.shriram.cinecode.ui.jarvis.JarvisSettingsPage.SETUP
+        JARVIS_WAKE -> com.shriram.cinecode.ui.jarvis.JarvisSettingsPage.WAKE
+        JARVIS_LISTEN -> com.shriram.cinecode.ui.jarvis.JarvisSettingsPage.LISTEN
+        JARVIS_VOICE -> com.shriram.cinecode.ui.jarvis.JarvisSettingsPage.VOICE
+        JARVIS_TASKS -> com.shriram.cinecode.ui.jarvis.JarvisSettingsPage.TASKS
+        JARVIS_APPROVALS -> com.shriram.cinecode.ui.jarvis.JarvisSettingsPage.APPROVALS
+        JARVIS_SCREEN -> com.shriram.cinecode.ui.jarvis.JarvisSettingsPage.SCREEN
+        JARVIS_CHAT -> com.shriram.cinecode.ui.jarvis.JarvisSettingsPage.CHAT
         else -> null
     }
 
@@ -157,8 +157,8 @@ fun SettingsDialog(
     isDevModeEnabled: Boolean = false,
     chatFontScale: Float = 1.0f,
     themeMode: String = "DARK",
-    agyHubUrl: String = com.example.gemini.data.preferences.AuthPreferences.currentHubUrl,
-    agyBridgeHttpUrl: String = com.example.gemini.data.preferences.AuthPreferences.currentBridgeHttpUrl,
+    agyHubUrl: String = com.shriram.cinecode.data.preferences.AuthPreferences.currentHubUrl,
+    agyBridgeHttpUrl: String = com.shriram.cinecode.data.preferences.AuthPreferences.currentBridgeHttpUrl,
     isServerOnline: Boolean = true,
     isBridgeOnline: Boolean = false,
     useSshTerminal: Boolean = false,
@@ -192,7 +192,7 @@ fun SettingsDialog(
     onInstallLocalTools: () -> Unit = {},
     onOpenLocalTerminal: () -> Unit = {},
     onResetLocalTools: () -> Unit = {},
-    mcpServers: List<com.example.gemini.domain.model.McpServerState> = emptyList(),
+    mcpServers: List<com.shriram.cinecode.domain.model.McpServerState> = emptyList(),
     isMcpLoading: Boolean = false,
     isMcpRefreshing: Boolean = false,
     refreshingMcpServer: String? = null,
@@ -202,22 +202,22 @@ fun SettingsDialog(
     onRefreshMcpServers: () -> Unit = {},
     onRefreshMcpServer: (String) -> Unit = {},
     onToggleMcpServer: (String, Boolean) -> Unit = { _, _ -> },
-    onSaveMcpServer: (com.example.gemini.domain.model.McpServerSpec, String?) -> Unit = { _, _ -> },
+    onSaveMcpServer: (com.shriram.cinecode.domain.model.McpServerSpec, String?) -> Unit = { _, _ -> },
     onDeleteMcpServer: (String) -> Unit = {},
-    availableCascadePlugins: List<com.example.gemini.data.remote.dto.AvailableCascadePluginDto> = emptyList(),
+    availableCascadePlugins: List<com.shriram.cinecode.data.remote.dto.AvailableCascadePluginDto> = emptyList(),
     isCascadePluginsLoading: Boolean = false,
     installingCascadePluginId: String? = null,
     onSearchCascadePlugins: (String) -> Unit = {},
-    onInstallCascadePlugin: (com.example.gemini.data.remote.dto.AvailableCascadePluginDto) -> Unit = {},
-    allSkills: List<com.example.gemini.data.remote.dto.SkillDefinitionDto> = emptyList(),
+    onInstallCascadePlugin: (com.shriram.cinecode.data.remote.dto.AvailableCascadePluginDto) -> Unit = {},
+    allSkills: List<com.shriram.cinecode.data.remote.dto.SkillDefinitionDto> = emptyList(),
     isSkillsLoading: Boolean = false,
     skillsFilterScope: String = "GLOBAL",
     onSetSkillsFilterScope: (String) -> Unit = {},
     onRefreshSkills: () -> Unit = {},
-    installedPlugins: List<com.example.gemini.data.remote.dto.InstalledPluginDto> = emptyList(),
+    installedPlugins: List<com.shriram.cinecode.data.remote.dto.InstalledPluginDto> = emptyList(),
     isInstalledPluginsLoading: Boolean = false,
     onRefreshInstalledPlugins: () -> Unit = {},
-    googlePluginsCatalog: List<com.example.gemini.data.remote.dto.BuildWithGooglePluginItemDto> = emptyList(),
+    googlePluginsCatalog: List<com.shriram.cinecode.data.remote.dto.BuildWithGooglePluginItemDto> = emptyList(),
     isGooglePluginsLoading: Boolean = false,
     installingGooglePluginId: String? = null,
     deletingPluginId: String? = null,
@@ -240,18 +240,18 @@ fun SettingsDialog(
     defaultApprovalScope: String = "PERMISSION_SCOPE_ONCE",
     groupChatsByWorkspace: Boolean = false,
     onToggleGroupChatsByWorkspace: (Boolean) -> Unit = {},
-    globalSecuritySettings: com.example.gemini.data.remote.AgyHubClient.GlobalUserSettings? = null,
+    globalSecuritySettings: com.shriram.cinecode.data.remote.AgyHubClient.GlobalUserSettings? = null,
     globalSettingsError: String? = null,
     isGlobalSettingsLoading: Boolean = false,
-    projectsList: List<com.example.gemini.data.remote.AgyHubClient.ProjectItem> = emptyList(),
+    projectsList: List<com.shriram.cinecode.data.remote.AgyHubClient.ProjectItem> = emptyList(),
     isProjectsLoading: Boolean = false,
     onSetGlobalArtifactReviewMode: (String) -> Unit = {},
     onSetGlobalSecurityPreset: (autoExec: String, fileAccess: String) -> Unit = { _, _ -> },
     onSetGlobalCustomTerminalPolicy: (String) -> Unit = {},
     onSetGlobalCustomFileAccessPolicy: (String) -> Unit = {},
     onSetGlobalTerminalSandbox: (Boolean) -> Unit = {},
-    onSetProjectInheritGlobal: (com.example.gemini.data.remote.AgyHubClient.ProjectItem) -> Unit = {},
-    onSetProjectPreset: (com.example.gemini.data.remote.AgyHubClient.ProjectItem, autoExec: String, fileAccess: String) -> Unit = { _, _, _ -> },
+    onSetProjectInheritGlobal: (com.shriram.cinecode.data.remote.AgyHubClient.ProjectItem) -> Unit = {},
+    onSetProjectPreset: (com.shriram.cinecode.data.remote.AgyHubClient.ProjectItem, autoExec: String, fileAccess: String) -> Unit = { _, _, _ -> },
     onRefreshSecurityAndProjects: () -> Unit = {},
     onSetCommandAutoExecutionPolicy: (String) -> Unit = {},
     onSetCommandSandboxEnabled: (Boolean) -> Unit = {},
@@ -267,19 +267,19 @@ fun SettingsDialog(
     isFloatingNetworkInspectorEnabled: Boolean = false,
     onToggleFloatingNetworkInspector: (Boolean) -> Unit = {},
     onOpenNetworkInspector: () -> Unit = {},
-    claude: com.example.gemini.ui.claude.ClaudeSettingsDeps? = null,
-    initialClaudePage: com.example.gemini.ui.claude.ClaudeSettingsPage? = null,
+    claude: com.shriram.cinecode.ui.claude.ClaudeSettingsDeps? = null,
+    initialClaudePage: com.shriram.cinecode.ui.claude.ClaudeSettingsPage? = null,
     /** Opens on this page (e.g. Jarvis asked to show it); also switches to it while the dialog is open. */
     initialSection: SettingsSection? = null,
-    enabledAgents: Set<com.example.gemini.domain.model.AgentKind> = setOf(com.example.gemini.domain.model.AgentKind.AGY),
+    enabledAgents: Set<com.shriram.cinecode.domain.model.AgentKind> = setOf(com.shriram.cinecode.domain.model.AgentKind.AGY),
     isApplyingAgents: Boolean = false,
-    onApplyAgents: (Set<com.example.gemini.domain.model.AgentKind>) -> Unit = {},
+    onApplyAgents: (Set<com.shriram.cinecode.domain.model.AgentKind>) -> Unit = {},
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     var currentSection by remember { mutableStateOf(initialSection ?: if (initialClaudePage != null && claude != null) SettingsSection.CLAUDE_PAGE else SettingsSection.MAIN) }
-    var claudePage by remember { mutableStateOf(initialClaudePage ?: com.example.gemini.ui.claude.ClaudeSettingsPage.ACCOUNT) }
+    var claudePage by remember { mutableStateOf(initialClaudePage ?: com.shriram.cinecode.ui.claude.ClaudeSettingsPage.ACCOUNT) }
     LaunchedEffect(initialSection) { if (initialSection != null) currentSection = initialSection }
     // Hoisted so the main list keeps its position while a sub-section is open
     val mainMenuScrollState = rememberScrollState()
@@ -294,11 +294,11 @@ fun SettingsDialog(
     }
 
     val isDark = isAppInDarkTheme()
-    val cardBg = com.example.gemini.theme.AppColors.card
+    val cardBg = com.shriram.cinecode.theme.AppColors.card
     val cardBorder = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
 
     // every list in settings bounces at its ends like iOS instead of Android's stretch
-    com.example.gemini.ui.components.ProvideBouncyOverscroll {
+    com.shriram.cinecode.ui.components.ProvideBouncyOverscroll {
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -561,12 +561,12 @@ fun SettingsDialog(
                         cardBorder = cardBorder
                     )
 
-                    SettingsSection.AGENTS -> com.example.gemini.ui.agents.AgentsSettingsPage(
+                    SettingsSection.AGENTS -> com.shriram.cinecode.ui.agents.AgentsSettingsPage(
                         enabled = enabledAgents,
                         isApplying = isApplyingAgents,
                         onApply = onApplyAgents
                     )
-                    SettingsSection.JARVIS -> com.example.gemini.ui.jarvis.JarvisSettingsScreen(
+                    SettingsSection.JARVIS -> com.shriram.cinecode.ui.jarvis.JarvisSettingsScreen(
                         cardBg = cardBg,
                         cardBorder = cardBorder,
                         onOpen = { page -> currentSection = SettingsSection.entries.first { it.jarvisPage == page } }
@@ -574,7 +574,7 @@ fun SettingsDialog(
                     SettingsSection.JARVIS_AGENT, SettingsSection.JARVIS_PERSONALITY, SettingsSection.JARVIS_SETUP,
                     SettingsSection.JARVIS_WAKE, SettingsSection.JARVIS_LISTEN, SettingsSection.JARVIS_VOICE,
                     SettingsSection.JARVIS_TASKS, SettingsSection.JARVIS_APPROVALS, SettingsSection.JARVIS_SCREEN,
-                    SettingsSection.JARVIS_CHAT -> com.example.gemini.ui.jarvis.JarvisSettingsSectionPage(
+                    SettingsSection.JARVIS_CHAT -> com.shriram.cinecode.ui.jarvis.JarvisSettingsSectionPage(
                         page = section.jarvisPage!!,
                         cardBg = cardBg,
                         cardBorder = cardBorder
@@ -590,16 +590,16 @@ fun SettingsDialog(
                     SettingsSection.AGY_CLI -> Column(
                         Modifier.fillMaxSize().bouncyVerticalScroll(rememberScrollState()).padding(16.dp)
                     ) {
-                        com.example.gemini.ui.agents.AgyCliCard()
+                        com.shriram.cinecode.ui.agents.AgyCliCard()
                     }
                     SettingsSection.CLAUDE -> if (claude != null) {
-                        com.example.gemini.ui.claude.ClaudeSettingsGroup(claude, cardBg) { page ->
+                        com.shriram.cinecode.ui.claude.ClaudeSettingsGroup(claude, cardBg) { page ->
                             claudePage = page
                             currentSection = SettingsSection.CLAUDE_PAGE
                         }
                     }
                     SettingsSection.CLAUDE_PAGE -> if (claude != null) {
-                        com.example.gemini.ui.claude.ClaudeSettingsScreen(claude, claudePage) { currentSection = SettingsSection.CLAUDE }
+                        com.shriram.cinecode.ui.claude.ClaudeSettingsScreen(claude, claudePage) { currentSection = SettingsSection.CLAUDE }
                     }
                     SettingsSection.UTILITIES -> UtilitiesSubScreen(
                         cardBg = cardBg,
@@ -635,18 +635,18 @@ private fun MainSettingsMenu(
     isServerOnline: Boolean,
     isBridgeOnline: Boolean,
     useSshTerminal: Boolean,
-    mcpServers: List<com.example.gemini.domain.model.McpServerState>,
+    mcpServers: List<com.shriram.cinecode.domain.model.McpServerState>,
     isFloatingDiagnosticsEnabled: Boolean = false,
     isLocalToolsInstalled: Boolean = false,
     cardBg: Color,
     scrollState: androidx.compose.foundation.ScrollState,
-    claude: com.example.gemini.ui.claude.ClaudeSettingsDeps? = null,
-    enabledAgents: Set<com.example.gemini.domain.model.AgentKind> = setOf(com.example.gemini.domain.model.AgentKind.AGY),
+    claude: com.shriram.cinecode.ui.claude.ClaudeSettingsDeps? = null,
+    enabledAgents: Set<com.shriram.cinecode.domain.model.AgentKind> = setOf(com.shriram.cinecode.domain.model.AgentKind.AGY),
     onNavigate: (SettingsSection) -> Unit
 ) {
-    val agyOn = com.example.gemini.domain.model.AgentKind.AGY in enabledAgents
-    val claudeOn = com.example.gemini.domain.model.AgentKind.CLAUDE in enabledAgents
-    val c = com.example.gemini.theme.AppColors
+    val agyOn = com.shriram.cinecode.domain.model.AgentKind.AGY in enabledAgents
+    val claudeOn = com.shriram.cinecode.domain.model.AgentKind.CLAUDE in enabledAgents
+    val c = com.shriram.cinecode.theme.AppColors
     fun row(section: SettingsSection, icon: ImageVector, tint: Color, value: String? = null, valueColor: Color? = null) =
         SettingsRowItem(icon, tint, section.title, value, valueColor) { onNavigate(section) }
 
@@ -655,7 +655,7 @@ private fun MainSettingsMenu(
         isServerOnline || isBridgeOnline -> "Partial" to c.warning
         else -> "Offline" to c.danger
     }
-    val jarvisOn by com.example.gemini.data.jarvis.JarvisPreferences.enabled.state.collectAsState()
+    val jarvisOn by com.shriram.cinecode.data.jarvis.JarvisPreferences.enabled.state.collectAsState()
     val activeMcp = mcpServers.count { it.isEnabled }
     val deviceTools = rememberDeviceToolRows(onNavigate)
 
@@ -667,9 +667,9 @@ private fun MainSettingsMenu(
         val state by claude.account.state.collectAsState()
         LaunchedEffect(Unit) { if (status == null) claude.account.refreshStatus() }
         claudeValue = when (state) {
-            com.example.gemini.data.agent.claude.ClaudeStatus.READY ->
-                status?.auth?.subscriptionType?.let { com.example.gemini.ui.agents.claudePlanLabel(it) } ?: "Signed in"
-            com.example.gemini.data.agent.claude.ClaudeStatus.SIGNED_OUT -> "Signed out"
+            com.shriram.cinecode.data.agent.claude.ClaudeStatus.READY ->
+                status?.auth?.subscriptionType?.let { com.shriram.cinecode.ui.agents.claudePlanLabel(it) } ?: "Signed in"
+            com.shriram.cinecode.data.agent.claude.ClaudeStatus.SIGNED_OUT -> "Signed out"
             else -> state.label
         }
         claudeColor = state.dotColor
@@ -680,7 +680,7 @@ private fun MainSettingsMenu(
         cardBg = cardBg,
         groups = listOf(
             listOf(
-                row(SettingsSection.APPEARANCE, Icons.Outlined.Palette, c.accentPink, com.example.gemini.theme.ThemeManager.current.name),
+                row(SettingsSection.APPEARANCE, Icons.Outlined.Palette, c.accentPink, com.shriram.cinecode.theme.ThemeManager.current.name),
                 row(SettingsSection.SERVERS, Icons.Outlined.Dns, c.info, serverValue, serverColor)
             ),
             listOfNotNull(
@@ -701,7 +701,7 @@ private fun MainSettingsMenu(
             ),
             listOfNotNull(
                 row(SettingsSection.TERMINAL, Icons.Outlined.Terminal, c.accentIndigo,
-                    if (useSshTerminal || com.example.gemini.data.preferences.AuthPreferences.currentRemoteMode) "SSH" else "Local"),
+                    if (useSshTerminal || com.shriram.cinecode.data.preferences.AuthPreferences.currentRemoteMode) "SSH" else "Local"),
                 deviceTools.adb,
                 deviceTools.automation,
                 // Utilities only shows once it has something in it (its old items are rows of their own now)
@@ -711,7 +711,7 @@ private fun MainSettingsMenu(
             ),
             listOfNotNull(
                 // backups are of the phone's own Linux environment, so only with it installed and not in server mode
-                if (isLocalToolsInstalled && !com.example.gemini.data.preferences.AuthPreferences.currentRemoteMode)
+                if (isLocalToolsInstalled && !com.shriram.cinecode.data.preferences.AuthPreferences.currentRemoteMode)
                     row(SettingsSection.BACKUPS, Icons.Outlined.Backup, c.info) else null,
                 row(SettingsSection.DATA_PROTECTION, Icons.Outlined.Security, c.success)
             ),
@@ -725,14 +725,14 @@ private fun MainSettingsMenu(
 /** Antigravity's own page: its MCP servers, skills & plugins, and commands & permissions. */
 @Composable
 private fun AntigravitySettingsMenu(
-    mcpServers: List<com.example.gemini.domain.model.McpServerState>,
-    allSkills: List<com.example.gemini.data.remote.dto.SkillDefinitionDto>,
-    installedPlugins: List<com.example.gemini.data.remote.dto.InstalledPluginDto>,
+    mcpServers: List<com.shriram.cinecode.domain.model.McpServerState>,
+    allSkills: List<com.shriram.cinecode.data.remote.dto.SkillDefinitionDto>,
+    installedPlugins: List<com.shriram.cinecode.data.remote.dto.InstalledPluginDto>,
     commandAutoExecutionPolicy: String,
     cardBg: Color,
     onNavigate: (SettingsSection) -> Unit
 ) {
-    val c = com.example.gemini.theme.AppColors
+    val c = com.shriram.cinecode.theme.AppColors
     val activeMcp = mcpServers.count { it.isEnabled }
     val (mcpValue, mcpColor) = when {
         mcpServers.isEmpty() -> "None" to null
@@ -745,8 +745,8 @@ private fun AntigravitySettingsMenu(
         else -> "Ask first" to c.warning
     }
     // the CLI row shows the installed version (like Claude Code's Account & CLI row)
-    val cli by com.example.gemini.data.remote.BridgeInfo.agyCli.collectAsState()
-    LaunchedEffect(Unit) { if (cli == null) com.example.gemini.data.remote.BridgeInfo.refreshAgyCli() }
+    val cli by com.shriram.cinecode.data.remote.BridgeInfo.agyCli.collectAsState()
+    LaunchedEffect(Unit) { if (cli == null) com.shriram.cinecode.data.remote.BridgeInfo.refreshAgyCli() }
     val (cliValue, cliColor) = when {
         cli == null -> null to null
         cli!!.installed -> cli!!.version.ifBlank { "Installed" } to QuotaGreen
@@ -786,19 +786,19 @@ private class DeviceToolRows(val adb: SettingsRowItem, val automation: SettingsR
 private fun rememberDeviceToolRows(onNavigate: (SettingsSection) -> Unit): DeviceToolRows {
     val context = LocalContext.current
     LaunchedEffect(Unit) {
-        com.example.gemini.data.adb.AdbConnectManager.init(context)
-        com.example.gemini.data.adb.AdbConnectManager.refresh()
+        com.shriram.cinecode.data.adb.AdbConnectManager.init(context)
+        com.shriram.cinecode.data.adb.AdbConnectManager.refresh()
     }
-    val adb by com.example.gemini.data.adb.AdbConnectManager.state.collectAsState()
+    val adb by com.shriram.cinecode.data.adb.AdbConnectManager.state.collectAsState()
     val connected = adb.connectedDevice
-    var automationAllowed by remember { mutableStateOf(com.example.gemini.data.automation.AndroidAutomation.isServiceRunning()) }
+    var automationAllowed by remember { mutableStateOf(com.shriram.cinecode.data.automation.AndroidAutomation.isServiceRunning()) }
     LaunchedEffect(Unit) {
         while (true) {
-            automationAllowed = com.example.gemini.data.automation.AndroidAutomation.isServiceRunning()
+            automationAllowed = com.shriram.cinecode.data.automation.AndroidAutomation.isServiceRunning()
             delay(1000)
         }
     }
-    val c = com.example.gemini.theme.AppColors
+    val c = com.shriram.cinecode.theme.AppColors
     return DeviceToolRows(
         adb = SettingsRowItem(
             Icons.Outlined.PhonelinkSetup, c.accentTeal, SettingsSection.ADB_CONNECT.title,
@@ -844,7 +844,7 @@ private fun AppearanceSubScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        val vibrateOnDone by com.example.gemini.data.agent.ChatCompletionMonitor.vibrate.collectAsState()
+        val vibrateOnDone by com.shriram.cinecode.data.agent.ChatCompletionMonitor.vibrate.collectAsState()
         Surface(
             shape = RoundedCornerShape(12.dp), color = cardBg,
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
@@ -857,7 +857,7 @@ private fun AppearanceSubScreen(
                         fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
                 }
-                Switch(checked = vibrateOnDone, onCheckedChange = { com.example.gemini.data.agent.ChatCompletionMonitor.setVibrate(it) })
+                Switch(checked = vibrateOnDone, onCheckedChange = { com.shriram.cinecode.data.agent.ChatCompletionMonitor.setVibrate(it) })
             }
         }
 
@@ -1374,12 +1374,12 @@ private fun AppearanceSubScreen(
 
         // Standalone Terminal Launcher Icon & Style Settings (PackageManager as source of truth)
         val context = LocalContext.current
-        val authPrefs = remember(context) { com.example.gemini.data.preferences.AuthPreferences(context) }
+        val authPrefs = remember(context) { com.shriram.cinecode.data.preferences.AuthPreferences(context) }
         var isTerminalLauncherEnabled by remember(context) {
-            mutableStateOf(com.example.gemini.data.preferences.TerminalLauncherManager.isLauncherEnabled(context))
+            mutableStateOf(com.shriram.cinecode.data.preferences.TerminalLauncherManager.isLauncherEnabled(context))
         }
         var terminalLauncherStyle by remember(context) {
-            mutableStateOf(com.example.gemini.data.preferences.TerminalLauncherManager.getLauncherStyle(context))
+            mutableStateOf(com.shriram.cinecode.data.preferences.TerminalLauncherManager.getLauncherStyle(context))
         }
         val coroutineScope = rememberCoroutineScope()
 
@@ -1417,7 +1417,7 @@ private fun AppearanceSubScreen(
                         checked = isTerminalLauncherEnabled,
                         onCheckedChange = { enable ->
                             isTerminalLauncherEnabled = enable
-                            com.example.gemini.data.preferences.TerminalLauncherManager.applyLauncherSetting(
+                            com.shriram.cinecode.data.preferences.TerminalLauncherManager.applyLauncherSetting(
                                 context = context,
                                 enabled = enable,
                                 style = terminalLauncherStyle
@@ -1457,7 +1457,7 @@ private fun AppearanceSubScreen(
                         )
 
                         // Option 1: AntiTerm
-                        val isAntiTerm = terminalLauncherStyle == com.example.gemini.data.preferences.TerminalLauncherManager.STYLE_ANTITERM
+                        val isAntiTerm = terminalLauncherStyle == com.shriram.cinecode.data.preferences.TerminalLauncherManager.STYLE_ANTITERM
                         Surface(
                             shape = RoundedCornerShape(10.dp),
                             color = if (isAntiTerm) ClaudeTerracotta.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
@@ -1468,14 +1468,14 @@ private fun AppearanceSubScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    terminalLauncherStyle = com.example.gemini.data.preferences.TerminalLauncherManager.STYLE_ANTITERM
-                                    com.example.gemini.data.preferences.TerminalLauncherManager.applyLauncherSetting(
+                                    terminalLauncherStyle = com.shriram.cinecode.data.preferences.TerminalLauncherManager.STYLE_ANTITERM
+                                    com.shriram.cinecode.data.preferences.TerminalLauncherManager.applyLauncherSetting(
                                         context = context,
                                         enabled = true,
-                                        style = com.example.gemini.data.preferences.TerminalLauncherManager.STYLE_ANTITERM
+                                        style = com.shriram.cinecode.data.preferences.TerminalLauncherManager.STYLE_ANTITERM
                                     )
                                     coroutineScope.launch {
-                                        authPrefs.setTerminalLauncherStyle(com.example.gemini.data.preferences.TerminalLauncherManager.STYLE_ANTITERM)
+                                        authPrefs.setTerminalLauncherStyle(com.shriram.cinecode.data.preferences.TerminalLauncherManager.STYLE_ANTITERM)
                                     }
                                 }
                         ) {
@@ -1494,7 +1494,7 @@ private fun AppearanceSubScreen(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     androidx.compose.foundation.Image(
-                                        painter = androidx.compose.ui.res.painterResource(id = com.example.gemini.R.drawable.splash_logo),
+                                        painter = androidx.compose.ui.res.painterResource(id = com.shriram.cinecode.R.drawable.splash_logo),
                                         contentDescription = "AntiTerm",
                                         modifier = Modifier.size(26.dp)
                                     )
@@ -1519,14 +1519,14 @@ private fun AppearanceSubScreen(
                                 RadioButton(
                                     selected = isAntiTerm,
                                     onClick = {
-                                        terminalLauncherStyle = com.example.gemini.data.preferences.TerminalLauncherManager.STYLE_ANTITERM
-                                        com.example.gemini.data.preferences.TerminalLauncherManager.applyLauncherSetting(
+                                        terminalLauncherStyle = com.shriram.cinecode.data.preferences.TerminalLauncherManager.STYLE_ANTITERM
+                                        com.shriram.cinecode.data.preferences.TerminalLauncherManager.applyLauncherSetting(
                                             context = context,
                                             enabled = true,
-                                            style = com.example.gemini.data.preferences.TerminalLauncherManager.STYLE_ANTITERM
+                                            style = com.shriram.cinecode.data.preferences.TerminalLauncherManager.STYLE_ANTITERM
                                         )
                                         coroutineScope.launch {
-                                            authPrefs.setTerminalLauncherStyle(com.example.gemini.data.preferences.TerminalLauncherManager.STYLE_ANTITERM)
+                                            authPrefs.setTerminalLauncherStyle(com.shriram.cinecode.data.preferences.TerminalLauncherManager.STYLE_ANTITERM)
                                         }
                                     },
                                     colors = RadioButtonDefaults.colors(selectedColor = ClaudeTerracotta)
@@ -1537,7 +1537,7 @@ private fun AppearanceSubScreen(
                         Spacer(modifier = Modifier.height(6.dp))
 
                         // Option 2: Termux Classic
-                        val isTermux = terminalLauncherStyle == com.example.gemini.data.preferences.TerminalLauncherManager.STYLE_TERMUX
+                        val isTermux = terminalLauncherStyle == com.shriram.cinecode.data.preferences.TerminalLauncherManager.STYLE_TERMUX
                         Surface(
                             shape = RoundedCornerShape(10.dp),
                             color = if (isTermux) ClaudeTerracotta.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
@@ -1548,14 +1548,14 @@ private fun AppearanceSubScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    terminalLauncherStyle = com.example.gemini.data.preferences.TerminalLauncherManager.STYLE_TERMUX
-                                    com.example.gemini.data.preferences.TerminalLauncherManager.applyLauncherSetting(
+                                    terminalLauncherStyle = com.shriram.cinecode.data.preferences.TerminalLauncherManager.STYLE_TERMUX
+                                    com.shriram.cinecode.data.preferences.TerminalLauncherManager.applyLauncherSetting(
                                         context = context,
                                         enabled = true,
-                                        style = com.example.gemini.data.preferences.TerminalLauncherManager.STYLE_TERMUX
+                                        style = com.shriram.cinecode.data.preferences.TerminalLauncherManager.STYLE_TERMUX
                                     )
                                     coroutineScope.launch {
-                                        authPrefs.setTerminalLauncherStyle(com.example.gemini.data.preferences.TerminalLauncherManager.STYLE_TERMUX)
+                                        authPrefs.setTerminalLauncherStyle(com.shriram.cinecode.data.preferences.TerminalLauncherManager.STYLE_TERMUX)
                                     }
                                 }
                         ) {
@@ -1574,7 +1574,7 @@ private fun AppearanceSubScreen(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     androidx.compose.foundation.Image(
-                                        painter = androidx.compose.ui.res.painterResource(id = com.example.gemini.R.drawable.ic_termux_foreground),
+                                        painter = androidx.compose.ui.res.painterResource(id = com.shriram.cinecode.R.drawable.ic_termux_foreground),
                                         contentDescription = "Termux",
                                         modifier = Modifier.size(24.dp)
                                     )
@@ -1599,14 +1599,14 @@ private fun AppearanceSubScreen(
                                 RadioButton(
                                     selected = isTermux,
                                     onClick = {
-                                        terminalLauncherStyle = com.example.gemini.data.preferences.TerminalLauncherManager.STYLE_TERMUX
-                                        com.example.gemini.data.preferences.TerminalLauncherManager.applyLauncherSetting(
+                                        terminalLauncherStyle = com.shriram.cinecode.data.preferences.TerminalLauncherManager.STYLE_TERMUX
+                                        com.shriram.cinecode.data.preferences.TerminalLauncherManager.applyLauncherSetting(
                                             context = context,
                                             enabled = true,
-                                            style = com.example.gemini.data.preferences.TerminalLauncherManager.STYLE_TERMUX
+                                            style = com.shriram.cinecode.data.preferences.TerminalLauncherManager.STYLE_TERMUX
                                         )
                                         coroutineScope.launch {
-                                            authPrefs.setTerminalLauncherStyle(com.example.gemini.data.preferences.TerminalLauncherManager.STYLE_TERMUX)
+                                            authPrefs.setTerminalLauncherStyle(com.shriram.cinecode.data.preferences.TerminalLauncherManager.STYLE_TERMUX)
                                         }
                                     },
                                     colors = RadioButtonDefaults.colors(selectedColor = ClaudeTerracotta)
@@ -1628,7 +1628,7 @@ private data class McpPreset(
     val subtitle: String,
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
     val accent: Color,
-    val spec: com.example.gemini.domain.model.McpServerSpec?
+    val spec: com.shriram.cinecode.domain.model.McpServerSpec?
 )
 
 /** One preset in the MCP screens' grid (also used by the Claude CLI MCP settings). */
@@ -1689,7 +1689,7 @@ internal fun McpPresetTile(
 
 @Composable
 private fun McpSubScreen(
-    mcpServers: List<com.example.gemini.domain.model.McpServerState>,
+    mcpServers: List<com.shriram.cinecode.domain.model.McpServerState>,
     isLoading: Boolean,
     isRefreshing: Boolean = false,
     refreshingServerName: String? = null,
@@ -1701,18 +1701,18 @@ private fun McpSubScreen(
     onRefreshAll: () -> Unit,
     onRefreshServer: (String) -> Unit,
     onToggleServer: (String, Boolean) -> Unit,
-    onSaveServer: (com.example.gemini.domain.model.McpServerSpec, String?) -> Unit,
+    onSaveServer: (com.shriram.cinecode.domain.model.McpServerSpec, String?) -> Unit,
     onDeleteServer: (String) -> Unit,
-    availableCascadePlugins: List<com.example.gemini.data.remote.dto.AvailableCascadePluginDto> = emptyList(),
+    availableCascadePlugins: List<com.shriram.cinecode.data.remote.dto.AvailableCascadePluginDto> = emptyList(),
     isCascadePluginsLoading: Boolean = false,
     installingCascadePluginId: String? = null,
     onSearchCascadePlugins: (String) -> Unit = {},
-    onInstallCascadePlugin: (com.example.gemini.data.remote.dto.AvailableCascadePluginDto) -> Unit = {}
+    onInstallCascadePlugin: (com.shriram.cinecode.data.remote.dto.AvailableCascadePluginDto) -> Unit = {}
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var chooseWebViewExtension by remember { mutableStateOf(false) }
     var showCascadeCatalogDialog by remember { mutableStateOf(false) }
-    var serverToEdit by remember { mutableStateOf<com.example.gemini.domain.model.McpServerSpec?>(null) }
+    var serverToEdit by remember { mutableStateOf<com.shriram.cinecode.domain.model.McpServerSpec?>(null) }
     var serverToDelete by remember { mutableStateOf<String?>(null) }
     var expandedTools by remember { mutableStateOf(setOf<String>()) }
     var expandedErrors by remember { mutableStateOf(setOf<String>()) }
@@ -1924,9 +1924,9 @@ private fun McpSubScreen(
                     android.provider.Settings.Secure.getString(context.contentResolver, android.provider.Settings.Secure.ANDROID_ID) ?: ""
                 } catch (_: Exception) { "" }
             }
-            val extensionManager = remember { com.example.gemini.ui.browser.BrowserExtensionManager.instance }
+            val extensionManager = remember { com.shriram.cinecode.ui.browser.BrowserExtensionManager.instance }
             if (chooseWebViewExtension) WebViewExtensionMcpPicker(onDismiss = { chooseWebViewExtension = false }) { extension ->
-                serverToEdit = com.example.gemini.domain.model.McpServerSpec(
+                serverToEdit = com.shriram.cinecode.domain.model.McpServerSpec(
                     serverName = extensionManager.mcpServerName(extension.id),
                     serverUrl = extensionManager.mcpUrl(extension.id),
                     headers = if (deviceId.isNotBlank()) mapOf("X-Device-Id" to deviceId) else emptyMap()
@@ -1934,13 +1934,13 @@ private fun McpSubScreen(
                 chooseWebViewExtension = false
                 showDialog = true
             }
-            val bridge = com.example.gemini.data.remote.AndroidLocalBridgeServer
+            val bridge = com.shriram.cinecode.data.remote.AndroidLocalBridgeServer
             val local = "http://127.0.0.1:${bridge.DEFAULT_PORT}"
             val deviceHeaders = if (deviceId.isNotBlank()) mapOf("X-Device-Id" to deviceId) else emptyMap()
             fun localSpec(name: String, path: String) =
-                com.example.gemini.domain.model.McpServerSpec(serverName = name, serverUrl = "$local$path", headers = deviceHeaders)
+                com.shriram.cinecode.domain.model.McpServerSpec(serverName = name, serverUrl = "$local$path", headers = deviceHeaders)
             // Already added (the plugin developer also under its old name): edit that one instead of adding a duplicate
-            fun existing(spec: com.example.gemini.domain.model.McpServerSpec) = mcpServers.firstOrNull {
+            fun existing(spec: com.shriram.cinecode.domain.model.McpServerSpec) = mcpServers.firstOrNull {
                 it.name == spec.serverName || (bridge.isDeveloperMcpName(spec.serverName) && bridge.isDeveloperMcpName(it.name))
             }
             val presets = listOf(
@@ -1950,13 +1950,13 @@ private fun McpSubScreen(
                     localSpec(bridge.DEVELOPER_MCP_NAME, "/extension_developer")),
                 McpPreset("Browser", "Control the in-app browser", Icons.Outlined.Language, GeminiBlue, localSpec("browser_mcp", "/browser")),
                 McpPreset("Terminal", "Run commands in the terminal", Icons.Outlined.Terminal, QuotaGreen, localSpec("terminal_mcp", "/terminal")),
-                McpPreset("Android", "Tap, type & read this phone", Icons.Outlined.PhoneAndroid, com.example.gemini.theme.AppColors.accentTeal,
+                McpPreset("Android", "Tap, type & read this phone", Icons.Outlined.PhoneAndroid, com.shriram.cinecode.theme.AppColors.accentTeal,
                     localSpec(bridge.ANDROID_AUTOMATION_MCP_NAME, "/android")),
-                McpPreset("Notes & To-dos", "Read & edit your notes", Icons.Outlined.EditNote, com.example.gemini.theme.AppColors.warning, localSpec(bridge.NOTES_MCP_NAME, "/notes")),
-                McpPreset("Jarvis", "Voice control of this app", Icons.Outlined.RecordVoiceOver, com.example.gemini.theme.AppColors.accentTeal, localSpec(bridge.JARVIS_MCP_NAME, "/jarvis")),
-                McpPreset("Theme", "Create & switch app themes", Icons.Outlined.Palette, com.example.gemini.theme.AppColors.accentAlt, localSpec(bridge.THEME_MCP_NAME, "/theme")),
-                McpPreset("Stitch", "Google Stitch UI design · API key", Icons.Outlined.Palette, com.example.gemini.theme.AppColors.accentPink,
-                    com.example.gemini.domain.model.McpServerSpec(serverName = "stitch", serverUrl = "https://stitch.googleapis.com/mcp", headers = mapOf("X-Goog-Api-Key" to "")))
+                McpPreset("Notes & To-dos", "Read & edit your notes", Icons.Outlined.EditNote, com.shriram.cinecode.theme.AppColors.warning, localSpec(bridge.NOTES_MCP_NAME, "/notes")),
+                McpPreset("Jarvis", "Voice control of this app", Icons.Outlined.RecordVoiceOver, com.shriram.cinecode.theme.AppColors.accentTeal, localSpec(bridge.JARVIS_MCP_NAME, "/jarvis")),
+                McpPreset("Theme", "Create & switch app themes", Icons.Outlined.Palette, com.shriram.cinecode.theme.AppColors.accentAlt, localSpec(bridge.THEME_MCP_NAME, "/theme")),
+                McpPreset("Stitch", "Google Stitch UI design · API key", Icons.Outlined.Palette, com.shriram.cinecode.theme.AppColors.accentPink,
+                    com.shriram.cinecode.domain.model.McpServerSpec(serverName = "stitch", serverUrl = "https://stitch.googleapis.com/mcp", headers = mapOf("X-Goog-Api-Key" to "")))
             )
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 presets.chunked(2).forEach { row ->
@@ -2133,7 +2133,7 @@ private fun McpSubScreen(
                 !server.isEnabled -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
                 server.status.contains("RUNNING", ignoreCase = true) || server.status.contains("OK", ignoreCase = true) || server.tools.isNotEmpty() -> QuotaGreen
                 server.status.contains("ERROR", ignoreCase = true) || !server.error.isNullOrBlank() -> Color.Red
-                else -> com.example.gemini.theme.AppColors.warning
+                else -> com.shriram.cinecode.theme.AppColors.warning
             }
             val statusLabel = when {
                 !server.isEnabled -> "Disabled"
@@ -2163,13 +2163,13 @@ private fun McpSubScreen(
                             modifier = Modifier
                                 .size(32.dp)
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(if (isSse) com.example.gemini.theme.AppColors.info.copy(alpha = 0.12f) else com.example.gemini.theme.AppColors.accentAlt.copy(alpha = 0.12f)),
+                                .background(if (isSse) com.shriram.cinecode.theme.AppColors.info.copy(alpha = 0.12f) else com.shriram.cinecode.theme.AppColors.accentAlt.copy(alpha = 0.12f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Extension,
                                 contentDescription = null,
-                                tint = if (isSse) com.example.gemini.theme.AppColors.info else com.example.gemini.theme.AppColors.accentAlt,
+                                tint = if (isSse) com.shriram.cinecode.theme.AppColors.info else com.shriram.cinecode.theme.AppColors.accentAlt,
                                 modifier = Modifier.size(18.dp)
                             )
                         }
@@ -2190,13 +2190,13 @@ private fun McpSubScreen(
                                 // Transport badge
                                 Surface(
                                     shape = RoundedCornerShape(4.dp),
-                                    color = if (isSse) com.example.gemini.theme.AppColors.info.copy(alpha = 0.15f) else com.example.gemini.theme.AppColors.accentAlt.copy(alpha = 0.15f)
+                                    color = if (isSse) com.shriram.cinecode.theme.AppColors.info.copy(alpha = 0.15f) else com.shriram.cinecode.theme.AppColors.accentAlt.copy(alpha = 0.15f)
                                 ) {
                                     Text(
                                         text = if (isSse) "SSE" else "Stdio",
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = if (isSse) com.example.gemini.theme.AppColors.info else com.example.gemini.theme.AppColors.accentAlt,
+                                        color = if (isSse) com.shriram.cinecode.theme.AppColors.info else com.shriram.cinecode.theme.AppColors.accentAlt,
                                         modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
                                     )
                                 }
@@ -2254,7 +2254,7 @@ private fun McpSubScreen(
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(6.dp),
-                            color = com.example.gemini.theme.AppColors.info.copy(alpha = 0.08f)
+                            color = com.shriram.cinecode.theme.AppColors.info.copy(alpha = 0.08f)
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
@@ -2265,13 +2265,13 @@ private fun McpSubScreen(
                                     imageVector = Icons.Default.Key,
                                     contentDescription = null,
                                     modifier = Modifier.size(12.dp),
-                                    tint = com.example.gemini.theme.AppColors.info
+                                    tint = com.shriram.cinecode.theme.AppColors.info
                                 )
                                 Text(
                                     text = "Headers: ${server.spec!!.headers.keys.joinToString(", ")}",
                                     fontSize = 11.sp,
                                     fontFamily = FontFamily.Monospace,
-                                    color = com.example.gemini.theme.AppColors.info
+                                    color = com.shriram.cinecode.theme.AppColors.info
                                 )
                             }
                         }
@@ -2437,7 +2437,7 @@ private fun McpSubScreen(
 
                         TextButton(
                             onClick = {
-                                serverToEdit = server.spec ?: com.example.gemini.domain.model.McpServerSpec(serverName = server.name)
+                                serverToEdit = server.spec ?: com.shriram.cinecode.domain.model.McpServerSpec(serverName = server.name)
                                 showDialog = true
                             },
                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
@@ -2582,9 +2582,9 @@ private enum class McpEditMode {
 
 @Composable
 private fun AddEditMcpServerDialog(
-    initialSpec: com.example.gemini.domain.model.McpServerSpec?,
+    initialSpec: com.shriram.cinecode.domain.model.McpServerSpec?,
     onDismiss: () -> Unit,
-    onSave: (com.example.gemini.domain.model.McpServerSpec, String?) -> Unit
+    onSave: (com.shriram.cinecode.domain.model.McpServerSpec, String?) -> Unit
 ) {
     var mode by remember {
         mutableStateOf(
@@ -2744,7 +2744,7 @@ private fun AddEditMcpServerDialog(
     LaunchedEffect(initialSpec) {
         if (initialSpec != null && initialSpec.serverName.isNotBlank()) {
             try {
-                val configRaw = com.example.gemini.data.daemon.IdeApiClient.getMcpConfig()
+                val configRaw = com.shriram.cinecode.data.daemon.IdeApiClient.getMcpConfig()
                 if (!configRaw.isNullOrBlank()) {
                     val cfgJson = org.json.JSONObject(configRaw)
                     val sObj = cfgJson.optJSONObject("mcpServers")?.optJSONObject(initialSpec.serverName)
@@ -2982,7 +2982,7 @@ private fun AddEditMcpServerDialog(
                                 return@Button
                             }
                             val isDis = sObj.optBoolean("disabled", initialSpec?.disabled ?: false)
-                            val spec = com.example.gemini.domain.model.McpServerSpec(
+                            val spec = com.shriram.cinecode.domain.model.McpServerSpec(
                                 serverName = cleanName,
                                 command = sCmd,
                                 serverUrl = sUrl,
@@ -3015,7 +3015,7 @@ private fun AddEditMcpServerDialog(
                             }
                         }
 
-                        val spec = com.example.gemini.domain.model.McpServerSpec(
+                        val spec = com.shriram.cinecode.domain.model.McpServerSpec(
                             serverName = cleanName,
                             command = cleanCmd,
                             args = argsList,
@@ -3047,7 +3047,7 @@ private fun AddEditMcpServerDialog(
                             }
                         }
 
-                        val spec = com.example.gemini.domain.model.McpServerSpec(
+                        val spec = com.shriram.cinecode.domain.model.McpServerSpec(
                             serverName = cleanName,
                             serverUrl = cleanUrl,
                             headers = headersMap,
@@ -3096,7 +3096,7 @@ private fun TerminalSubScreen(
     onOpenLocalTerminal: () -> Unit
 ) {
     val context = LocalContext.current
-    val remoteMode = com.example.gemini.data.preferences.AuthPreferences.currentRemoteMode
+    val remoteMode = com.shriram.cinecode.data.preferences.AuthPreferences.currentRemoteMode
     val coroutineScope = rememberCoroutineScope()
     var showResetWarningDialog by remember { mutableStateOf(false) }
     var showResetPasswordDialog by remember { mutableStateOf(false) }
@@ -3118,7 +3118,7 @@ private fun TerminalSubScreen(
     var themeState by remember { mutableStateOf(terminalTheme) }
 
     var termuxApiProviderState by remember {
-        mutableStateOf(com.example.gemini.data.local.LocalEnvironmentManager.getTermuxApiProvider(context))
+        mutableStateOf(com.shriram.cinecode.data.local.LocalEnvironmentManager.getTermuxApiProvider(context))
     }
     var showExternalApiInstructionDialog by remember { mutableStateOf(false) }
     var activeCommandExecution by remember { mutableStateOf<Pair<String, String>?>(null) }
@@ -3270,7 +3270,7 @@ private fun TerminalSubScreen(
                             isTestingSsh = true
                             sshTestStatus = "Testing SSH connection to $hostState..."
                             coroutineScope.launch {
-                                val res = com.example.gemini.data.ssh.TermuxSshManager.testConnection(
+                                val res = com.shriram.cinecode.data.ssh.TermuxSshManager.testConnection(
                                     host = hostState.trim(),
                                     port = portState.toIntOrNull() ?: sshPort,
                                     user = userState.trim(),
@@ -3499,17 +3499,17 @@ private fun TerminalSubScreen(
                 )
 
                 // Option 1: Built-in
-                val isBuiltin = termuxApiProviderState == com.example.gemini.data.local.LocalEnvironmentManager.TERMUX_API_PROVIDER_BUILTIN
+                val isBuiltin = termuxApiProviderState == com.shriram.cinecode.data.local.LocalEnvironmentManager.TERMUX_API_PROVIDER_BUILTIN
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(10.dp))
                         .clickable {
                             if (!isBuiltin) {
-                                termuxApiProviderState = com.example.gemini.data.local.LocalEnvironmentManager.TERMUX_API_PROVIDER_BUILTIN
-                                com.example.gemini.data.local.LocalEnvironmentManager.setTermuxApiProvider(
+                                termuxApiProviderState = com.shriram.cinecode.data.local.LocalEnvironmentManager.TERMUX_API_PROVIDER_BUILTIN
+                                com.shriram.cinecode.data.local.LocalEnvironmentManager.setTermuxApiProvider(
                                     context,
-                                    com.example.gemini.data.local.LocalEnvironmentManager.TERMUX_API_PROVIDER_BUILTIN
+                                    com.shriram.cinecode.data.local.LocalEnvironmentManager.TERMUX_API_PROVIDER_BUILTIN
                                 )
                                 android.widget.Toast.makeText(context, "Built-in Termux API restored", android.widget.Toast.LENGTH_SHORT).show()
                             }
@@ -3526,10 +3526,10 @@ private fun TerminalSubScreen(
                             selected = isBuiltin,
                             onClick = {
                                 if (!isBuiltin) {
-                                    termuxApiProviderState = com.example.gemini.data.local.LocalEnvironmentManager.TERMUX_API_PROVIDER_BUILTIN
-                                    com.example.gemini.data.local.LocalEnvironmentManager.setTermuxApiProvider(
+                                    termuxApiProviderState = com.shriram.cinecode.data.local.LocalEnvironmentManager.TERMUX_API_PROVIDER_BUILTIN
+                                    com.shriram.cinecode.data.local.LocalEnvironmentManager.setTermuxApiProvider(
                                         context,
-                                        com.example.gemini.data.local.LocalEnvironmentManager.TERMUX_API_PROVIDER_BUILTIN
+                                        com.shriram.cinecode.data.local.LocalEnvironmentManager.TERMUX_API_PROVIDER_BUILTIN
                                     )
                                     android.widget.Toast.makeText(context, "Built-in Termux API restored", android.widget.Toast.LENGTH_SHORT).show()
                                 }
@@ -3554,17 +3554,17 @@ private fun TerminalSubScreen(
                 }
 
                 // Option 2: External App
-                val isExternal = termuxApiProviderState == com.example.gemini.data.local.LocalEnvironmentManager.TERMUX_API_PROVIDER_EXTERNAL
+                val isExternal = termuxApiProviderState == com.shriram.cinecode.data.local.LocalEnvironmentManager.TERMUX_API_PROVIDER_EXTERNAL
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(10.dp))
                         .clickable {
                             if (!isExternal) {
-                                termuxApiProviderState = com.example.gemini.data.local.LocalEnvironmentManager.TERMUX_API_PROVIDER_EXTERNAL
-                                com.example.gemini.data.local.LocalEnvironmentManager.setTermuxApiProvider(
+                                termuxApiProviderState = com.shriram.cinecode.data.local.LocalEnvironmentManager.TERMUX_API_PROVIDER_EXTERNAL
+                                com.shriram.cinecode.data.local.LocalEnvironmentManager.setTermuxApiProvider(
                                     context,
-                                    com.example.gemini.data.local.LocalEnvironmentManager.TERMUX_API_PROVIDER_EXTERNAL
+                                    com.shriram.cinecode.data.local.LocalEnvironmentManager.TERMUX_API_PROVIDER_EXTERNAL
                                 )
                                 showExternalApiInstructionDialog = true
                             }
@@ -3581,10 +3581,10 @@ private fun TerminalSubScreen(
                             selected = isExternal,
                             onClick = {
                                 if (!isExternal) {
-                                    termuxApiProviderState = com.example.gemini.data.local.LocalEnvironmentManager.TERMUX_API_PROVIDER_EXTERNAL
-                                    com.example.gemini.data.local.LocalEnvironmentManager.setTermuxApiProvider(
+                                    termuxApiProviderState = com.shriram.cinecode.data.local.LocalEnvironmentManager.TERMUX_API_PROVIDER_EXTERNAL
+                                    com.shriram.cinecode.data.local.LocalEnvironmentManager.setTermuxApiProvider(
                                         context,
-                                        com.example.gemini.data.local.LocalEnvironmentManager.TERMUX_API_PROVIDER_EXTERNAL
+                                        com.shriram.cinecode.data.local.LocalEnvironmentManager.TERMUX_API_PROVIDER_EXTERNAL
                                     )
                                     showExternalApiInstructionDialog = true
                                 }
@@ -3975,8 +3975,8 @@ private fun BackupsSubScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val systemConnectionState by com.example.gemini.data.remote.AgyBridgeService.instance.systemConnectionState.collectAsState()
-    val isAnyServerRunning = systemConnectionState !is com.example.gemini.data.remote.SystemConnectionState.Offline
+    val systemConnectionState by com.shriram.cinecode.data.remote.AgyBridgeService.instance.systemConnectionState.collectAsState()
+    val isAnyServerRunning = systemConnectionState !is com.shriram.cinecode.data.remote.SystemConnectionState.Offline
 
     var activeScriptExecution by remember { mutableStateOf<ScriptExecutionInfo?>(null) }
     var showServerRunningAlert by remember { mutableStateOf<String?>(null) }
@@ -4049,8 +4049,8 @@ private fun BackupsSubScreen(
         if (isAnyServerRunning) {
             Surface(
                 shape = RoundedCornerShape(12.dp),
-                color = com.example.gemini.theme.AppColors.warning.copy(alpha = 0.12f),
-                border = BorderStroke(1.dp, com.example.gemini.theme.AppColors.warning.copy(alpha = 0.4f)),
+                color = com.shriram.cinecode.theme.AppColors.warning.copy(alpha = 0.12f),
+                border = BorderStroke(1.dp, com.shriram.cinecode.theme.AppColors.warning.copy(alpha = 0.4f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -4061,7 +4061,7 @@ private fun BackupsSubScreen(
                     Icon(
                         imageVector = Icons.Default.WarningAmber,
                         contentDescription = null,
-                        tint = com.example.gemini.theme.AppColors.warning,
+                        tint = com.shriram.cinecode.theme.AppColors.warning,
                         modifier = Modifier.size(24.dp)
                     )
                     Column(modifier = Modifier.weight(1f)) {
@@ -4082,7 +4082,7 @@ private fun BackupsSubScreen(
                         Button(
                             onClick = onStopServer,
                             shape = RoundedCornerShape(8.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = com.example.gemini.theme.AppColors.danger),
+                            colors = ButtonDefaults.buttonColors(containerColor = com.shriram.cinecode.theme.AppColors.danger),
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                             modifier = Modifier.height(34.dp)
                         ) {
@@ -4109,14 +4109,14 @@ private fun BackupsSubScreen(
                 ) {
                     Surface(
                         shape = CircleShape,
-                        color = com.example.gemini.theme.AppColors.accentTeal.copy(alpha = 0.15f),
+                        color = com.shriram.cinecode.theme.AppColors.accentTeal.copy(alpha = 0.15f),
                         modifier = Modifier.size(38.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = Icons.Outlined.Inventory2,
                                 contentDescription = null,
-                                tint = com.example.gemini.theme.AppColors.accentTeal,
+                                tint = com.shriram.cinecode.theme.AppColors.accentTeal,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -4182,7 +4182,7 @@ private fun BackupsSubScreen(
                         }
                     },
                     shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = com.example.gemini.theme.AppColors.accentTeal),
+                    colors = ButtonDefaults.buttonColors(containerColor = com.shriram.cinecode.theme.AppColors.accentTeal),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Icon(Icons.Outlined.Archive, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -4244,8 +4244,8 @@ private fun BackupsSubScreen(
                 Spacer(modifier = Modifier.height(10.dp))
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = com.example.gemini.theme.AppColors.danger.copy(alpha = 0.12f),
-                    border = BorderStroke(1.dp, com.example.gemini.theme.AppColors.danger.copy(alpha = 0.35f)),
+                    color = com.shriram.cinecode.theme.AppColors.danger.copy(alpha = 0.12f),
+                    border = BorderStroke(1.dp, com.shriram.cinecode.theme.AppColors.danger.copy(alpha = 0.35f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -4253,7 +4253,7 @@ private fun BackupsSubScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(Icons.Default.Security, contentDescription = null, tint = com.example.gemini.theme.AppColors.danger, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.Security, contentDescription = null, tint = com.shriram.cinecode.theme.AppColors.danger, modifier = Modifier.size(18.dp))
                         Text(
                             text = "⚠️ Security Warning: This backup includes your authentication credentials and login tokens. Never share this archive with anyone, as anyone with this file can log in to your account.",
                             fontSize = 11.sp,
@@ -4389,14 +4389,14 @@ private fun BackupsSubScreen(
                 ) {
                     Surface(
                         shape = CircleShape,
-                        color = com.example.gemini.theme.AppColors.accentIndigo.copy(alpha = 0.15f),
+                        color = com.shriram.cinecode.theme.AppColors.accentIndigo.copy(alpha = 0.15f),
                         modifier = Modifier.size(38.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = Icons.Outlined.Workspaces,
                                 contentDescription = null,
-                                tint = com.example.gemini.theme.AppColors.accentIndigo,
+                                tint = com.shriram.cinecode.theme.AppColors.accentIndigo,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -4428,7 +4428,7 @@ private fun BackupsSubScreen(
                 Button(
                     onClick = { showProjectsBackupRestoreDialog = true },
                     shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = com.example.gemini.theme.AppColors.accentIndigo),
+                    colors = ButtonDefaults.buttonColors(containerColor = com.shriram.cinecode.theme.AppColors.accentIndigo),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Icon(Icons.Outlined.FolderZip, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -4443,7 +4443,7 @@ private fun BackupsSubScreen(
     showServerRunningAlert?.let { actionName ->
         AlertDialog(
             onDismissRequest = { showServerRunningAlert = null },
-            icon = { Icon(Icons.Default.WarningAmber, contentDescription = null, tint = com.example.gemini.theme.AppColors.warning) },
+            icon = { Icon(Icons.Default.WarningAmber, contentDescription = null, tint = com.shriram.cinecode.theme.AppColors.warning) },
             title = { Text("Server Must Be Stopped", fontWeight = FontWeight.Bold) },
             text = {
                 Text(
@@ -4458,7 +4458,7 @@ private fun BackupsSubScreen(
                         showServerRunningAlert = null
                         Toast.makeText(context, "Stopping server... Please re-run $actionName once stopped.", Toast.LENGTH_SHORT).show()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = com.example.gemini.theme.AppColors.danger)
+                    colors = ButtonDefaults.buttonColors(containerColor = com.shriram.cinecode.theme.AppColors.danger)
                 ) {
                     Text("Stop Server", fontWeight = FontWeight.Bold)
                 }
@@ -4486,8 +4486,8 @@ private fun BackupsSubScreen(
                     )
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = com.example.gemini.theme.AppColors.danger.copy(alpha = 0.12f),
-                        border = BorderStroke(1.dp, com.example.gemini.theme.AppColors.danger.copy(alpha = 0.35f)),
+                        color = com.shriram.cinecode.theme.AppColors.danger.copy(alpha = 0.12f),
+                        border = BorderStroke(1.dp, com.shriram.cinecode.theme.AppColors.danger.copy(alpha = 0.35f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -4495,7 +4495,7 @@ private fun BackupsSubScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            Icon(Icons.Default.Security, contentDescription = null, tint = com.example.gemini.theme.AppColors.danger, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.Security, contentDescription = null, tint = com.shriram.cinecode.theme.AppColors.danger, modifier = Modifier.size(16.dp))
                             Text(
                                 text = "Do not share this file. Anyone with it can log into your account.",
                                 fontSize = 10.5.sp,
@@ -4690,7 +4690,7 @@ private fun ProjectsBackupRestoreDialog(
         val normHome = normalizeProjectPath(homeDir, homeDir)
         allProjects.filter { proj ->
             val p = normalizeProjectPath(proj.path, normHome)
-            p.isNotBlank() && p != normHome && p != "/" && p != "/data/data/com.termux/files" && p != "/data/data/com.termux"
+            p.isNotBlank() && p != normHome && p != "/" && p != "/data/data/com.shriram.cinecode/files" && p != "/data/data/com.shriram.cinecode"
         }.distinctBy { normalizeProjectPath(it.path, normHome) }
     }
 
@@ -4899,14 +4899,14 @@ private fun ProjectsBackupRestoreDialog(
                     ) {
                         Surface(
                             shape = CircleShape,
-                            color = com.example.gemini.theme.AppColors.accentIndigo.copy(alpha = 0.15f),
+                            color = com.shriram.cinecode.theme.AppColors.accentIndigo.copy(alpha = 0.15f),
                             modifier = Modifier.size(38.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     imageVector = Icons.Outlined.Workspaces,
                                     contentDescription = null,
-                                    tint = com.example.gemini.theme.AppColors.accentIndigo,
+                                    tint = com.shriram.cinecode.theme.AppColors.accentIndigo,
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
@@ -4936,7 +4936,7 @@ private fun ProjectsBackupRestoreDialog(
                 TabRow(
                     selectedTabIndex = selectedTab,
                     containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                    contentColor = com.example.gemini.theme.AppColors.accentIndigo,
+                    contentColor = com.shriram.cinecode.theme.AppColors.accentIndigo,
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(10.dp))
@@ -4988,8 +4988,8 @@ private fun ProjectsBackupRestoreDialog(
                                     // Git-Aware (Clean)
                                     Surface(
                                         shape = RoundedCornerShape(8.dp),
-                                        color = if (backupMode == "git") com.example.gemini.theme.AppColors.accentIndigo.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surface,
-                                        border = BorderStroke(1.dp, if (backupMode == "git") com.example.gemini.theme.AppColors.accentIndigo else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)),
+                                        color = if (backupMode == "git") com.shriram.cinecode.theme.AppColors.accentIndigo.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surface,
+                                        border = BorderStroke(1.dp, if (backupMode == "git") com.shriram.cinecode.theme.AppColors.accentIndigo else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)),
                                         modifier = Modifier
                                             .weight(1f)
                                             .clickable { backupMode = "git" }
@@ -5002,11 +5002,11 @@ private fun ProjectsBackupRestoreDialog(
                                             Icon(
                                                 imageVector = if (backupMode == "git") Icons.Filled.RadioButtonChecked else Icons.Filled.RadioButtonUnchecked,
                                                 contentDescription = null,
-                                                tint = if (backupMode == "git") com.example.gemini.theme.AppColors.accentIndigo else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                tint = if (backupMode == "git") com.shriram.cinecode.theme.AppColors.accentIndigo else MaterialTheme.colorScheme.onSurfaceVariant,
                                                 modifier = Modifier.size(16.dp)
                                             )
                                             Column {
-                                                Text("Git-Aware (Clean)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (backupMode == "git") com.example.gemini.theme.AppColors.accentIndigo else MaterialTheme.colorScheme.onSurface)
+                                                Text("Git-Aware (Clean)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (backupMode == "git") com.shriram.cinecode.theme.AppColors.accentIndigo else MaterialTheme.colorScheme.onSurface)
                                                 Text("Excludes node_modules & build caches", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                             }
                                         }
@@ -5015,8 +5015,8 @@ private fun ProjectsBackupRestoreDialog(
                                     // Full Raw Archive
                                     Surface(
                                         shape = RoundedCornerShape(8.dp),
-                                        color = if (backupMode == "full") com.example.gemini.theme.AppColors.accentIndigo.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surface,
-                                        border = BorderStroke(1.dp, if (backupMode == "full") com.example.gemini.theme.AppColors.accentIndigo else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)),
+                                        color = if (backupMode == "full") com.shriram.cinecode.theme.AppColors.accentIndigo.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surface,
+                                        border = BorderStroke(1.dp, if (backupMode == "full") com.shriram.cinecode.theme.AppColors.accentIndigo else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)),
                                         modifier = Modifier
                                             .weight(1f)
                                             .clickable { backupMode = "full" }
@@ -5029,11 +5029,11 @@ private fun ProjectsBackupRestoreDialog(
                                             Icon(
                                                 imageVector = if (backupMode == "full") Icons.Filled.RadioButtonChecked else Icons.Filled.RadioButtonUnchecked,
                                                 contentDescription = null,
-                                                tint = if (backupMode == "full") com.example.gemini.theme.AppColors.accentIndigo else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                tint = if (backupMode == "full") com.shriram.cinecode.theme.AppColors.accentIndigo else MaterialTheme.colorScheme.onSurfaceVariant,
                                                 modifier = Modifier.size(16.dp)
                                             )
                                             Column {
-                                                Text("Full Raw Archive", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (backupMode == "full") com.example.gemini.theme.AppColors.accentIndigo else MaterialTheme.colorScheme.onSurface)
+                                                Text("Full Raw Archive", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (backupMode == "full") com.shriram.cinecode.theme.AppColors.accentIndigo else MaterialTheme.colorScheme.onSurface)
                                                 Text("All files, symlinks & permissions as-is", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                             }
                                         }
@@ -5062,7 +5062,7 @@ private fun ProjectsBackupRestoreDialog(
                                     },
                                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
                                 ) {
-                                    Text("Select All", fontSize = 11.5.sp, color = com.example.gemini.theme.AppColors.accentIndigo)
+                                    Text("Select All", fontSize = 11.5.sp, color = com.shriram.cinecode.theme.AppColors.accentIndigo)
                                 }
                                 TextButton(
                                     onClick = { selectedProjectPaths.clear() },
@@ -5146,17 +5146,17 @@ private fun ProjectsBackupRestoreDialog(
                                                 fontSize = 13.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 fontFamily = FontFamily.Monospace,
-                                                color = com.example.gemini.theme.AppColors.accentIndigo.copy(alpha = 0.8f),
+                                                color = com.shriram.cinecode.theme.AppColors.accentIndigo.copy(alpha = 0.8f),
                                                 modifier = Modifier.padding(end = 6.dp)
                                             )
                                         }
 
                                         Surface(
                                             shape = RoundedCornerShape(10.dp),
-                                            color = if (isSelected) com.example.gemini.theme.AppColors.accentIndigo.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                            color = if (isSelected) com.shriram.cinecode.theme.AppColors.accentIndigo.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
                                             border = BorderStroke(
                                                 1.dp,
-                                                if (isSelected) com.example.gemini.theme.AppColors.accentIndigo.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
+                                                if (isSelected) com.shriram.cinecode.theme.AppColors.accentIndigo.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
                                             ),
                                             modifier = Modifier
                                                 .weight(1f)
@@ -5170,7 +5170,7 @@ private fun ProjectsBackupRestoreDialog(
                                                 Checkbox(
                                                     checked = isSelected,
                                                     onCheckedChange = { toggleNode() },
-                                                    colors = CheckboxDefaults.colors(checkedColor = com.example.gemini.theme.AppColors.accentIndigo),
+                                                    colors = CheckboxDefaults.colors(checkedColor = com.shriram.cinecode.theme.AppColors.accentIndigo),
                                                     modifier = Modifier.size(20.dp)
                                                 )
                                                 Column(modifier = Modifier.weight(1f)) {
@@ -5187,13 +5187,13 @@ private fun ProjectsBackupRestoreDialog(
                                                         if (childProjectsCount > 0) {
                                                             Surface(
                                                                 shape = RoundedCornerShape(4.dp),
-                                                                color = com.example.gemini.theme.AppColors.accentIndigo.copy(alpha = 0.15f)
+                                                                color = com.shriram.cinecode.theme.AppColors.accentIndigo.copy(alpha = 0.15f)
                                                             ) {
                                                                 Text(
                                                                     text = "$childProjectsCount ${if (childProjectsCount == 1) "sub-project" else "sub-projects"}",
                                                                     fontSize = 9.5.sp,
                                                                     fontWeight = FontWeight.Bold,
-                                                                    color = com.example.gemini.theme.AppColors.accentIndigo,
+                                                                    color = com.shriram.cinecode.theme.AppColors.accentIndigo,
                                                                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
                                                                 )
                                                             }
@@ -5201,26 +5201,26 @@ private fun ProjectsBackupRestoreDialog(
                                                         if (isCoveredByParent && parentProj != null) {
                                                             Surface(
                                                                 shape = RoundedCornerShape(4.dp),
-                                                                color = com.example.gemini.theme.AppColors.success.copy(alpha = 0.15f)
+                                                                color = com.shriram.cinecode.theme.AppColors.success.copy(alpha = 0.15f)
                                                             ) {
                                                                 Text(
                                                                     text = "Included with ${parentProj.name}",
                                                                     fontSize = 9.5.sp,
                                                                     fontWeight = FontWeight.Medium,
-                                                                    color = com.example.gemini.theme.AppColors.success,
+                                                                    color = com.shriram.cinecode.theme.AppColors.success,
                                                                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
                                                                 )
                                                             }
                                                         } else if (parentProj != null) {
                                                             Surface(
                                                                 shape = RoundedCornerShape(4.dp),
-                                                                color = com.example.gemini.theme.AppColors.accentIndigo.copy(alpha = 0.12f)
+                                                                color = com.shriram.cinecode.theme.AppColors.accentIndigo.copy(alpha = 0.12f)
                                                             ) {
                                                                 Text(
                                                                     text = "Inside ${parentProj.name}",
                                                                     fontSize = 9.5.sp,
                                                                     fontWeight = FontWeight.Medium,
-                                                                    color = com.example.gemini.theme.AppColors.accentIndigo,
+                                                                    color = com.shriram.cinecode.theme.AppColors.accentIndigo,
                                                                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
                                                                 )
                                                             }
@@ -5264,7 +5264,7 @@ private fun ProjectsBackupRestoreDialog(
                             },
                             enabled = selectedCount > 0,
                             shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = com.example.gemini.theme.AppColors.accentIndigo),
+                            colors = ButtonDefaults.buttonColors(containerColor = com.shriram.cinecode.theme.AppColors.accentIndigo),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Icon(Icons.Outlined.Archive, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -5306,7 +5306,7 @@ private fun ProjectsBackupRestoreDialog(
                             singleLine = true,
                             trailingIcon = {
                                 IconButton(onClick = { filePickerLauncher.launch("*/*") }) {
-                                    Icon(Icons.Outlined.FolderOpen, contentDescription = "Choose File", tint = com.example.gemini.theme.AppColors.accentIndigo)
+                                    Icon(Icons.Outlined.FolderOpen, contentDescription = "Choose File", tint = com.shriram.cinecode.theme.AppColors.accentIndigo)
                                 }
                             },
                             modifier = Modifier.fillMaxWidth()
@@ -5319,13 +5319,13 @@ private fun ProjectsBackupRestoreDialog(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 modifier = Modifier.padding(vertical = 4.dp)
                             ) {
-                                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = com.example.gemini.theme.AppColors.accentIndigo)
+                                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = com.shriram.cinecode.theme.AppColors.accentIndigo)
                                 Text("Inspecting archive contents & manifest...", fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
 
                         archiveError?.let { err ->
-                            Text(text = err, color = com.example.gemini.theme.AppColors.danger, fontSize = 11.5.sp)
+                            Text(text = err, color = com.shriram.cinecode.theme.AppColors.danger, fontSize = 11.5.sp)
                         }
 
                         if (manifestProjects.isNotEmpty()) {
@@ -5358,7 +5358,7 @@ private fun ProjectsBackupRestoreDialog(
                                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                                             modifier = Modifier.padding(vertical = 2.dp)
                                         ) {
-                                            Icon(Icons.Outlined.Folder, contentDescription = null, tint = com.example.gemini.theme.AppColors.accentIndigo, modifier = Modifier.size(16.dp))
+                                            Icon(Icons.Outlined.Folder, contentDescription = null, tint = com.shriram.cinecode.theme.AppColors.accentIndigo, modifier = Modifier.size(16.dp))
                                             Column {
                                                 Text(item.name, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                                                 if (item.originalPath.isNotBlank()) {
@@ -5404,7 +5404,7 @@ private fun ProjectsBackupRestoreDialog(
                                     Icon(
                                         imageVector = if (conflictStrategy == "bak") Icons.Filled.RadioButtonChecked else Icons.Filled.RadioButtonUnchecked,
                                         contentDescription = null,
-                                        tint = if (conflictStrategy == "bak") com.example.gemini.theme.AppColors.accentIndigo else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        tint = if (conflictStrategy == "bak") com.shriram.cinecode.theme.AppColors.accentIndigo else MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.size(16.dp)
                                     )
                                     Column {
@@ -5426,7 +5426,7 @@ private fun ProjectsBackupRestoreDialog(
                                     Icon(
                                         imageVector = if (conflictStrategy == "overwrite") Icons.Filled.RadioButtonChecked else Icons.Filled.RadioButtonUnchecked,
                                         contentDescription = null,
-                                        tint = if (conflictStrategy == "overwrite") com.example.gemini.theme.AppColors.accentIndigo else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        tint = if (conflictStrategy == "overwrite") com.shriram.cinecode.theme.AppColors.accentIndigo else MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.size(16.dp)
                                     )
                                     Column {
@@ -5445,7 +5445,7 @@ private fun ProjectsBackupRestoreDialog(
                             Checkbox(
                                 checked = useCustomRestoreDir,
                                 onCheckedChange = { useCustomRestoreDir = it },
-                                colors = CheckboxDefaults.colors(checkedColor = com.example.gemini.theme.AppColors.accentIndigo),
+                                colors = CheckboxDefaults.colors(checkedColor = com.shriram.cinecode.theme.AppColors.accentIndigo),
                                 modifier = Modifier.size(20.dp)
                             )
                             Text("Restore to custom parent directory", fontSize = 12.sp)
@@ -5456,7 +5456,7 @@ private fun ProjectsBackupRestoreDialog(
                                 value = customRestoreDir,
                                 onValueChange = { customRestoreDir = it },
                                 label = { Text("Custom Restore Directory") },
-                                placeholder = { Text("/data/data/com.termux/files/home/restored_projects") },
+                                placeholder = { Text("/data/data/com.shriram.cinecode/files/home/restored_projects") },
                                 singleLine = true,
                                 modifier = Modifier.fillMaxWidth()
                             )
@@ -5633,8 +5633,8 @@ private fun ScriptExecutionDialog(
                 // Terminal output container
                 Surface(
                     shape = RoundedCornerShape(10.dp),
-                    color = com.example.gemini.theme.AppColors.terminalBg,
-                    border = BorderStroke(1.dp, com.example.gemini.theme.AppColors.editorBorder),
+                    color = com.shriram.cinecode.theme.AppColors.terminalBg,
+                    border = BorderStroke(1.dp, com.shriram.cinecode.theme.AppColors.editorBorder),
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
@@ -5648,11 +5648,11 @@ private fun ScriptExecutionDialog(
                         items(logs) { line ->
                             val cleanLine = line.replace(Regex("\u001B\\[[;\\d]*m"), "")
                             val lineColor = when {
-                                cleanLine.startsWith("❌") || cleanLine.contains("Error", ignoreCase = true) -> com.example.gemini.theme.AppColors.danger
-                                cleanLine.startsWith("✅") || cleanLine.startsWith("🎉") || cleanLine.contains("Success", ignoreCase = true) -> com.example.gemini.theme.AppColors.success
-                                cleanLine.startsWith("⚠️") || cleanLine.contains("Note:", ignoreCase = true) || cleanLine.contains("Warning:", ignoreCase = true) -> com.example.gemini.theme.AppColors.warning
-                                cleanLine.startsWith("=") || cleanLine.startsWith("[") -> com.example.gemini.theme.AppColors.info
-                                else -> com.example.gemini.theme.AppColors.editorText
+                                cleanLine.startsWith("❌") || cleanLine.contains("Error", ignoreCase = true) -> com.shriram.cinecode.theme.AppColors.danger
+                                cleanLine.startsWith("✅") || cleanLine.startsWith("🎉") || cleanLine.contains("Success", ignoreCase = true) -> com.shriram.cinecode.theme.AppColors.success
+                                cleanLine.startsWith("⚠️") || cleanLine.contains("Note:", ignoreCase = true) || cleanLine.contains("Warning:", ignoreCase = true) -> com.shriram.cinecode.theme.AppColors.warning
+                                cleanLine.startsWith("=") || cleanLine.startsWith("[") -> com.shriram.cinecode.theme.AppColors.info
+                                else -> com.shriram.cinecode.theme.AppColors.editorText
                             }
                             Text(
                                 text = cleanLine,
@@ -5681,7 +5681,7 @@ private fun ScriptExecutionDialog(
                                 logs.add("🛑 Execution cancelled by user.")
                             },
                             shape = RoundedCornerShape(8.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = com.example.gemini.theme.AppColors.danger)
+                            colors = ButtonDefaults.buttonColors(containerColor = com.shriram.cinecode.theme.AppColors.danger)
                         ) {
                             Icon(Icons.Default.Stop, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
@@ -5738,7 +5738,7 @@ private fun CommandExecutionDialog(
             isRunning = true
             logs.clear()
             logs.add("⚡ Running: $command...")
-            val result = com.example.gemini.data.local.LocalEnvironmentManager.executeCommandLive(
+            val result = com.shriram.cinecode.data.local.LocalEnvironmentManager.executeCommandLive(
                 context = context,
                 command = command
             ) { line ->
@@ -5836,8 +5836,8 @@ private fun CommandExecutionDialog(
                 // Terminal output container
                 Surface(
                     shape = RoundedCornerShape(10.dp),
-                    color = com.example.gemini.theme.AppColors.terminalBg,
-                    border = BorderStroke(1.dp, com.example.gemini.theme.AppColors.editorBorder),
+                    color = com.shriram.cinecode.theme.AppColors.terminalBg,
+                    border = BorderStroke(1.dp, com.shriram.cinecode.theme.AppColors.editorBorder),
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
@@ -5851,10 +5851,10 @@ private fun CommandExecutionDialog(
                         items(logs) { line ->
                             val cleanLine = line.replace(Regex("\u001B\\[[;?0-9]*[a-zA-Z]"), "")
                             val lineColor = when {
-                                cleanLine.contains("ERROR", ignoreCase = true) || cleanLine.contains("FAILED", ignoreCase = true) -> com.example.gemini.theme.AppColors.danger
-                                cleanLine.contains("SUCCESS", ignoreCase = true) || cleanLine.contains("✓") || cleanLine.contains("Setting up termux-api") -> com.example.gemini.theme.AppColors.success
-                                cleanLine.startsWith("⚡") -> com.example.gemini.theme.AppColors.accentTeal
-                                else -> com.example.gemini.theme.AppColors.editorText
+                                cleanLine.contains("ERROR", ignoreCase = true) || cleanLine.contains("FAILED", ignoreCase = true) -> com.shriram.cinecode.theme.AppColors.danger
+                                cleanLine.contains("SUCCESS", ignoreCase = true) || cleanLine.contains("✓") || cleanLine.contains("Setting up termux-api") -> com.shriram.cinecode.theme.AppColors.success
+                                cleanLine.startsWith("⚡") -> com.shriram.cinecode.theme.AppColors.accentTeal
+                                else -> com.shriram.cinecode.theme.AppColors.editorText
                             }
                             Text(
                                 text = cleanLine,
@@ -5883,7 +5883,7 @@ private fun CommandExecutionDialog(
                                 logs.add("🛑 Execution cancelled by user.")
                             },
                             shape = RoundedCornerShape(8.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = com.example.gemini.theme.AppColors.danger)
+                            colors = ButtonDefaults.buttonColors(containerColor = com.shriram.cinecode.theme.AppColors.danger)
                         ) {
                             Icon(Icons.Default.Stop, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
@@ -5950,8 +5950,8 @@ private fun DataProtectionSubScreen(
         // Banner info
         Surface(
             shape = RoundedCornerShape(14.dp),
-            color = com.example.gemini.theme.AppColors.success.copy(alpha = 0.1f),
-            border = BorderStroke(1.dp, com.example.gemini.theme.AppColors.success.copy(alpha = 0.3f)),
+            color = com.shriram.cinecode.theme.AppColors.success.copy(alpha = 0.1f),
+            border = BorderStroke(1.dp, com.shriram.cinecode.theme.AppColors.success.copy(alpha = 0.3f)),
             modifier = Modifier.fillMaxWidth()
         ) {
             Row(
@@ -5962,7 +5962,7 @@ private fun DataProtectionSubScreen(
                 Icon(
                     imageVector = Icons.Outlined.Security,
                     contentDescription = null,
-                    tint = com.example.gemini.theme.AppColors.success,
+                    tint = com.shriram.cinecode.theme.AppColors.success,
                     modifier = Modifier.size(26.dp)
                 )
                 Column {
@@ -6242,10 +6242,10 @@ private fun CommandsSubScreen(
     commandSandboxEnabled: Boolean,
     requireApprovalForFileEdits: Boolean,
     defaultApprovalScope: String,
-    globalSecuritySettings: com.example.gemini.data.remote.AgyHubClient.GlobalUserSettings?,
+    globalSecuritySettings: com.shriram.cinecode.data.remote.AgyHubClient.GlobalUserSettings?,
     globalSettingsError: String? = null,
     isGlobalSettingsLoading: Boolean,
-    projectsList: List<com.example.gemini.data.remote.AgyHubClient.ProjectItem>,
+    projectsList: List<com.shriram.cinecode.data.remote.AgyHubClient.ProjectItem>,
     isProjectsLoading: Boolean,
     cardBg: Color,
     cardBorder: BorderStroke,
@@ -6254,8 +6254,8 @@ private fun CommandsSubScreen(
     onSetGlobalCustomTerminalPolicy: (String) -> Unit,
     onSetGlobalCustomFileAccessPolicy: (String) -> Unit,
     onSetGlobalTerminalSandbox: (Boolean) -> Unit,
-    onSetProjectInheritGlobal: (com.example.gemini.data.remote.AgyHubClient.ProjectItem) -> Unit,
-    onSetProjectPreset: (com.example.gemini.data.remote.AgyHubClient.ProjectItem, autoExec: String, fileAccess: String) -> Unit,
+    onSetProjectInheritGlobal: (com.shriram.cinecode.data.remote.AgyHubClient.ProjectItem) -> Unit,
+    onSetProjectPreset: (com.shriram.cinecode.data.remote.AgyHubClient.ProjectItem, autoExec: String, fileAccess: String) -> Unit,
     onRefreshSecurityAndProjects: () -> Unit,
     onSetCommandAutoExecutionPolicy: (String) -> Unit,
     onSetCommandSandboxEnabled: (Boolean) -> Unit,
@@ -6581,12 +6581,12 @@ private fun CommandsSubScreen(
                 "DEFAULT",
                 "🛡️ Default Mode",
                 "Terminal commands require confirmation. Files outside workspace require confirmation."
-            ) to ("Recommended" to com.example.gemini.theme.AppColors.accentTeal),
+            ) to ("Recommended" to com.shriram.cinecode.theme.AppColors.accentTeal),
             Triple(
                 "FULL_MACHINE",
                 "💻 Full Machine Mode",
                 "Terminal commands require confirmation. Full read/write access to all files on device."
-            ) to ("Open Files" to com.example.gemini.theme.AppColors.warning),
+            ) to ("Open Files" to com.shriram.cinecode.theme.AppColors.warning),
             Triple(
                 "TURBO",
                 "⚡ Turbo Mode",
@@ -6596,7 +6596,7 @@ private fun CommandsSubScreen(
                 "CUSTOM",
                 "⚙️ Custom Granular Mode",
                 "Configure terminal command execution and external filesystem permissions separately."
-            ) to ("Custom" to com.example.gemini.theme.AppColors.accentAlt)
+            ) to ("Custom" to com.shriram.cinecode.theme.AppColors.accentAlt)
         )
 
         presets.forEach { (presetInfo, badgeInfo) ->
@@ -7038,7 +7038,7 @@ private fun CommandsSubScreen(
                                 val decisions = listOf(
                                     Triple("ALLOW", "✅ Allow", QuotaGreen),
                                     Triple("DENY", "🚫 Deny", MaterialTheme.colorScheme.error),
-                                    Triple("ASK", "❓ Ask", com.example.gemini.theme.AppColors.warning)
+                                    Triple("ASK", "❓ Ask", com.shriram.cinecode.theme.AppColors.warning)
                                 )
 
                                 decisions.forEach { (decKey, decLabel, decColor) ->
@@ -7181,13 +7181,13 @@ private fun CommandsSubScreen(
 
                                 Surface(
                                     shape = RoundedCornerShape(6.dp),
-                                    color = if (project.isInheritingGlobal) QuotaGreen.copy(alpha = 0.15f) else com.example.gemini.theme.AppColors.warning.copy(alpha = 0.15f)
+                                    color = if (project.isInheritingGlobal) QuotaGreen.copy(alpha = 0.15f) else com.shriram.cinecode.theme.AppColors.warning.copy(alpha = 0.15f)
                                 ) {
                                     Text(
                                         text = if (project.isInheritingGlobal) "🌐 Inherits Global" else "⚠️ Custom Override",
                                         fontSize = 10.5.sp,
                                         fontWeight = FontWeight.SemiBold,
-                                        color = if (project.isInheritingGlobal) QuotaGreen else com.example.gemini.theme.AppColors.warning,
+                                        color = if (project.isInheritingGlobal) QuotaGreen else com.shriram.cinecode.theme.AppColors.warning,
                                         modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
                                     )
                                 }
@@ -7526,7 +7526,7 @@ private fun AddPermissionRuleDialog(
                     val decs = listOf(
                         Triple("ALLOW", "✅ Allow", QuotaGreen),
                         Triple("DENY", "🚫 Deny", MaterialTheme.colorScheme.error),
-                        Triple("ASK", "❓ Ask", com.example.gemini.theme.AppColors.warning)
+                        Triple("ASK", "❓ Ask", com.shriram.cinecode.theme.AppColors.warning)
                     )
                     decs.forEach { (key, label, col) ->
                         val isSel = selectedDecision == key
@@ -7601,17 +7601,17 @@ private fun DiagnosticsSubScreen(
     cardBorder: BorderStroke
 ) {
     DisposableEffect(isFloatingDiagnosticsEnabled) {
-        com.example.gemini.data.remote.core.AntiGemLiveDiagnostics.start()
+        com.shriram.cinecode.data.remote.core.AntiGemLiveDiagnostics.start()
         onDispose {
             if (!isFloatingDiagnosticsEnabled) {
-                com.example.gemini.data.remote.core.AntiGemLiveDiagnostics.stop()
+                com.shriram.cinecode.data.remote.core.AntiGemLiveDiagnostics.stop()
             }
         }
     }
 
-    val snapshot by com.example.gemini.data.remote.core.AntiGemLiveDiagnostics.snapshot.collectAsState()
-    val logs by com.example.gemini.data.remote.inspector.NetworkInspectorManager.logs.collectAsState()
-    val activeStreams by com.example.gemini.data.remote.inspector.NetworkInspectorManager.activeStreamsCount.collectAsState()
+    val snapshot by com.shriram.cinecode.data.remote.core.AntiGemLiveDiagnostics.snapshot.collectAsState()
+    val logs by com.shriram.cinecode.data.remote.inspector.NetworkInspectorManager.logs.collectAsState()
+    val activeStreams by com.shriram.cinecode.data.remote.inspector.NetworkInspectorManager.activeStreamsCount.collectAsState()
     val context = androidx.compose.ui.platform.LocalContext.current
     var pendingInspectorRestart by remember { mutableStateOf<Boolean?>(null) }
 
@@ -7642,7 +7642,7 @@ private fun DiagnosticsSubScreen(
                     onClick = {
                         val toEnable = targetState
                         pendingInspectorRestart = null
-                        com.example.gemini.data.preferences.AuthPreferences(context).saveNetworkInspectorEnabledSync(toEnable)
+                        com.shriram.cinecode.data.preferences.AuthPreferences(context).saveNetworkInspectorEnabledSync(toEnable)
                         val pm = context.packageManager
                         val intent = pm.getLaunchIntentForPackage(context.packageName)
                         if (intent != null) {
@@ -7651,7 +7651,7 @@ private fun DiagnosticsSubScreen(
                             Runtime.getRuntime().exit(0)
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = com.example.gemini.theme.AppColors.info),
+                    colors = ButtonDefaults.buttonColors(containerColor = com.shriram.cinecode.theme.AppColors.info),
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text("Restart App", fontWeight = FontWeight.Bold)
@@ -7696,14 +7696,14 @@ private fun DiagnosticsSubScreen(
                     ) {
                         Surface(
                             shape = RoundedCornerShape(8.dp),
-                            color = (if (isNetworkInspectorEnabled) com.example.gemini.theme.AppColors.info else Color.Gray).copy(alpha = 0.12f),
+                            color = (if (isNetworkInspectorEnabled) com.shriram.cinecode.theme.AppColors.info else Color.Gray).copy(alpha = 0.12f),
                             modifier = Modifier.size(36.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     imageVector = Icons.Default.Language,
                                     contentDescription = null,
-                                    tint = if (isNetworkInspectorEnabled) com.example.gemini.theme.AppColors.info else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                                    tint = if (isNetworkInspectorEnabled) com.shriram.cinecode.theme.AppColors.info else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
@@ -7718,13 +7718,13 @@ private fun DiagnosticsSubScreen(
                                 )
                                 Surface(
                                     shape = RoundedCornerShape(4.dp),
-                                    color = if (isNetworkInspectorEnabled) com.example.gemini.theme.AppColors.info.copy(alpha = 0.15f) else Color.Gray.copy(alpha = 0.15f)
+                                    color = if (isNetworkInspectorEnabled) com.shriram.cinecode.theme.AppColors.info.copy(alpha = 0.15f) else Color.Gray.copy(alpha = 0.15f)
                                 ) {
                                     Text(
                                         text = if (isNetworkInspectorEnabled) "ACTIVE" else "OFF",
                                         fontSize = 9.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = if (isNetworkInspectorEnabled) com.example.gemini.theme.AppColors.info else Color.Gray,
+                                        color = if (isNetworkInspectorEnabled) com.shriram.cinecode.theme.AppColors.info else Color.Gray,
                                         modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp)
                                     )
                                 }
@@ -7743,7 +7743,7 @@ private fun DiagnosticsSubScreen(
                         },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = Color.White,
-                            checkedTrackColor = com.example.gemini.theme.AppColors.info
+                            checkedTrackColor = com.shriram.cinecode.theme.AppColors.info
                         )
                     )
                 }
@@ -7785,7 +7785,7 @@ private fun DiagnosticsSubScreen(
                             onCheckedChange = onToggleFloatingNetworkInspector,
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = Color.White,
-                                checkedTrackColor = com.example.gemini.theme.AppColors.info
+                                checkedTrackColor = com.shriram.cinecode.theme.AppColors.info
                             )
                         )
                     }
@@ -7798,7 +7798,7 @@ private fun DiagnosticsSubScreen(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = com.example.gemini.theme.AppColors.info
+                            containerColor = com.shriram.cinecode.theme.AppColors.info
                         )
                     ) {
                         Icon(
@@ -7950,7 +7950,7 @@ private fun DiagnosticsSubScreen(
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         fontFamily = FontFamily.Monospace,
-                        color = if (snapshot.agyQueued > 0) com.example.gemini.theme.AppColors.danger else MaterialTheme.colorScheme.onSurface
+                        color = if (snapshot.agyQueued > 0) com.shriram.cinecode.theme.AppColors.danger else MaterialTheme.colorScheme.onSurface
                     )
                 }
 
@@ -8004,7 +8004,7 @@ private fun DiagnosticsSubScreen(
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         fontFamily = FontFamily.Monospace,
-                        color = if (snapshot.isLagging) com.example.gemini.theme.AppColors.danger else QuotaGreen
+                        color = if (snapshot.isLagging) com.shriram.cinecode.theme.AppColors.danger else QuotaGreen
                     )
                 }
 
@@ -8091,15 +8091,15 @@ private fun AboutSubScreen(
             ) {
                 Surface(
                     shape = CircleShape,
-                    color = com.example.gemini.theme.AppColors.accentAlt.copy(alpha = 0.15f),
-                    border = BorderStroke(1.5.dp, com.example.gemini.theme.AppColors.accentAlt.copy(alpha = 0.4f)),
+                    color = com.shriram.cinecode.theme.AppColors.accentAlt.copy(alpha = 0.15f),
+                    border = BorderStroke(1.5.dp, com.shriram.cinecode.theme.AppColors.accentAlt.copy(alpha = 0.4f)),
                     modifier = Modifier.size(64.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = Icons.Outlined.Info,
                             contentDescription = null,
-                            tint = com.example.gemini.theme.AppColors.accentAlt,
+                            tint = com.shriram.cinecode.theme.AppColors.accentAlt,
                             modifier = Modifier.size(32.dp)
                         )
                     }
@@ -8120,7 +8120,7 @@ private fun AboutSubScreen(
                 Spacer(modifier = Modifier.height(10.dp))
                 val isSharedBuild = BuildConfig.IS_SHARED_USER_ID
                 val variantBadgeText = if (isSharedBuild) "Shared UID" else "Standalone"
-                val variantColor = if (isSharedBuild) QuotaGreen else com.example.gemini.theme.AppColors.accentAlt
+                val variantColor = if (isSharedBuild) QuotaGreen else com.shriram.cinecode.theme.AppColors.accentAlt
                 Surface(
                     shape = RoundedCornerShape(20.dp),
                     color = variantColor.copy(alpha = 0.12f),
@@ -8153,7 +8153,7 @@ private fun AboutSubScreen(
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
-                val bridgeVersion by com.example.gemini.data.remote.BridgeInfo.version.collectAsState()
+                val bridgeVersion by com.shriram.cinecode.data.remote.BridgeInfo.version.collectAsState()
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -8165,7 +8165,7 @@ private fun AboutSubScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     val bv = bridgeVersion
-                    val bridgeMatches = bv != null && com.example.gemini.data.remote.BridgeInfo.compareBridgeToApp(bv) == 0
+                    val bridgeMatches = bv != null && com.shriram.cinecode.data.remote.BridgeInfo.compareBridgeToApp(bv) == 0
                     Text(
                         text = when {
                             bv == null -> "not connected"
@@ -8175,7 +8175,7 @@ private fun AboutSubScreen(
                         fontSize = 12.5.sp,
                         fontWeight = FontWeight.Medium,
                         fontFamily = FontFamily.Monospace,
-                        color = if (bv == null || bridgeMatches) MaterialTheme.colorScheme.onSurface else com.example.gemini.theme.AppColors.warning
+                        color = if (bv == null || bridgeMatches) MaterialTheme.colorScheme.onSurface else com.shriram.cinecode.theme.AppColors.warning
                     )
                 }
 
@@ -8306,8 +8306,8 @@ private fun AboutSubScreen(
                 if (updateCheckResultText != null) {
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = if (isUpdateCheckError) com.example.gemini.theme.AppColors.danger.copy(alpha = 0.12f) else QuotaGreen.copy(alpha = 0.12f),
-                        border = BorderStroke(1.dp, if (isUpdateCheckError) com.example.gemini.theme.AppColors.danger.copy(alpha = 0.3f) else QuotaGreen.copy(alpha = 0.3f)),
+                        color = if (isUpdateCheckError) com.shriram.cinecode.theme.AppColors.danger.copy(alpha = 0.12f) else QuotaGreen.copy(alpha = 0.12f),
+                        border = BorderStroke(1.dp, if (isUpdateCheckError) com.shriram.cinecode.theme.AppColors.danger.copy(alpha = 0.3f) else QuotaGreen.copy(alpha = 0.3f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -8318,13 +8318,13 @@ private fun AboutSubScreen(
                             Icon(
                                 imageVector = if (isUpdateCheckError) Icons.Default.Warning else Icons.Default.CheckCircle,
                                 contentDescription = null,
-                                tint = if (isUpdateCheckError) com.example.gemini.theme.AppColors.danger else QuotaGreen,
+                                tint = if (isUpdateCheckError) com.shriram.cinecode.theme.AppColors.danger else QuotaGreen,
                                 modifier = Modifier.size(18.dp)
                             )
                             Text(
                                 text = updateCheckResultText!!,
                                 fontSize = 12.sp,
-                                color = if (isUpdateCheckError) com.example.gemini.theme.AppColors.danger else QuotaGreen
+                                color = if (isUpdateCheckError) com.shriram.cinecode.theme.AppColors.danger else QuotaGreen
                             )
                         }
                     }
@@ -8404,7 +8404,7 @@ private fun AboutSubScreen(
                         Icon(
                             imageVector = Icons.Outlined.FolderZip,
                             contentDescription = null,
-                            tint = com.example.gemini.theme.AppColors.accentTeal,
+                            tint = com.shriram.cinecode.theme.AppColors.accentTeal,
                             modifier = Modifier.size(20.dp)
                         )
                         Text(
@@ -8483,7 +8483,7 @@ private fun AboutSubScreen(
                         enabled = !isExportingBridge,
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = com.example.gemini.theme.AppColors.accentTeal)
+                        colors = ButtonDefaults.buttonColors(containerColor = com.shriram.cinecode.theme.AppColors.accentTeal)
                     ) {
                         if (isExportingBridge) {
                             CircularProgressIndicator(
@@ -8516,16 +8516,16 @@ private fun AboutSubScreen(
                             },
                             modifier = Modifier.weight(0.7f),
                             shape = RoundedCornerShape(10.dp),
-                            border = BorderStroke(1.dp, com.example.gemini.theme.AppColors.accentTeal.copy(alpha = 0.5f))
+                            border = BorderStroke(1.dp, com.shriram.cinecode.theme.AppColors.accentTeal.copy(alpha = 0.5f))
                         ) {
                             Icon(
                                 imageVector = Icons.Default.OpenInNew,
                                 contentDescription = null,
-                                tint = com.example.gemini.theme.AppColors.accentTeal,
+                                tint = com.shriram.cinecode.theme.AppColors.accentTeal,
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("View File", fontSize = 12.5.sp, color = com.example.gemini.theme.AppColors.accentTeal)
+                            Text("View File", fontSize = 12.5.sp, color = com.shriram.cinecode.theme.AppColors.accentTeal)
                         }
                     }
                 }

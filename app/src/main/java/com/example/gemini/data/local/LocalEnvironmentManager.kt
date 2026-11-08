@@ -1,4 +1,4 @@
-package com.example.gemini.data.local
+package com.shriram.cinecode.data.local
 
 import android.app.ActivityManager
 import android.app.NotificationChannel
@@ -11,8 +11,8 @@ import android.provider.Settings
 import android.system.Os
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import com.example.gemini.R
-import com.example.gemini.data.preferences.AuthPreferences
+import com.shriram.cinecode.R
+import com.shriram.cinecode.data.preferences.AuthPreferences
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -172,7 +172,7 @@ object LocalEnvironmentManager {
     fun getHomeDir(context: Context): File = File(context.filesDir, "home")
     fun getProjectsDir(context: Context): File = File(getHomeDir(context), "projects")
     fun getUbuntuRootDir(context: Context): File = File(context.filesDir, "ubuntu")
-    fun isTermuxPackage(context: Context): Boolean = context.packageName == "com.termux"
+    fun isTermuxPackage(context: Context): Boolean = context.packageName == "com.shriram.cinecode"
 
     fun ensureProotExtracted(context: Context): String {
         val binDir = File(context.filesDir, "bin")
@@ -612,7 +612,7 @@ object LocalEnvironmentManager {
             if (!libexecDir.exists()) libexecDir.mkdirs()
             val dispatcherFile = File(libexecDir, "termux-api")
             val scriptContent = """
-                #!/data/data/com.termux/files/usr/bin/bash
+                #!/data/data/com.shriram.cinecode/files/usr/bin/bash
                 METHOD="${'$'}1"
                 shift
 
@@ -624,13 +624,13 @@ object LocalEnvironmentManager {
                     fi
                 fi
 
-                TMP_DIR="${'$'}{TMPDIR:-/data/data/com.termux/files/usr/tmp}"
+                TMP_DIR="${'$'}{TMPDIR:-/data/data/com.shriram.cinecode/files/usr/tmp}"
                 mkdir -p "${'$'}TMP_DIR"
                 TMP_OUT="${'$'}TMP_DIR/api_out.${'$'}${'$'}"
 
                 am broadcast --user 0 \
-                    -a "com.termux.api" \
-                    -n "com.termux/com.example.gemini.data.receiver.TermuxApiReceiver" \
+                    -a "com.shriram.cinecode.api" \
+                    -n "com.shriram.cinecode/com.shriram.cinecode.data.receiver.TermuxApiReceiver" \
                     --es "api_method" "${'$'}METHOD" \
                     --es "socket_output" "${'$'}TMP_OUT" \
                     "${'$'}{EXTRA_ARGS[@]}" \
@@ -2594,7 +2594,7 @@ All files created here persist inside the application.
         LocalServerManager.resetAutoStartFlag()
 
         try {
-            com.example.gemini.data.remote.AgyBridgeService.instance.notifyLocalStopped()
+            com.shriram.cinecode.data.remote.AgyBridgeService.instance.notifyLocalStopped()
         } catch (_: Exception) {}
 
         val appContext = context.applicationContext
@@ -2636,7 +2636,7 @@ All files created here persist inside the application.
             File(binDir, "bash").exists() -> File(binDir, "bash").absolutePath
             File(prefixDir, "bin/bash").exists() -> File(prefixDir, "bin/bash").absolutePath
             File(binDir, "sh").exists() -> File(binDir, "sh").absolutePath
-            File("/data/data/com.termux/files/usr/bin/bash").exists() -> "/data/data/com.termux/files/usr/bin/bash"
+            File("/data/data/com.shriram.cinecode/files/usr/bin/bash").exists() -> "/data/data/com.shriram.cinecode/files/usr/bin/bash"
             else -> "sh"
         }
 
@@ -2698,7 +2698,7 @@ All files created here persist inside the application.
             File(binDir, "bash").exists() -> File(binDir, "bash").absolutePath
             File(prefixDir, "bin/bash").exists() -> File(prefixDir, "bin/bash").absolutePath
             File(binDir, "sh").exists() -> File(binDir, "sh").absolutePath
-            File("/data/data/com.termux/files/usr/bin/bash").exists() -> "/data/data/com.termux/files/usr/bin/bash"
+            File("/data/data/com.shriram.cinecode/files/usr/bin/bash").exists() -> "/data/data/com.shriram.cinecode/files/usr/bin/bash"
             else -> "sh"
         }
 

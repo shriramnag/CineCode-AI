@@ -1,4 +1,4 @@
-package com.example.gemini.data.receiver
+package com.shriram.cinecode.data.receiver
 
 import android.app.ActivityOptions
 import android.app.NotificationChannel
@@ -15,7 +15,7 @@ import android.webkit.MimeTypeMap
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.content.FileProvider
-import com.example.gemini.R
+import com.shriram.cinecode.R
 import java.io.File
 
 open class TermuxOpenReceiver : BroadcastReceiver() {
@@ -121,7 +121,7 @@ open class TermuxOpenReceiver : BroadcastReceiver() {
 
         private fun launchSafely(context: Context, intent: Intent, title: String, description: String) {
             // Priority 1: If user is actively inside the app, launch directly from foreground Activity to bypass BAL
-            val foregroundActivity = com.example.gemini.MainActivity.currentInstance
+            val foregroundActivity = com.shriram.cinecode.MainActivity.currentInstance
             if (foregroundActivity != null) {
                 try {
                     foregroundActivity.startActivity(intent)

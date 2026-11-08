@@ -1,16 +1,16 @@
-package com.example.gemini.domain.chat
+package com.shriram.cinecode.domain.chat
 
 import android.util.Log
-import com.example.gemini.domain.model.ArtifactSnapshot
-import com.example.gemini.domain.model.ChatAttachment
-import com.example.gemini.domain.model.ChoiceQuestionnaire
-import com.example.gemini.domain.model.ChatMessage
-import com.example.gemini.domain.model.ChatTurn
-import com.example.gemini.domain.model.MessageRole
-import com.example.gemini.domain.model.TokenUsage
-import com.example.gemini.domain.model.ToolCall
-import com.example.gemini.domain.model.ToolType
-import com.example.gemini.domain.model.TurnBlock
+import com.shriram.cinecode.domain.model.ArtifactSnapshot
+import com.shriram.cinecode.domain.model.ChatAttachment
+import com.shriram.cinecode.domain.model.ChoiceQuestionnaire
+import com.shriram.cinecode.domain.model.ChatMessage
+import com.shriram.cinecode.domain.model.ChatTurn
+import com.shriram.cinecode.domain.model.MessageRole
+import com.shriram.cinecode.domain.model.TokenUsage
+import com.shriram.cinecode.domain.model.ToolCall
+import com.shriram.cinecode.domain.model.ToolType
+import com.shriram.cinecode.domain.model.TurnBlock
 import exa.language_server_pb.AgentMessage
 import exa.language_server_pb.AgentStateUpdate
 import exa.language_server_pb.CascadeRunStatus

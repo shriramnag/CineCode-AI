@@ -1,4 +1,4 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
@@ -23,11 +23,11 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gemini.data.remote.dto.AskQuestionOptionDto
-import com.example.gemini.data.remote.dto.AskQuestionResponseItemDto
-import com.example.gemini.domain.model.*
-import com.example.gemini.theme.ClaudeTerracotta
-import com.example.gemini.theme.QuotaGreen
+import com.shriram.cinecode.data.remote.dto.AskQuestionOptionDto
+import com.shriram.cinecode.data.remote.dto.AskQuestionResponseItemDto
+import com.shriram.cinecode.domain.model.*
+import com.shriram.cinecode.theme.ClaudeTerracotta
+import com.shriram.cinecode.theme.QuotaGreen
 
 /** True where the chat shows unanswered questions in the docked question panel; the card then stays compact. */
 val LocalQuestionPanelActive = staticCompositionLocalOf { false }
@@ -51,8 +51,8 @@ fun ChoiceQuestionnaireCard(
                 .fillMaxWidth()
                 .padding(vertical = 4.dp),
             shape = RoundedCornerShape(12.dp),
-            color = com.example.gemini.theme.AppColors.card,
-            border = BorderStroke(1.dp, com.example.gemini.theme.AppColors.border)
+            color = com.shriram.cinecode.theme.AppColors.card,
+            border = BorderStroke(1.dp, com.shriram.cinecode.theme.AppColors.border)
         ) {
             Column(modifier = Modifier.padding(14.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -67,14 +67,14 @@ fun ChoiceQuestionnaireCard(
                         text = "Questionnaire",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
-                        color = com.example.gemini.theme.AppColors.onBackground
+                        color = com.shriram.cinecode.theme.AppColors.onBackground
                     )
                 }
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = toolCall.command,
                     fontSize = 12.sp,
-                    color = com.example.gemini.theme.AppColors.textSecondary
+                    color = com.shriram.cinecode.theme.AppColors.textSecondary
                 )
             }
         }
@@ -101,10 +101,10 @@ fun ChoiceQuestionnaireCard(
             .fillMaxWidth()
             .padding(vertical = 6.dp),
         shape = RoundedCornerShape(14.dp),
-        color = com.example.gemini.theme.AppColors.card,
+        color = com.shriram.cinecode.theme.AppColors.card,
         border = BorderStroke(
             1.2.dp,
-            if (isCompleted) QuotaGreen.copy(alpha = 0.5f) else com.example.gemini.theme.AppColors.border
+            if (isCompleted) QuotaGreen.copy(alpha = 0.5f) else com.shriram.cinecode.theme.AppColors.border
         )
     ) {
         Column(
@@ -129,7 +129,7 @@ fun ChoiceQuestionnaireCard(
                         text = "Preferences Submitted",
                         fontSize = 13.5.sp,
                         fontWeight = FontWeight.Bold,
-                        color = com.example.gemini.theme.AppColors.onBackground
+                        color = com.shriram.cinecode.theme.AppColors.onBackground
                     )
                 }
 
@@ -143,8 +143,8 @@ fun ChoiceQuestionnaireCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(8.dp))
-                        .background(com.example.gemini.theme.AppColors.fill)
-                        .border(BorderStroke(1.dp, com.example.gemini.theme.AppColors.border), RoundedCornerShape(8.dp))
+                        .background(com.shriram.cinecode.theme.AppColors.fill)
+                        .border(BorderStroke(1.dp, com.shriram.cinecode.theme.AppColors.border), RoundedCornerShape(8.dp))
                         .padding(10.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
@@ -159,14 +159,14 @@ fun ChoiceQuestionnaireCard(
                                     text = "Q:",
                                     fontSize = 12.5.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = com.example.gemini.theme.AppColors.info,
+                                    color = com.shriram.cinecode.theme.AppColors.info,
                                     modifier = Modifier.padding(end = 6.dp)
                                 )
                                 Text(
                                     text = item.question,
                                     fontSize = 12.5.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = com.example.gemini.theme.AppColors.onBackground,
+                                    color = com.shriram.cinecode.theme.AppColors.onBackground,
                                     lineHeight = 17.sp,
                                     modifier = Modifier.weight(1f)
                                 )
@@ -190,7 +190,7 @@ fun ChoiceQuestionnaireCard(
                                     text = item.answer,
                                     fontSize = 12.5.sp,
                                     fontWeight = FontWeight.Medium,
-                                    color = com.example.gemini.theme.AppColors.onBackground,
+                                    color = com.shriram.cinecode.theme.AppColors.onBackground,
                                     lineHeight = 17.sp,
                                     modifier = Modifier.weight(1f)
                                 )
@@ -199,7 +199,7 @@ fun ChoiceQuestionnaireCard(
 
                         if (index < pairs.lastIndex) {
                             HorizontalDivider(
-                                color = com.example.gemini.theme.AppColors.card,
+                                color = com.shriram.cinecode.theme.AppColors.card,
                                 thickness = 1.dp,
                                 modifier = Modifier.padding(top = 4.dp)
                             )
@@ -244,7 +244,7 @@ fun ChoiceQuestionnaireCard(
                     if (qIndex < questionnaire.questions.lastIndex) {
                         Spacer(modifier = Modifier.height(18.dp))
                         HorizontalDivider(
-                            color = com.example.gemini.theme.AppColors.card,
+                            color = com.shriram.cinecode.theme.AppColors.card,
                             thickness = 1.dp,
                             modifier = Modifier.padding(vertical = 4.dp)
                         )
@@ -269,7 +269,7 @@ fun ChoiceQuestionnaireCard(
                         Text(
                             text = "Cancel",
                             fontSize = 12.5.sp,
-                            color = com.example.gemini.theme.AppColors.textSecondary
+                            color = com.shriram.cinecode.theme.AppColors.textSecondary
                         )
                     }
 
@@ -293,7 +293,7 @@ fun ChoiceQuestionnaireCard(
                             Text(
                                 text = "Skip",
                                 fontSize = 12.5.sp,
-                                color = com.example.gemini.theme.AppColors.textSecondary
+                                color = com.shriram.cinecode.theme.AppColors.textSecondary
                             )
                         }
 
@@ -385,7 +385,7 @@ private fun QuestionBlockView(
             Icon(
                 imageVector = Icons.Outlined.ChatBubbleOutline,
                 contentDescription = null,
-                tint = com.example.gemini.theme.AppColors.textSecondary,
+                tint = com.shriram.cinecode.theme.AppColors.textSecondary,
                 modifier = Modifier.size(16.dp)
             )
 
@@ -395,7 +395,7 @@ private fun QuestionBlockView(
                 text = question.prompt,
                 fontSize = 13.5.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = com.example.gemini.theme.AppColors.onBackground,
+                color = com.shriram.cinecode.theme.AppColors.onBackground,
                 modifier = Modifier.weight(1f)
             )
 
@@ -403,14 +403,14 @@ private fun QuestionBlockView(
                 Spacer(modifier = Modifier.width(8.dp))
                 Surface(
                     shape = RoundedCornerShape(4.dp),
-                    color = com.example.gemini.theme.AppColors.fill,
+                    color = com.shriram.cinecode.theme.AppColors.fill,
                     modifier = Modifier.padding(start = 4.dp)
                 ) {
                     Text(
                         text = "Multi-select",
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Medium,
-                        color = com.example.gemini.theme.AppColors.textSecondary,
+                        color = com.shriram.cinecode.theme.AppColors.textSecondary,
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                     )
                 }
@@ -418,14 +418,14 @@ private fun QuestionBlockView(
                 Spacer(modifier = Modifier.width(8.dp))
                 Surface(
                     shape = RoundedCornerShape(4.dp),
-                    color = com.example.gemini.theme.AppColors.fill,
+                    color = com.shriram.cinecode.theme.AppColors.fill,
                     modifier = Modifier.padding(start = 4.dp)
                 ) {
                     Text(
                         text = "$questionNumber of $totalQuestions",
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Medium,
-                        color = com.example.gemini.theme.AppColors.textSecondary,
+                        color = com.shriram.cinecode.theme.AppColors.textSecondary,
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                     )
                 }
@@ -437,7 +437,7 @@ private fun QuestionBlockView(
             Text(
                 text = question.description,
                 fontSize = 11.5.sp,
-                color = com.example.gemini.theme.AppColors.textSecondary,
+                color = com.shriram.cinecode.theme.AppColors.textSecondary,
                 modifier = Modifier.padding(start = 24.dp)
             )
         }
@@ -491,21 +491,21 @@ private fun QuestionBlockView(
                             Text(
                                 text = "Type your custom answer here...",
                                 fontSize = 12.sp,
-                                color = com.example.gemini.theme.AppColors.textSecondary
+                                color = com.shriram.cinecode.theme.AppColors.textSecondary
                             )
                         },
                         textStyle = androidx.compose.ui.text.TextStyle(
                             fontSize = 12.5.sp,
-                            color = com.example.gemini.theme.AppColors.onBackground
+                            color = com.shriram.cinecode.theme.AppColors.onBackground
                         ),
                         modifier = Modifier.fillMaxWidth(),
                         maxLines = 3,
                         shape = RoundedCornerShape(8.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = ClaudeTerracotta,
-                            unfocusedBorderColor = com.example.gemini.theme.AppColors.border,
-                            focusedContainerColor = com.example.gemini.theme.AppColors.fill,
-                            unfocusedContainerColor = com.example.gemini.theme.AppColors.fill
+                            unfocusedBorderColor = com.shriram.cinecode.theme.AppColors.border,
+                            focusedContainerColor = com.shriram.cinecode.theme.AppColors.fill,
+                            unfocusedContainerColor = com.shriram.cinecode.theme.AppColors.fill
                         )
                     )
                 }
@@ -523,8 +523,8 @@ private fun OptionRow(
     isMultiSelect: Boolean,
     onClick: () -> Unit
 ) {
-    val bgColor = if (isSelected) com.example.gemini.theme.AppColors.fill else com.example.gemini.theme.AppColors.card
-    val borderColor = if (isSelected) ClaudeTerracotta.copy(alpha = 0.8f) else com.example.gemini.theme.AppColors.border
+    val bgColor = if (isSelected) com.shriram.cinecode.theme.AppColors.fill else com.shriram.cinecode.theme.AppColors.card
+    val borderColor = if (isSelected) ClaudeTerracotta.copy(alpha = 0.8f) else com.shriram.cinecode.theme.AppColors.border
 
     Surface(
         modifier = Modifier
@@ -544,7 +544,7 @@ private fun OptionRow(
             // Number Box [ 1 ], [ 2 ], etc. matching screenshot
             Surface(
                 shape = RoundedCornerShape(4.dp),
-                color = if (isSelected) ClaudeTerracotta else com.example.gemini.theme.AppColors.fill,
+                color = if (isSelected) ClaudeTerracotta else com.shriram.cinecode.theme.AppColors.fill,
                 modifier = Modifier.size(20.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -553,7 +553,7 @@ private fun OptionRow(
                         fontFamily = FontFamily.Monospace,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (isSelected) Color.White else com.example.gemini.theme.AppColors.onBackground
+                        color = if (isSelected) Color.White else com.shriram.cinecode.theme.AppColors.onBackground
                     )
                 }
             }
@@ -566,13 +566,13 @@ private fun OptionRow(
                     text = label,
                     fontSize = 12.5.sp,
                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                    color = if (isSelected) com.example.gemini.theme.AppColors.onBackground else com.example.gemini.theme.AppColors.onBackground
+                    color = if (isSelected) com.shriram.cinecode.theme.AppColors.onBackground else com.shriram.cinecode.theme.AppColors.onBackground
                 )
                 if (!description.isNullOrBlank()) {
                     Text(
                         text = description,
                         fontSize = 10.5.sp,
-                        color = com.example.gemini.theme.AppColors.textSecondary
+                        color = com.shriram.cinecode.theme.AppColors.textSecondary
                     )
                 }
             }
@@ -587,7 +587,7 @@ private fun OptionRow(
                     .background(if (isSelected) ClaudeTerracotta else Color.Transparent)
                     .border(
                         1.2.dp,
-                        if (isSelected) ClaudeTerracotta else com.example.gemini.theme.AppColors.textSecondary,
+                        if (isSelected) ClaudeTerracotta else com.shriram.cinecode.theme.AppColors.textSecondary,
                         if (isMultiSelect) RoundedCornerShape(4.dp) else CircleShape
                     ),
                 contentAlignment = Alignment.Center

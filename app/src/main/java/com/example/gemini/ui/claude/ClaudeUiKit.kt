@@ -1,4 +1,4 @@
-package com.example.gemini.ui.claude
+package com.shriram.cinecode.ui.claude
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -32,15 +32,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gemini.theme.ClaudeDarkSurface
-import com.example.gemini.theme.QuotaAmber
-import com.example.gemini.theme.QuotaGreen
-import com.example.gemini.theme.QuotaRed
-import com.example.gemini.theme.isAppInDarkTheme
-import com.example.gemini.ui.components.ClaudeAccent
+import com.shriram.cinecode.theme.ClaudeDarkSurface
+import com.shriram.cinecode.theme.QuotaAmber
+import com.shriram.cinecode.theme.QuotaGreen
+import com.shriram.cinecode.theme.QuotaRed
+import com.shriram.cinecode.theme.isAppInDarkTheme
+import com.shriram.cinecode.ui.components.ClaudeAccent
 
 @Composable
-fun claudeCardColor(): Color = com.example.gemini.theme.AppColors.card
+fun claudeCardColor(): Color = com.shriram.cinecode.theme.AppColors.card
 
 /** Navigation card matching the existing settings cards. */
 @Composable

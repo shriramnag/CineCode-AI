@@ -1,4 +1,4 @@
-package com.example.gemini.ui.ide
+package com.shriram.cinecode.ui.ide
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -54,7 +54,7 @@ fun NewProjectDialog(
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
                     border = androidx.compose.foundation.BorderStroke(
                         1.dp,
-                        if (projectName.isNotBlank()) com.example.gemini.theme.ClaudeTerracotta.copy(alpha = 0.6f)
+                        if (projectName.isNotBlank()) com.shriram.cinecode.theme.ClaudeTerracotta.copy(alpha = 0.6f)
                         else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
                     ),
                     modifier = Modifier.fillMaxWidth()
@@ -68,7 +68,7 @@ fun NewProjectDialog(
                             fontSize = 13.5.sp,
                             lineHeight = 18.sp
                         ),
-                        cursorBrush = androidx.compose.ui.graphics.SolidColor(com.example.gemini.theme.ClaudeTerracotta),
+                        cursorBrush = androidx.compose.ui.graphics.SolidColor(com.shriram.cinecode.theme.ClaudeTerracotta),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 12.dp, vertical = 11.dp),

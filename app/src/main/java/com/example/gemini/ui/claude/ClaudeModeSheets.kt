@@ -1,4 +1,4 @@
-package com.example.gemini.ui.claude
+package com.shriram.cinecode.ui.claude
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -42,18 +42,18 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gemini.domain.model.AgentKind
-import com.example.gemini.ui.agents.AgentSheetHeader
-import com.example.gemini.ui.components.ClaudeAccent
+import com.shriram.cinecode.domain.model.AgentKind
+import com.shriram.cinecode.ui.agents.AgentSheetHeader
+import com.shriram.cinecode.ui.components.ClaudeAccent
 
 /** Color of a permission mode (chip, picker icon). */
 @Composable
 fun permissionModeColor(mode: String): Color = when (mode) {
-    "plan" -> com.example.gemini.theme.AppColors.accentTeal
-    "acceptEdits" -> com.example.gemini.theme.AppColors.success
-    "auto" -> com.example.gemini.theme.AppColors.accentAlt
-    "bypassPermissions" -> com.example.gemini.theme.AppColors.danger
-    "dontAsk" -> com.example.gemini.theme.AppColors.warning
+    "plan" -> com.shriram.cinecode.theme.AppColors.accentTeal
+    "acceptEdits" -> com.shriram.cinecode.theme.AppColors.success
+    "auto" -> com.shriram.cinecode.theme.AppColors.accentAlt
+    "bypassPermissions" -> com.shriram.cinecode.theme.AppColors.danger
+    "dontAsk" -> com.shriram.cinecode.theme.AppColors.warning
     else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f)
 }
 

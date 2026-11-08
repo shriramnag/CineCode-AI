@@ -1,4 +1,4 @@
-package com.example.gemini.ui.agents
+package com.shriram.cinecode.ui.agents
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.EditNote
@@ -9,11 +9,11 @@ import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material.icons.outlined.TravelExplore
-import com.example.gemini.data.remote.dto.PermissionScopes
-import com.example.gemini.domain.model.AgentKind
-import com.example.gemini.domain.model.ToolCall
-import com.example.gemini.domain.model.ToolType
-import com.example.gemini.ui.chat.PendingToolApproval
+import com.shriram.cinecode.data.remote.dto.PermissionScopes
+import com.shriram.cinecode.domain.model.AgentKind
+import com.shriram.cinecode.domain.model.ToolCall
+import com.shriram.cinecode.domain.model.ToolType
+import com.shriram.cinecode.ui.chat.PendingToolApproval
 
 /**
  * Antigravity's pending tool approvals as approval-panel items: allow once, always allow (conversation /

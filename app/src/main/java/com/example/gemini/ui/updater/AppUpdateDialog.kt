@@ -1,4 +1,4 @@
-package com.example.gemini.ui.updater
+package com.shriram.cinecode.ui.updater
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -25,11 +25,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.example.gemini.data.updater.AppUpdateInfo
-import com.example.gemini.data.updater.AppUpdateManager
-import com.example.gemini.data.updater.DownloadState
-import com.example.gemini.theme.QuotaGreen
-import com.example.gemini.theme.QuotaRed
+import com.shriram.cinecode.data.updater.AppUpdateInfo
+import com.shriram.cinecode.data.updater.AppUpdateManager
+import com.shriram.cinecode.data.updater.DownloadState
+import com.shriram.cinecode.theme.QuotaGreen
+import com.shriram.cinecode.theme.QuotaRed
 import kotlinx.coroutines.launch
 import java.io.File
 import java.util.Locale

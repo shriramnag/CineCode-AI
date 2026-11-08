@@ -1,16 +1,16 @@
-package com.example.gemini.data.remote.services
+package com.shriram.cinecode.data.remote.services
 
 import android.util.Log
-import com.example.gemini.data.preferences.AuthPreferences
-import com.example.gemini.data.remote.AgyHubClient.AgyMediaItem
-import com.example.gemini.data.remote.AgyHubClient.Companion.resolveModelEnum
+import com.shriram.cinecode.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.remote.AgyHubClient.AgyMediaItem
+import com.shriram.cinecode.data.remote.AgyHubClient.Companion.resolveModelEnum
 
-import com.example.gemini.data.remote.dto.AgyStreamFrameDto
-import com.example.gemini.data.remote.dto.AskQuestionInteractionDto
-import com.example.gemini.data.remote.dto.AskQuestionResponseItemDto
-import com.example.gemini.data.remote.dto.CancelCascadeStepsRequestDto
-import com.example.gemini.data.remote.dto.CascadeInteractionPayloadDto
-import com.example.gemini.data.remote.dto.HandleCascadeUserInteractionRequestDto
+import com.shriram.cinecode.data.remote.dto.AgyStreamFrameDto
+import com.shriram.cinecode.data.remote.dto.AskQuestionInteractionDto
+import com.shriram.cinecode.data.remote.dto.AskQuestionResponseItemDto
+import com.shriram.cinecode.data.remote.dto.CancelCascadeStepsRequestDto
+import com.shriram.cinecode.data.remote.dto.CascadeInteractionPayloadDto
+import com.shriram.cinecode.data.remote.dto.HandleCascadeUserInteractionRequestDto
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow

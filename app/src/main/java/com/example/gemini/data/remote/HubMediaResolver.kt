@@ -1,4 +1,4 @@
-package com.example.gemini.data.remote
+package com.shriram.cinecode.data.remote
 
 import android.content.Context
 import android.util.Base64
@@ -42,7 +42,7 @@ object HubMediaResolver {
 
     /** A file served by the IDE bridge (Claude chat attachments): needs the bridge's auth header, so Coil cannot load it. */
     fun isBridgeFileUrl(uri: String): Boolean =
-        uri.startsWith(com.example.gemini.data.preferences.AuthPreferences.currentBridgeHttpUrl.trimEnd('/') + "/api/claude/attachments/")
+        uri.startsWith(com.shriram.cinecode.data.preferences.AuthPreferences.currentBridgeHttpUrl.trimEnd('/') + "/api/claude/attachments/")
 
     /** Downloads a bridge file with the authenticated client (null when it is gone or the bridge is offline). */
     suspend fun fetchBridgeFile(url: String): ByteArray? = withContext(Dispatchers.IO) {
@@ -73,15 +73,15 @@ object HubMediaResolver {
         val s = source.trim()
         if (s.isEmpty()) return null
         if (s.startsWith("http://") || s.startsWith("https://")) {
-            val fixed = com.example.gemini.data.preferences.AuthPreferences.rebaseBridgeUrl(s)
-            return fixed.takeIf { com.example.gemini.data.preferences.AuthPreferences.isBridgeUrl(it) }
+            val fixed = com.shriram.cinecode.data.preferences.AuthPreferences.rebaseBridgeUrl(s)
+            return fixed.takeIf { com.shriram.cinecode.data.preferences.AuthPreferences.isBridgeUrl(it) }
         }
         if (s.startsWith("content://")) return null
-        if (!com.example.gemini.data.preferences.AuthPreferences.currentRemoteMode) return null
+        if (!com.shriram.cinecode.data.preferences.AuthPreferences.currentRemoteMode) return null
         val path = s.removePrefix("file://")
         // a file that exists on this phone (for example a video you attached) is always used directly
         if (runCatching { File(path).canRead() }.getOrDefault(false)) return null
-        val base = com.example.gemini.data.preferences.AuthPreferences.currentBridgeHttpUrl.trimEnd('/')
+        val base = com.shriram.cinecode.data.preferences.AuthPreferences.currentBridgeHttpUrl.trimEnd('/')
         return "$base/api/file/read?path=" + java.net.URLEncoder.encode(path, "UTF-8")
     }
 
@@ -171,7 +171,7 @@ object HubMediaResolver {
         context: Context,
         rawUri: String,
         agyHubClient: AgyHubClient = AgyHubClient(),
-        hubUrl: String = com.example.gemini.data.preferences.AuthPreferences.currentHubUrl
+        hubUrl: String = com.shriram.cinecode.data.preferences.AuthPreferences.currentHubUrl
     ): String = withContext(Dispatchers.IO) {
         if (rawUri.isBlank()) return@withContext ""
         if (isBridgeFileUrl(rawUri)) {

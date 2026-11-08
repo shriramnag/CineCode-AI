@@ -1,4 +1,4 @@
-package com.example.gemini.ui.ide
+package com.shriram.cinecode.ui.ide
 
 import android.content.Context
 import android.view.KeyEvent
@@ -28,11 +28,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import com.example.gemini.data.local.LocalPtySession
-import com.example.gemini.theme.ClaudeTerracotta
-import com.termux.terminal.TerminalSession
-import com.termux.view.TerminalView
-import com.termux.view.TerminalViewClient
+import com.shriram.cinecode.data.local.LocalPtySession
+import com.shriram.cinecode.theme.ClaudeTerracotta
+import com.shriram.cinecode.terminal.TerminalSession
+import com.shriram.cinecode.view.TerminalView
+import com.shriram.cinecode.view.TerminalViewClient
 import java.util.UUID
 import kotlinx.coroutines.flow.first
 
@@ -61,7 +61,7 @@ fun IdeExecutionRunnerSheet(
     var altState by remember { mutableStateOf(IdeKeyModifierState.OFF) }
 
     // Remote mode: the command runs on the server, in its own tmux session reached over SSH
-    val remoteRun = com.example.gemini.data.preferences.AuthPreferences.currentRemoteMode
+    val remoteRun = com.shriram.cinecode.data.preferences.AuthPreferences.currentRemoteMode
     val runSessionName = remember(sessionKey) { "antigem-run-" + UUID.randomUUID().toString().take(8) }
 
     val ptySession = remember(sessionKey) {
@@ -69,7 +69,7 @@ fun IdeExecutionRunnerSheet(
         val escapedCmd = displayCmd.replace("\\", "\\\\").replace("\"", "\\\"").replace("$", "\\$")
         val wrappedCmd = "echo -e \"\\033[1;32m▶ $escapedCmd\\033[0m\"; $displayCmd"
         if (remoteRun) {
-            val prefs = com.example.gemini.data.preferences.AuthPreferences(context)
+            val prefs = com.shriram.cinecode.data.preferences.AuthPreferences(context)
             val (host, port, user, pass) = kotlinx.coroutines.runBlocking(kotlinx.coroutines.Dispatchers.IO) {
                 listOf(
                     prefs.termuxSshHost.first(), prefs.termuxSshPort.first().toString(),
@@ -108,7 +108,7 @@ fun IdeExecutionRunnerSheet(
         onDispose {
             if (remoteRun) {
                 ptySession.close()
-                com.example.gemini.data.remote.RemoteServerManager.killTmuxSession(runSessionName)
+                com.shriram.cinecode.data.remote.RemoteServerManager.killTmuxSession(runSessionName)
             } else {
                 closeWithChildren(ptySession)
             }
@@ -147,7 +147,7 @@ fun IdeExecutionRunnerSheet(
     }
 
     Surface(
-        color = com.example.gemini.theme.AppColors.editorBg,
+        color = com.shriram.cinecode.theme.AppColors.editorBg,
         modifier = modifier.fillMaxSize()
     ) {
         Column(
@@ -159,8 +159,8 @@ fun IdeExecutionRunnerSheet(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(com.example.gemini.theme.AppColors.editorPanel)
-                    .border(BorderStroke(0.5.dp, com.example.gemini.theme.AppColors.editorBorder))
+                    .background(com.shriram.cinecode.theme.AppColors.editorPanel)
+                    .border(BorderStroke(0.5.dp, com.shriram.cinecode.theme.AppColors.editorBorder))
                     .padding(horizontal = 12.dp, vertical = 8.dp)
             ) {
                 Row(
@@ -172,7 +172,7 @@ fun IdeExecutionRunnerSheet(
                         modifier = Modifier
                             .size(10.dp)
                             .clip(CircleShape)
-                            .background(if (!isExited) com.example.gemini.theme.AppColors.success else com.example.gemini.theme.AppColors.danger)
+                            .background(if (!isExited) com.shriram.cinecode.theme.AppColors.success else com.shriram.cinecode.theme.AppColors.danger)
                     )
 
                     Column {
@@ -189,7 +189,7 @@ fun IdeExecutionRunnerSheet(
                             fontSize = 11.sp,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            color = if (!isExited) com.example.gemini.theme.AppColors.success else com.example.gemini.theme.AppColors.danger
+                            color = if (!isExited) com.shriram.cinecode.theme.AppColors.success else com.shriram.cinecode.theme.AppColors.danger
                         )
                     }
                 }
@@ -228,7 +228,7 @@ fun IdeExecutionRunnerSheet(
                         Icon(
                             imageVector = Icons.Default.Stop,
                             contentDescription = "Stop",
-                            tint = if (!isExited) com.example.gemini.theme.AppColors.danger else Color.DarkGray,
+                            tint = if (!isExited) com.shriram.cinecode.theme.AppColors.danger else Color.DarkGray,
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -271,7 +271,7 @@ fun IdeExecutionRunnerSheet(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .background(com.example.gemini.theme.AppColors.terminalBg)
+                    .background(com.shriram.cinecode.theme.AppColors.terminalBg)
                     .padding(horizontal = 4.dp, vertical = 2.dp)
             ) {
                 key(sessionKey) {
@@ -397,8 +397,8 @@ fun IdeExecutionRunnerSheet(
 
             // Bottom Extra Keys Bar (Quick access to terminal navigation)
             Surface(
-                color = com.example.gemini.theme.AppColors.editorBg,
-                border = BorderStroke(0.5.dp, com.example.gemini.theme.AppColors.editorBorder),
+                color = com.shriram.cinecode.theme.AppColors.editorBg,
+                border = BorderStroke(0.5.dp, com.shriram.cinecode.theme.AppColors.editorBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -514,23 +514,23 @@ private fun IdeTermKey(
     }
 
     val backgroundColor = when {
-        isPressed -> com.example.gemini.theme.AppColors.editorLine
+        isPressed -> com.shriram.cinecode.theme.AppColors.editorLine
         isLocked -> ClaudeTerracotta.copy(alpha = 0.5f)
         isActive -> ClaudeTerracotta.copy(alpha = 0.25f)
-        else -> com.example.gemini.theme.AppColors.editorPanel
+        else -> com.shriram.cinecode.theme.AppColors.editorPanel
     }
 
     val textColor = when {
         isPressed -> Color.White
         isLocked -> Color.White
         isActive -> ClaudeTerracotta
-        else -> com.example.gemini.theme.AppColors.editorText
+        else -> com.shriram.cinecode.theme.AppColors.editorText
     }
 
     val border = when {
         isLocked -> BorderStroke(1.dp, ClaudeTerracotta)
         isActive -> BorderStroke(0.5.dp, ClaudeTerracotta.copy(alpha = 0.5f))
-        else -> BorderStroke(0.5.dp, com.example.gemini.theme.AppColors.editorBorder)
+        else -> BorderStroke(0.5.dp, com.shriram.cinecode.theme.AppColors.editorBorder)
     }
 
     Surface(

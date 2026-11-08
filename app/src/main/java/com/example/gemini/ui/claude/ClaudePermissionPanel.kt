@@ -1,4 +1,4 @@
-package com.example.gemini.ui.claude
+package com.shriram.cinecode.ui.claude
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.NoteAdd
@@ -11,11 +11,11 @@ import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material.icons.outlined.TravelExplore
 import androidx.compose.ui.graphics.vector.ImageVector
-import com.example.gemini.data.agent.claude.ClaudeChatBackend
-import com.example.gemini.data.agent.claude.ClaudeTranscript
-import com.example.gemini.domain.model.AgentKind
-import com.example.gemini.ui.agents.ApprovalChoice
-import com.example.gemini.ui.agents.ApprovalItem
+import com.shriram.cinecode.data.agent.claude.ClaudeChatBackend
+import com.shriram.cinecode.data.agent.claude.ClaudeTranscript
+import com.shriram.cinecode.domain.model.AgentKind
+import com.shriram.cinecode.ui.agents.ApprovalChoice
+import com.shriram.cinecode.ui.agents.ApprovalItem
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject

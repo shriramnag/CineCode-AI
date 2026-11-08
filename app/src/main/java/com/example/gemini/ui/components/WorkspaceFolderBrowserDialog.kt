@@ -1,4 +1,4 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -24,9 +24,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.example.gemini.data.daemon.IdeApiClient
-import com.example.gemini.data.daemon.ProjectItem
-import com.example.gemini.theme.ClaudeTerracotta
+import com.shriram.cinecode.data.daemon.IdeApiClient
+import com.shriram.cinecode.data.daemon.ProjectItem
+import com.shriram.cinecode.theme.ClaudeTerracotta
 import kotlinx.coroutines.launch
 import java.io.File
 

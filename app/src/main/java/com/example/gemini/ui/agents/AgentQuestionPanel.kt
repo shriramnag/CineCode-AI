@@ -1,4 +1,4 @@
-package com.example.gemini.ui.agents
+package com.shriram.cinecode.ui.agents
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -54,16 +54,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gemini.data.remote.dto.AskQuestionOptionDto
-import com.example.gemini.data.remote.dto.AskQuestionResponseItemDto
-import com.example.gemini.domain.model.AgentKind
-import com.example.gemini.domain.model.ChoiceQuestion
-import com.example.gemini.domain.model.ToolCall
-import com.example.gemini.domain.model.ToolType
-import com.example.gemini.domain.model.ChatMessage
-import com.example.gemini.ui.components.accent
-import com.example.gemini.ui.components.formatSelectionsSummary
-import com.example.gemini.ui.components.label
+import com.shriram.cinecode.data.remote.dto.AskQuestionOptionDto
+import com.shriram.cinecode.data.remote.dto.AskQuestionResponseItemDto
+import com.shriram.cinecode.domain.model.AgentKind
+import com.shriram.cinecode.domain.model.ChoiceQuestion
+import com.shriram.cinecode.domain.model.ToolCall
+import com.shriram.cinecode.domain.model.ToolType
+import com.shriram.cinecode.domain.model.ChatMessage
+import com.shriram.cinecode.ui.components.accent
+import com.shriram.cinecode.ui.components.formatSelectionsSummary
+import com.shriram.cinecode.ui.components.label
 
 /** A question an agent is waiting on (Claude's AskUserQuestion, Antigravity's ask-choice step). */
 class PendingQuestion(val agent: AgentKind, val toolCall: ToolCall, val messageId: String)

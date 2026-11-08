@@ -1,4 +1,4 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import android.annotation.SuppressLint
 import android.content.ClipData
@@ -19,7 +19,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
-import com.example.gemini.theme.isAppInDarkTheme
+import com.shriram.cinecode.theme.isAppInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -95,10 +95,10 @@ import androidx.compose.material.icons.filled.BrokenImage
 import coil.compose.AsyncImage
 import coil.decode.SvgDecoder
 import coil.request.ImageRequest
-import com.example.gemini.data.remote.HubMediaResolver
-import com.example.gemini.theme.ClaudeTerracotta
-import com.example.gemini.theme.GeminiBlue
-import com.example.gemini.theme.QuotaGreen
+import com.shriram.cinecode.data.remote.HubMediaResolver
+import com.shriram.cinecode.theme.ClaudeTerracotta
+import com.shriram.cinecode.theme.GeminiBlue
+import com.shriram.cinecode.theme.QuotaGreen
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.delay
@@ -117,7 +117,7 @@ sealed class MarkdownBlock {
     @androidx.compose.runtime.Immutable
     data class AgentThought(val thought: String, val durationMs: Long? = null, val isStreaming: Boolean = false) : MarkdownBlock()
     @androidx.compose.runtime.Immutable
-    data class AgentTool(val toolCall: com.example.gemini.domain.model.ToolCall) : MarkdownBlock()
+    data class AgentTool(val toolCall: com.shriram.cinecode.domain.model.ToolCall) : MarkdownBlock()
     @androidx.compose.runtime.Immutable
     data class AgentError(
         val title: String = "Error",
@@ -169,11 +169,11 @@ sealed class MarkdownBlock {
 fun MarkdownBlockView(
     block: MarkdownBlock,
     modifier: Modifier = Modifier,
-    onApproveTool: ((com.example.gemini.domain.model.ToolCall) -> Unit)? = null,
-    onRejectTool: ((com.example.gemini.domain.model.ToolCall) -> Unit)? = null,
-    onTerminateTool: ((com.example.gemini.domain.model.ToolCall) -> Unit)? = null,
-    onSubmitChoices: ((com.example.gemini.domain.model.ToolCall, List<com.example.gemini.data.remote.dto.AskQuestionResponseItemDto>, String) -> Unit)? = null,
-    onSkipChoices: ((com.example.gemini.domain.model.ToolCall, List<com.example.gemini.data.remote.dto.AskQuestionResponseItemDto>) -> Unit)? = null
+    onApproveTool: ((com.shriram.cinecode.domain.model.ToolCall) -> Unit)? = null,
+    onRejectTool: ((com.shriram.cinecode.domain.model.ToolCall) -> Unit)? = null,
+    onTerminateTool: ((com.shriram.cinecode.domain.model.ToolCall) -> Unit)? = null,
+    onSubmitChoices: ((com.shriram.cinecode.domain.model.ToolCall, List<com.shriram.cinecode.data.remote.dto.AskQuestionResponseItemDto>, String) -> Unit)? = null,
+    onSkipChoices: ((com.shriram.cinecode.domain.model.ToolCall, List<com.shriram.cinecode.data.remote.dto.AskQuestionResponseItemDto>) -> Unit)? = null
 ) {
     when (block) {
         is MarkdownBlock.AgentThought -> {
@@ -383,37 +383,37 @@ fun MarkdownAlertView(
     val isDark = isAppInDarkTheme()
     val style = when (alert.type) {
         AlertType.NOTE -> AlertStyle(
-            accentColor = com.example.gemini.theme.AppColors.info,
-            lightBg = com.example.gemini.theme.AppColors.infoContainer,
-            darkBg = com.example.gemini.theme.AppColors.info.copy(alpha = 0.13f),
+            accentColor = com.shriram.cinecode.theme.AppColors.info,
+            lightBg = com.shriram.cinecode.theme.AppColors.infoContainer,
+            darkBg = com.shriram.cinecode.theme.AppColors.info.copy(alpha = 0.13f),
             defaultTitle = "Note",
             icon = Icons.Outlined.Info
         )
         AlertType.TIP -> AlertStyle(
-            accentColor = com.example.gemini.theme.AppColors.success,
-            lightBg = com.example.gemini.theme.AppColors.successContainer,
-            darkBg = com.example.gemini.theme.AppColors.success.copy(alpha = 0.13f),
+            accentColor = com.shriram.cinecode.theme.AppColors.success,
+            lightBg = com.shriram.cinecode.theme.AppColors.successContainer,
+            darkBg = com.shriram.cinecode.theme.AppColors.success.copy(alpha = 0.13f),
             defaultTitle = "Tip",
             icon = Icons.Outlined.Lightbulb
         )
         AlertType.IMPORTANT -> AlertStyle(
-            accentColor = com.example.gemini.theme.AppColors.accentAlt,
-            lightBg = com.example.gemini.theme.AppColors.fill,
-            darkBg = com.example.gemini.theme.AppColors.accentAlt.copy(alpha = 0.13f),
+            accentColor = com.shriram.cinecode.theme.AppColors.accentAlt,
+            lightBg = com.shriram.cinecode.theme.AppColors.fill,
+            darkBg = com.shriram.cinecode.theme.AppColors.accentAlt.copy(alpha = 0.13f),
             defaultTitle = "Important",
             icon = Icons.Outlined.PriorityHigh
         )
         AlertType.WARNING -> AlertStyle(
-            accentColor = com.example.gemini.theme.AppColors.warning,
-            lightBg = com.example.gemini.theme.AppColors.warningContainer,
-            darkBg = com.example.gemini.theme.AppColors.warning.copy(alpha = 0.13f),
+            accentColor = com.shriram.cinecode.theme.AppColors.warning,
+            lightBg = com.shriram.cinecode.theme.AppColors.warningContainer,
+            darkBg = com.shriram.cinecode.theme.AppColors.warning.copy(alpha = 0.13f),
             defaultTitle = "Warning",
             icon = Icons.Outlined.Warning
         )
         AlertType.CAUTION -> AlertStyle(
-            accentColor = com.example.gemini.theme.AppColors.danger,
-            lightBg = com.example.gemini.theme.AppColors.dangerContainer,
-            darkBg = com.example.gemini.theme.AppColors.danger.copy(alpha = 0.13f),
+            accentColor = com.shriram.cinecode.theme.AppColors.danger,
+            lightBg = com.shriram.cinecode.theme.AppColors.dangerContainer,
+            darkBg = com.shriram.cinecode.theme.AppColors.danger.copy(alpha = 0.13f),
             defaultTitle = "Caution",
             icon = Icons.Outlined.Report
         )
@@ -477,13 +477,13 @@ fun MarkdownAlertView(
 @Composable
 fun MarkdownContent(
     content: String,
-    toolCalls: List<com.example.gemini.domain.model.ToolCall> = emptyList(),
+    toolCalls: List<com.shriram.cinecode.domain.model.ToolCall> = emptyList(),
     modifier: Modifier = Modifier,
-    onApproveTool: ((com.example.gemini.domain.model.ToolCall) -> Unit)? = null,
-    onRejectTool: ((com.example.gemini.domain.model.ToolCall) -> Unit)? = null,
-    onTerminateTool: ((com.example.gemini.domain.model.ToolCall) -> Unit)? = null,
-    onSubmitChoices: ((com.example.gemini.domain.model.ToolCall, List<com.example.gemini.data.remote.dto.AskQuestionResponseItemDto>, String) -> Unit)? = null,
-    onSkipChoices: ((com.example.gemini.domain.model.ToolCall, List<com.example.gemini.data.remote.dto.AskQuestionResponseItemDto>) -> Unit)? = null
+    onApproveTool: ((com.shriram.cinecode.domain.model.ToolCall) -> Unit)? = null,
+    onRejectTool: ((com.shriram.cinecode.domain.model.ToolCall) -> Unit)? = null,
+    onTerminateTool: ((com.shriram.cinecode.domain.model.ToolCall) -> Unit)? = null,
+    onSubmitChoices: ((com.shriram.cinecode.domain.model.ToolCall, List<com.shriram.cinecode.data.remote.dto.AskQuestionResponseItemDto>, String) -> Unit)? = null,
+    onSkipChoices: ((com.shriram.cinecode.domain.model.ToolCall, List<com.shriram.cinecode.data.remote.dto.AskQuestionResponseItemDto>) -> Unit)? = null
 ) {
     val t0 = System.nanoTime()
     val blocks = remember(content, toolCalls) {
@@ -1341,9 +1341,9 @@ fun AgentErrorCard(
     var isExpanded by remember { mutableStateOf(false) }
     val isDark = isAppInDarkTheme()
 
-    val cardBg = com.example.gemini.theme.AppColors.dangerContainer
-    val cardBorder = com.example.gemini.theme.AppColors.dangerContainer
-    val errorColor = if (isDark) com.example.gemini.theme.AppColors.danger else com.example.gemini.theme.AppColors.danger
+    val cardBg = com.shriram.cinecode.theme.AppColors.dangerContainer
+    val cardBorder = com.shriram.cinecode.theme.AppColors.dangerContainer
+    val errorColor = if (isDark) com.shriram.cinecode.theme.AppColors.danger else com.shriram.cinecode.theme.AppColors.danger
 
     Surface(
         modifier = modifier
@@ -1481,7 +1481,7 @@ fun AgentErrorCard(
                             .fillMaxWidth()
                             .padding(top = 6.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(com.example.gemini.theme.AppColors.dangerContainer)
+                            .background(com.shriram.cinecode.theme.AppColors.dangerContainer)
                             .padding(8.dp)
                     ) {
                         if (error.errorId.isNotBlank()) {
@@ -1953,13 +1953,13 @@ fun YouTubeVideoView(
             .build()
     }
     val activeVideoId by remember {
-        com.example.gemini.data.media.YouTubeMediaSessionManager.playbackState
+        com.shriram.cinecode.data.media.YouTubeMediaSessionManager.playbackState
             .map { it?.videoId }
             .distinctUntilChanged()
     }.collectAsState(initial = null)
     val isPlaying = activeVideoId == video.videoId
     val onStartPlay: () -> Unit = {
-        com.example.gemini.data.media.YouTubeMediaSessionManager.getOrCreatePlayer(
+        com.shriram.cinecode.data.media.YouTubeMediaSessionManager.getOrCreatePlayer(
             context = context,
             video = video
         )
@@ -2073,7 +2073,7 @@ fun YouTubeVideoView(
                     if (isPlaying) {
                         IconButton(
                             onClick = {
-                                com.example.gemini.data.media.YouTubeMediaSessionManager.release()
+                                com.shriram.cinecode.data.media.YouTubeMediaSessionManager.release()
                             },
                             modifier = Modifier.size(28.dp)
                         ) {
@@ -2161,13 +2161,13 @@ fun YouTubeVideoView(
                 } else {
                     DisposableEffect(video.videoId) {
                         onDispose {
-                            com.example.gemini.data.media.YouTubeMediaSessionManager.parkActivePlayer(context)
+                            com.shriram.cinecode.data.media.YouTubeMediaSessionManager.parkActivePlayer(context)
                         }
                     }
 
                     AndroidView(
                         factory = { ctx ->
-                            com.example.gemini.data.media.YouTubeMediaSessionManager.getOrCreatePlayer(
+                            com.shriram.cinecode.data.media.YouTubeMediaSessionManager.getOrCreatePlayer(
                                 context = ctx,
                                 video = video,
                                 onCustomView = { view, callback ->
@@ -2185,7 +2185,7 @@ fun YouTubeVideoView(
                             )
                         },
                         update = { _ ->
-                            com.example.gemini.data.media.YouTubeMediaSessionManager.updateCallbacks(
+                            com.shriram.cinecode.data.media.YouTubeMediaSessionManager.updateCallbacks(
                                 onCustomView = { view, callback ->
                                     (view.parent as? android.view.ViewGroup)?.removeView(view)
                                     customFullscreenView = view
@@ -2662,9 +2662,9 @@ private fun buildRichAnnotatedString(
                 )
                 builder.pushStyle(
                     SpanStyle(
-                        color = com.example.gemini.theme.AppColors.accentAlt,
+                        color = com.shriram.cinecode.theme.AppColors.accentAlt,
                         fontWeight = FontWeight.SemiBold,
-                        background = com.example.gemini.theme.AppColors.accentAlt.copy(alpha = 0.12f)
+                        background = com.shriram.cinecode.theme.AppColors.accentAlt.copy(alpha = 0.12f)
                     )
                 )
                 builder.append(" 💬 $displayLabel ")
@@ -2738,9 +2738,9 @@ private fun buildRichAnnotatedString(
                 )
                 builder.pushStyle(
                     SpanStyle(
-                        color = com.example.gemini.theme.AppColors.accentAlt,
+                        color = com.shriram.cinecode.theme.AppColors.accentAlt,
                         fontWeight = FontWeight.SemiBold,
-                        background = com.example.gemini.theme.AppColors.accentAlt.copy(alpha = 0.12f)
+                        background = com.shriram.cinecode.theme.AppColors.accentAlt.copy(alpha = 0.12f)
                     )
                 )
                 builder.append(" 💬 $displayLabel ")
@@ -2798,9 +2798,9 @@ private fun buildRichAnnotatedString(
             )
             builder.pushStyle(
                 SpanStyle(
-                    color = com.example.gemini.theme.AppColors.accentAlt,
+                    color = com.shriram.cinecode.theme.AppColors.accentAlt,
                     fontWeight = FontWeight.SemiBold,
-                    background = com.example.gemini.theme.AppColors.accentAlt.copy(alpha = 0.12f)
+                    background = com.shriram.cinecode.theme.AppColors.accentAlt.copy(alpha = 0.12f)
                 )
             )
             builder.append(" 💬 $displayLabel ")
@@ -2857,7 +2857,7 @@ private fun buildRichAnnotatedString(
                         fontFamily = FontFamily.Monospace,
                         background = parsedColor.copy(alpha = if (isDark) 0.22f else 0.14f),
                         fontWeight = FontWeight.Bold,
-                        color = com.example.gemini.theme.AppColors.onBackground,
+                        color = com.shriram.cinecode.theme.AppColors.onBackground,
                         fontSize = 12.5.sp
                     )
                 )
@@ -2867,7 +2867,7 @@ private fun buildRichAnnotatedString(
                 builder.pushStyle(
                     SpanStyle(
                         fontFamily = FontFamily.Monospace,
-                        background = com.example.gemini.theme.AppColors.warning.copy(alpha = 0.14f),
+                        background = com.shriram.cinecode.theme.AppColors.warning.copy(alpha = 0.14f),
                         fontWeight = FontWeight.SemiBold,
                         color = ClaudeTerracotta,
                         fontSize = 12.5.sp
@@ -3010,8 +3010,8 @@ private fun buildRichAnnotatedString(
                     fontFamily = FontFamily.Monospace,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
-                    background = com.example.gemini.theme.AppColors.fill,
-                    color = com.example.gemini.theme.AppColors.onBackground
+                    background = com.shriram.cinecode.theme.AppColors.fill,
+                    color = com.shriram.cinecode.theme.AppColors.onBackground
                 )
             )
             builder.append(" $content ")
@@ -3095,7 +3095,7 @@ private fun parseErrorPayloadToBlock(raw: String): MarkdownBlock.AgentError {
 
 fun parseMarkdownBlocks(
     rawText: String,
-    toolCalls: List<com.example.gemini.domain.model.ToolCall> = emptyList()
+    toolCalls: List<com.shriram.cinecode.domain.model.ToolCall> = emptyList()
 ): List<MarkdownBlock> {
     val result = mutableListOf<MarkdownBlock>()
 
@@ -3205,7 +3205,7 @@ fun parseMarkdownBlocks(
                     }
                     ?: toolCalls.find { tc ->
                         tc.id !in handledIds && (
-                            com.example.gemini.data.remote.AgyHubClient.normalizeToolName(tc.name) == com.example.gemini.data.remote.AgyHubClient.normalizeToolName(toolId.substringBefore("_").removePrefix("tool_"))
+                            com.shriram.cinecode.data.remote.AgyHubClient.normalizeToolName(tc.name) == com.shriram.cinecode.data.remote.AgyHubClient.normalizeToolName(toolId.substringBefore("_").removePrefix("tool_"))
                         )
                     }
                 if (matchedTool != null) {
@@ -3225,7 +3225,7 @@ fun parseMarkdownBlocks(
                     continue
                 }
                 val matchedTool = toolCalls.find { it.command == payload }
-                    ?: com.example.gemini.domain.model.ToolCall(name = name, command = payload, status = if (name == "ask_choices") "AWAITING_CHOICE" else "RUNNING")
+                    ?: com.shriram.cinecode.domain.model.ToolCall(name = name, command = payload, status = if (name == "ask_choices") "AWAITING_CHOICE" else "RUNNING")
                 result.add(MarkdownBlock.AgentTool(matchedTool))
                 i++
                 continue
@@ -3235,7 +3235,7 @@ fun parseMarkdownBlocks(
             if (choiceMatch != null) {
                 val json = choiceMatch.groupValues[2].trim()
                 val matchedTool = toolCalls.find { it.command == json && (it.name == "ask_choices" || it.name == "user_choice") }
-                    ?: com.example.gemini.domain.model.ToolCall(name = "ask_choices", command = json, status = "AWAITING_CHOICE")
+                    ?: com.shriram.cinecode.domain.model.ToolCall(name = "ask_choices", command = json, status = "AWAITING_CHOICE")
                 result.add(MarkdownBlock.AgentTool(matchedTool))
                 i++
                 continue
@@ -3244,7 +3244,7 @@ fun parseMarkdownBlocks(
             val execCmdMatch = EXEC_CMD_REGEX.find(line)
             if (execCmdMatch != null) {
                 val cmd = execCmdMatch.groupValues[1].trim()
-                val matchedTool = toolCalls.find { it.command == cmd } ?: com.example.gemini.domain.model.ToolCall(command = cmd, status = "RUNNING")
+                val matchedTool = toolCalls.find { it.command == cmd } ?: com.shriram.cinecode.domain.model.ToolCall(command = cmd, status = "RUNNING")
                 result.add(MarkdownBlock.AgentTool(matchedTool))
                 i++
                 continue
@@ -3253,7 +3253,7 @@ fun parseMarkdownBlocks(
             val webSearchMatch = WEB_SEARCH_REGEX.find(line)
             if (webSearchMatch != null) {
                 val query = webSearchMatch.groupValues[1].trim()
-                val matchedTool = toolCalls.find { it.command == query && it.name == "web_search" } ?: com.example.gemini.domain.model.ToolCall(name = "web_search", command = query, status = "RUNNING")
+                val matchedTool = toolCalls.find { it.command == query && it.name == "web_search" } ?: com.shriram.cinecode.domain.model.ToolCall(name = "web_search", command = query, status = "RUNNING")
                 result.add(MarkdownBlock.AgentTool(matchedTool))
                 i++
                 continue
@@ -3262,7 +3262,7 @@ fun parseMarkdownBlocks(
             val readUrlMatch = READ_URL_REGEX.find(line)
             if (readUrlMatch != null) {
                 val url = readUrlMatch.groupValues[1].trim()
-                val matchedTool = toolCalls.find { it.command == url && it.name == "read_url" } ?: com.example.gemini.domain.model.ToolCall(name = "read_url", command = url, status = "RUNNING")
+                val matchedTool = toolCalls.find { it.command == url && it.name == "read_url" } ?: com.shriram.cinecode.domain.model.ToolCall(name = "read_url", command = url, status = "RUNNING")
                 result.add(MarkdownBlock.AgentTool(matchedTool))
                 i++
                 continue
@@ -3596,9 +3596,9 @@ fun parseMarkdownBlocks(
     val handledTools = result.filterIsInstance<MarkdownBlock.AgentTool>().map { it.toolCall }
     val handledToolIds = handledTools.map { it.id }.toSet()
     toolCalls.filter { it.id !in handledToolIds }.forEach { orphanTool ->
-        val orphanNorm = com.example.gemini.data.remote.AgyHubClient.normalizeToolName(orphanTool.name)
+        val orphanNorm = com.shriram.cinecode.data.remote.AgyHubClient.normalizeToolName(orphanTool.name)
         val alreadyCovered = handledTools.any {
-            com.example.gemini.data.remote.AgyHubClient.normalizeToolName(it.name) == orphanNorm &&
+            com.shriram.cinecode.data.remote.AgyHubClient.normalizeToolName(it.name) == orphanNorm &&
             (it.command == orphanTool.command || it.command.isBlank() || orphanTool.command.isBlank())
         }
         if (!alreadyCovered) {

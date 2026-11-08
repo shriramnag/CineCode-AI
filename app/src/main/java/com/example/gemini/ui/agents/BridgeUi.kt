@@ -1,4 +1,4 @@
-package com.example.gemini.ui.agents
+package com.shriram.cinecode.ui.agents
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -39,13 +39,13 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gemini.data.local.LocalServerManager
-import com.example.gemini.data.preferences.AuthPreferences
-import com.example.gemini.data.remote.BridgeInfo
-import com.example.gemini.data.remote.RemoteServerManager
+import com.shriram.cinecode.data.local.LocalServerManager
+import com.shriram.cinecode.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.remote.BridgeInfo
+import com.shriram.cinecode.data.remote.RemoteServerManager
 
-private val Ok: androidx.compose.ui.graphics.Color get() = com.example.gemini.theme.AppColors.success
-private val Warn: androidx.compose.ui.graphics.Color get() = com.example.gemini.theme.AppColors.warning
+private val Ok: androidx.compose.ui.graphics.Color get() = com.shriram.cinecode.theme.AppColors.success
+private val Warn: androidx.compose.ui.graphics.Color get() = com.shriram.cinecode.theme.AppColors.warning
 
 /** Asks to update the IDE bridge when its version is not the app's. Shown once per version pair unless "Later". */
 @Composable

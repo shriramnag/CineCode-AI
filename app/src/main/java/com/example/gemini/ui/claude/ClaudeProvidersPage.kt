@@ -1,4 +1,4 @@
-package com.example.gemini.ui.claude
+package com.shriram.cinecode.ui.claude
 
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
@@ -81,21 +81,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.example.gemini.data.agent.claude.ClaudeChatBackend
-import com.example.gemini.data.agent.claude.ClaudeFetchRaw
-import com.example.gemini.data.agent.claude.ClaudeModelsMapping
-import com.example.gemini.data.agent.claude.ClaudeRawKey
-import com.example.gemini.data.agent.claude.ClaudeProvider
-import com.example.gemini.data.agent.claude.ClaudeProviderModel
-import com.example.gemini.data.agent.claude.ClaudeProviderTestResult
-import com.example.gemini.data.agent.claude.contextLabel
-import com.example.gemini.data.agent.claude.limitsOf
-import com.example.gemini.data.agent.claude.thinkingLabel
-import com.example.gemini.data.agent.claude.tokenLabel
-import com.example.gemini.theme.QuotaAmber
-import com.example.gemini.theme.QuotaGreen
-import com.example.gemini.theme.QuotaRed
-import com.example.gemini.ui.components.ClaudeAccent
+import com.shriram.cinecode.data.agent.claude.ClaudeChatBackend
+import com.shriram.cinecode.data.agent.claude.ClaudeFetchRaw
+import com.shriram.cinecode.data.agent.claude.ClaudeModelsMapping
+import com.shriram.cinecode.data.agent.claude.ClaudeRawKey
+import com.shriram.cinecode.data.agent.claude.ClaudeProvider
+import com.shriram.cinecode.data.agent.claude.ClaudeProviderModel
+import com.shriram.cinecode.data.agent.claude.ClaudeProviderTestResult
+import com.shriram.cinecode.data.agent.claude.contextLabel
+import com.shriram.cinecode.data.agent.claude.limitsOf
+import com.shriram.cinecode.data.agent.claude.thinkingLabel
+import com.shriram.cinecode.data.agent.claude.tokenLabel
+import com.shriram.cinecode.theme.QuotaAmber
+import com.shriram.cinecode.theme.QuotaGreen
+import com.shriram.cinecode.theme.QuotaRed
+import com.shriram.cinecode.ui.components.ClaudeAccent
 
 private const val OPENROUTER_BASE_URL = "https://openrouter.ai/api"
 

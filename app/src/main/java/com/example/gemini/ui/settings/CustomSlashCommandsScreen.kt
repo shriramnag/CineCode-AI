@@ -1,6 +1,6 @@
-package com.example.gemini.ui.settings
+package com.shriram.cinecode.ui.settings
 
-import com.example.gemini.ui.components.bouncyVerticalScroll
+import com.shriram.cinecode.ui.components.bouncyVerticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -11,9 +11,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.example.gemini.data.remote.CustomSlashCommand
-import com.example.gemini.data.remote.CustomSlashCommands
-import com.example.gemini.ui.browser.BrowserExtensionManager
+import com.shriram.cinecode.data.remote.CustomSlashCommand
+import com.shriram.cinecode.data.remote.CustomSlashCommands
+import com.shriram.cinecode.ui.browser.BrowserExtensionManager
 
 @Composable
 fun CustomSlashCommandsScreen() {

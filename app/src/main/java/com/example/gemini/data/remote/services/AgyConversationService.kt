@@ -1,10 +1,10 @@
-package com.example.gemini.data.remote.services
+package com.shriram.cinecode.data.remote.services
 
 import android.util.Log
-import com.example.gemini.data.preferences.AuthPreferences
-import com.example.gemini.data.remote.AgyHubClient.SummariesUpdate
+import com.shriram.cinecode.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.remote.AgyHubClient.SummariesUpdate
 
-import com.example.gemini.domain.model.Conversation
+import com.shriram.cinecode.domain.model.Conversation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -47,7 +47,7 @@ class AgyConversationService {
      * Subscribes to live conversation summary updates pushed by the AGY daemon via typed Wire LanguageServerService.
      */
     fun subscribeToSummaries(hubUrl: String = AuthPreferences.currentHubUrl): Flow<SummariesUpdate> = flow {
-        if (!com.example.gemini.data.remote.AgyBridgeService.instance.awaitHubReady(timeoutMs = 10_000L)) {
+        if (!com.shriram.cinecode.data.remote.AgyBridgeService.instance.awaitHubReady(timeoutMs = 10_000L)) {
             throw Exception("Antigravity Hub is not running")
         }
         AgyLanguageService.JetboxSubscribeToSummaries().asFlowSafely(JetboxSubscribeToSummariesRequest())
@@ -209,7 +209,7 @@ class AgyConversationService {
         targetStepIndex: Int? = null,
         hubUrl: String = AuthPreferences.currentHubUrl
     ): Result<Int> = withContext(Dispatchers.IO) {
-        val resolvedModelStr = com.example.gemini.data.remote.AgyHubClient.resolveModelEnum(modelEnum)
+        val resolvedModelStr = com.shriram.cinecode.data.remote.AgyHubClient.resolveModelEnum(modelEnum)
         val modelProto = toModelProto(resolvedModelStr)
 
         val targetStep = if (targetStepIndex != null) {

@@ -1,6 +1,6 @@
-package com.example.gemini.ui.claude
+package com.shriram.cinecode.ui.claude
 
-import com.example.gemini.ui.components.bouncyVerticalScroll
+import com.shriram.cinecode.ui.components.bouncyVerticalScroll
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -86,20 +86,20 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gemini.data.agent.claude.ClaudeAccountManager
-import com.example.gemini.data.agent.claude.ClaudeStatus
-import com.example.gemini.data.agent.claude.ClaudeChatBackend
-import com.example.gemini.data.agent.claude.ClaudeConfigManager
-import com.example.gemini.data.agent.claude.ClaudeMcpAddRequest
-import com.example.gemini.data.agent.claude.ClaudePluginAction
-import com.example.gemini.data.agent.claude.ClaudePreferences
-import com.example.gemini.theme.ClaudeTerracotta
-import com.example.gemini.theme.GeminiBlue
-import com.example.gemini.theme.GeminiPurple
-import com.example.gemini.theme.QuotaAmber
-import com.example.gemini.theme.QuotaGreen
-import com.example.gemini.theme.QuotaRed
-import com.example.gemini.ui.components.ClaudeAccent
+import com.shriram.cinecode.data.agent.claude.ClaudeAccountManager
+import com.shriram.cinecode.data.agent.claude.ClaudeStatus
+import com.shriram.cinecode.data.agent.claude.ClaudeChatBackend
+import com.shriram.cinecode.data.agent.claude.ClaudeConfigManager
+import com.shriram.cinecode.data.agent.claude.ClaudeMcpAddRequest
+import com.shriram.cinecode.data.agent.claude.ClaudePluginAction
+import com.shriram.cinecode.data.agent.claude.ClaudePreferences
+import com.shriram.cinecode.theme.ClaudeTerracotta
+import com.shriram.cinecode.theme.GeminiBlue
+import com.shriram.cinecode.theme.GeminiPurple
+import com.shriram.cinecode.theme.QuotaAmber
+import com.shriram.cinecode.theme.QuotaGreen
+import com.shriram.cinecode.theme.QuotaRed
+import com.shriram.cinecode.ui.components.ClaudeAccent
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -140,7 +140,7 @@ fun ClaudeSettingsGroup(deps: ClaudeSettingsDeps, cardBg: Color, onOpen: (Claude
     val state by deps.account.state.collectAsState()
     val auth = status?.auth
     val accountBadge = when (state) {
-        ClaudeStatus.READY -> auth?.subscriptionType?.let { com.example.gemini.ui.agents.claudePlanLabel(it) } ?: "Signed in"
+        ClaudeStatus.READY -> auth?.subscriptionType?.let { com.shriram.cinecode.ui.agents.claudePlanLabel(it) } ?: "Signed in"
         ClaudeStatus.SIGNED_OUT -> "Signed out"
         else -> state.label
     }
@@ -148,8 +148,8 @@ fun ClaudeSettingsGroup(deps: ClaudeSettingsDeps, cardBg: Color, onOpen: (Claude
     val providers by deps.backend.providers.collectAsState()
     val allowCount = settings?.let { deps.config.rules("allow").size } ?: 0
     fun row(page: ClaudeSettingsPage, icon: androidx.compose.ui.graphics.vector.ImageVector, value: String? = null, valueColor: Color? = null) =
-        com.example.gemini.ui.settings.SettingsRowItem(icon, ClaudeAccent, page.title, value, valueColor) { onOpen(page) }
-    com.example.gemini.ui.settings.SettingsRowList(
+        com.shriram.cinecode.ui.settings.SettingsRowItem(icon, ClaudeAccent, page.title, value, valueColor) { onOpen(page) }
+    com.shriram.cinecode.ui.settings.SettingsRowList(
         cardBg = cardBg,
         groups = listOf(
             listOf(row(ClaudeSettingsPage.ACCOUNT, Icons.Outlined.AccountCircle, accountBadge, accountColor)),
@@ -210,7 +210,7 @@ private fun Hint(text: String) {
 }
 
 private fun activeProjectPath(): String? =
-    com.example.gemini.data.daemon.TermuxDaemonManager.activeProject.value?.path?.removePrefix("file://")?.takeIf { it.isNotBlank() }
+    com.shriram.cinecode.data.daemon.TermuxDaemonManager.activeProject.value?.path?.removePrefix("file://")?.takeIf { it.isNotBlank() }
 
 // ======================================================================== Account & CLI
 
@@ -525,7 +525,7 @@ private fun McpPage(deps: ClaudeSettingsDeps) {
     val addError by deps.config.mcpAddError.collectAsState()
     val cwd = activeProjectPath()
     var addDraft by remember { mutableStateOf<ClaudeMcpAddRequest?>(null) }
-    var toDelete by remember { mutableStateOf<com.example.gemini.data.agent.claude.ClaudeMcpServer?>(null) }
+    var toDelete by remember { mutableStateOf<com.shriram.cinecode.data.agent.claude.ClaudeMcpServer?>(null) }
     var expandedTools by remember { mutableStateOf(setOf<String>()) }
     var expandedErrors by remember { mutableStateOf(setOf<String>()) }
     LaunchedEffect(Unit) { deps.config.loadMcp(cwd) }
@@ -544,7 +544,7 @@ private fun McpPage(deps: ClaudeSettingsDeps) {
     val deviceId = remember(context) {
         runCatching { android.provider.Settings.Secure.getString(context.contentResolver, android.provider.Settings.Secure.ANDROID_ID) }.getOrNull().orEmpty()
     }
-    val bridge = com.example.gemini.data.remote.AndroidLocalBridgeServer
+    val bridge = com.shriram.cinecode.data.remote.AndroidLocalBridgeServer
     val deviceHeaders = if (deviceId.isNotBlank()) mapOf("X-Device-Id" to deviceId) else emptyMap()
     fun local(name: String, path: String) =
         ClaudeMcpAddRequest(name = name, transport = "http", url = "http://127.0.0.1:${bridge.DEFAULT_PORT}$path", headers = deviceHeaders)
@@ -552,16 +552,16 @@ private fun McpPage(deps: ClaudeSettingsDeps) {
         ClaudeMcpPreset("Plugin Developer", "Build & test AntiGem plugins", Icons.Outlined.DeveloperMode, GeminiPurple, local(bridge.DEVELOPER_MCP_NAME, "/extension_developer")),
         ClaudeMcpPreset("Browser", "Control the in-app browser", Icons.Outlined.Language, GeminiBlue, local("browser_mcp", "/browser")),
         ClaudeMcpPreset("Terminal", "Run commands in the terminal", Icons.Outlined.Terminal, QuotaGreen, local("terminal_mcp", "/terminal")),
-        ClaudeMcpPreset("Android", "Tap, type & read this phone", Icons.Outlined.PhoneAndroid, com.example.gemini.theme.AppColors.accentTeal, local(bridge.ANDROID_AUTOMATION_MCP_NAME, "/android")),
-        ClaudeMcpPreset("Notes & To-dos", "Read & edit your notes", Icons.Outlined.EditNote, com.example.gemini.theme.AppColors.warning, local(bridge.NOTES_MCP_NAME, "/notes")),
-        ClaudeMcpPreset("Jarvis", "Voice control of this app", Icons.Outlined.RecordVoiceOver, com.example.gemini.theme.AppColors.accentTeal, local(bridge.JARVIS_MCP_NAME, "/jarvis")),
-        ClaudeMcpPreset("Theme", "Create & switch app themes", Icons.Outlined.Palette, com.example.gemini.theme.AppColors.accentAlt, local(bridge.THEME_MCP_NAME, "/theme")),
-        ClaudeMcpPreset("Stitch", "Google Stitch UI design · API key", Icons.Outlined.Palette, com.example.gemini.theme.AppColors.accentPink,
+        ClaudeMcpPreset("Android", "Tap, type & read this phone", Icons.Outlined.PhoneAndroid, com.shriram.cinecode.theme.AppColors.accentTeal, local(bridge.ANDROID_AUTOMATION_MCP_NAME, "/android")),
+        ClaudeMcpPreset("Notes & To-dos", "Read & edit your notes", Icons.Outlined.EditNote, com.shriram.cinecode.theme.AppColors.warning, local(bridge.NOTES_MCP_NAME, "/notes")),
+        ClaudeMcpPreset("Jarvis", "Voice control of this app", Icons.Outlined.RecordVoiceOver, com.shriram.cinecode.theme.AppColors.accentTeal, local(bridge.JARVIS_MCP_NAME, "/jarvis")),
+        ClaudeMcpPreset("Theme", "Create & switch app themes", Icons.Outlined.Palette, com.shriram.cinecode.theme.AppColors.accentAlt, local(bridge.THEME_MCP_NAME, "/theme")),
+        ClaudeMcpPreset("Stitch", "Google Stitch UI design · API key", Icons.Outlined.Palette, com.shriram.cinecode.theme.AppColors.accentPink,
             ClaudeMcpAddRequest(name = "stitch", transport = "http", url = "https://stitch.googleapis.com/mcp", headers = mapOf("X-Goog-Api-Key" to "")))
     )
     var chooseWebViewExtension by remember { mutableStateOf(false) }
-    val extensionManager = remember { com.example.gemini.ui.browser.BrowserExtensionManager.instance }
-    if (chooseWebViewExtension) com.example.gemini.ui.settings.WebViewExtensionMcpPicker(onDismiss = { chooseWebViewExtension = false }) { extension ->
+    val extensionManager = remember { com.shriram.cinecode.ui.browser.BrowserExtensionManager.instance }
+    if (chooseWebViewExtension) com.shriram.cinecode.ui.settings.WebViewExtensionMcpPicker(onDismiss = { chooseWebViewExtension = false }) { extension ->
         addDraft = ClaudeMcpAddRequest(
             name = extensionManager.mcpServerName(extension.id), transport = "http",
             url = extensionManager.mcpUrl(extension.id), headers = deviceHeaders
@@ -580,7 +580,7 @@ private fun McpPage(deps: ClaudeSettingsDeps) {
                     // The plugin developer may already be added under its old name
                     val added = req != null && servers.any { it.name == req.name || (bridge.isDeveloperMcpName(req.name) && bridge.isDeveloperMcpName(it.name)) }
                     val busy = req != null && req.name in ops
-                    com.example.gemini.ui.settings.McpPresetTile(
+                    com.shriram.cinecode.ui.settings.McpPresetTile(
                         name = p.name,
                         subtitle = if (busy) "Adding…" else p.subtitle,
                         icon = p.icon,
@@ -748,7 +748,7 @@ private fun McpPage(deps: ClaudeSettingsDeps) {
     }
 }
 
-private fun transportColor(transport: String) = if (transport == "stdio") com.example.gemini.theme.AppColors.accentAlt else com.example.gemini.theme.AppColors.info
+private fun transportColor(transport: String) = if (transport == "stdio") com.shriram.cinecode.theme.AppColors.accentAlt else com.shriram.cinecode.theme.AppColors.info
 
 @Composable
 private fun TransportBadge(transport: String) = Badge(if (transport == "stdio") "Stdio" else transport.uppercase(), transportColor(transport))
@@ -894,7 +894,7 @@ private fun PluginsPage(deps: ClaudeSettingsDeps) {
         }
         val installedIds = remember(d) { d.plugins.installed.map { it.key }.toSet() }
         val listState = androidx.compose.foundation.lazy.rememberLazyListState()
-        val bounce = com.example.gemini.ui.components.rememberBouncyLazyScroll(listState)
+        val bounce = com.shriram.cinecode.ui.components.rememberBouncyLazyScroll(listState)
         androidx.compose.foundation.lazy.LazyColumn(
             Modifier.fillMaxSize().then(bounce.modifier),
             state = listState,

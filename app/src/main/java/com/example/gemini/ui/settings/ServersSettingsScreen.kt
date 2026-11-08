@@ -1,6 +1,6 @@
-package com.example.gemini.ui.settings
+package com.shriram.cinecode.ui.settings
 
-import com.example.gemini.ui.components.bouncyVerticalScroll
+import com.shriram.cinecode.ui.components.bouncyVerticalScroll
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
@@ -70,14 +70,14 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gemini.BuildConfig
-import com.example.gemini.data.local.LocalServerManager
-import com.example.gemini.data.local.LocalServerStatus
-import com.example.gemini.data.preferences.AuthPreferences
-import com.example.gemini.data.remote.RemoteServerManager
-import com.example.gemini.data.ssh.SshSessionFactory
-import com.example.gemini.theme.ClaudeTerracotta
-import com.example.gemini.theme.QuotaGreen
+import com.shriram.cinecode.BuildConfig
+import com.shriram.cinecode.data.local.LocalServerManager
+import com.shriram.cinecode.data.local.LocalServerStatus
+import com.shriram.cinecode.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.remote.RemoteServerManager
+import com.shriram.cinecode.data.ssh.SshSessionFactory
+import com.shriram.cinecode.theme.ClaudeTerracotta
+import com.shriram.cinecode.theme.QuotaGreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -664,7 +664,7 @@ internal fun ServersSubScreen(
                 Spacer(Modifier.height(6.dp))
                 StatusLine(isBridgeOnline || bridgeTestStatus?.startsWith("✓") == true, "Bridge", AuthPreferences.normalizeServerUrl(bridgeText, BuildConfig.BRIDGE_PORT) ?: "invalid address")
                 bridgeTestStatus?.let { Text(it, fontSize = 11.5.sp, fontWeight = FontWeight.Medium, color = if (it.startsWith("✓")) QuotaGreen else Color.Red, modifier = Modifier.padding(top = 4.dp)) }
-                com.example.gemini.ui.agents.BridgeVersionLine(Modifier.padding(top = 6.dp))
+                com.shriram.cinecode.ui.agents.BridgeVersionLine(Modifier.padding(top = 6.dp))
 
                 Spacer(Modifier.height(14.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -949,7 +949,7 @@ internal fun ServersSubScreen(
                         "• Passed to the bridge on launch (--bin for AGY, --claude-bin for Claude Code) so auto-start executes the designated binary directly without interactive prompts.",
                         fontSize = 11.sp, color = subtle
                     )
-                    if (com.example.gemini.data.local.LocalEnvironmentManager.isTermuxPackage(context)) {
+                    if (com.shriram.cinecode.data.local.LocalEnvironmentManager.isTermuxPackage(context)) {
                         Text(
                             "• Claude Code: the default is AntiGem's launcher, which runs the newest official Claude version through the bundled glibc. Claude updates never replace it.",
                             fontSize = 11.sp, color = subtle
@@ -1120,11 +1120,11 @@ private fun RemoteServerCard(cardBg: Color, cardBorder: BorderStroke, subtle: Co
 
     val (label, color) = when (val s = status) {
         is LocalServerStatus.Running -> "Bridge running on the server" to QuotaGreen
-        is LocalServerStatus.Starting -> "Starting…" to com.example.gemini.theme.AppColors.warning
-        is LocalServerStatus.Stopping -> "Stopping…" to com.example.gemini.theme.AppColors.warning
-        is LocalServerStatus.Stopped -> "Bridge stopped" to com.example.gemini.theme.AppColors.textSecondary
+        is LocalServerStatus.Starting -> "Starting…" to com.shriram.cinecode.theme.AppColors.warning
+        is LocalServerStatus.Stopping -> "Stopping…" to com.shriram.cinecode.theme.AppColors.warning
+        is LocalServerStatus.Stopped -> "Bridge stopped" to com.shriram.cinecode.theme.AppColors.textSecondary
         is LocalServerStatus.Error -> s.message to Color.Red
-        is LocalServerStatus.Idle -> "Not started" to com.example.gemini.theme.AppColors.textSecondary
+        is LocalServerStatus.Idle -> "Not started" to com.shriram.cinecode.theme.AppColors.textSecondary
     }
 
     Card(Modifier.fillMaxWidth(), RoundedCornerShape(14.dp), CardDefaults.cardColors(containerColor = cardBg), border = cardBorder) {

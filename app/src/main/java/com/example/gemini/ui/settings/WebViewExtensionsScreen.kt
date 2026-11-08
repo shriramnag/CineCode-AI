@@ -1,6 +1,6 @@
-package com.example.gemini.ui.settings
+package com.shriram.cinecode.ui.settings
 
-import com.example.gemini.ui.components.bouncyVerticalScroll
+import com.shriram.cinecode.ui.components.bouncyVerticalScroll
 import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -17,10 +17,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.example.gemini.ui.browser.BrowserExtension
-import com.example.gemini.ui.browser.BrowserExtensionManager
-import com.example.gemini.ui.browser.PluginRepositories
-import com.example.gemini.ui.browser.PluginVersions
+import com.shriram.cinecode.ui.browser.BrowserExtension
+import com.shriram.cinecode.ui.browser.BrowserExtensionManager
+import com.shriram.cinecode.ui.browser.PluginRepositories
+import com.shriram.cinecode.ui.browser.PluginVersions
 import kotlinx.coroutines.launch
 
 @Composable

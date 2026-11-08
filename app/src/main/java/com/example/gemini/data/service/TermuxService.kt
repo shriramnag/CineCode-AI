@@ -1,4 +1,4 @@
-package com.example.gemini.data.service
+package com.shriram.cinecode.data.service
 
 import android.annotation.SuppressLint
 import android.app.Notification
@@ -27,10 +27,10 @@ import androidx.lifecycle.ViewModelStoreOwner
 import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
-import com.example.gemini.MainActivity
-import com.example.gemini.R
-import com.example.gemini.data.local.LocalTerminalManager
-import com.example.gemini.ui.bubble.FloatingChatActivity
+import com.shriram.cinecode.MainActivity
+import com.shriram.cinecode.R
+import com.shriram.cinecode.data.local.LocalTerminalManager
+import com.shriram.cinecode.ui.bubble.FloatingChatActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -58,12 +58,12 @@ open class TermuxService : Service(), LifecycleOwner, ViewModelStoreOwner, Saved
         private const val CHANNEL_ID = "antigem_termux_service_channel"
         private const val NOTIFICATION_ID = 1337
 
-        const val ACTION_WAKE_LOCK = "com.termux.service_wake_lock"
-        const val ACTION_WAKE_UNLOCK = "com.termux.service_wake_unlock"
-        const val ACTION_STOP_SERVICE = "com.termux.service_stop"
+        const val ACTION_WAKE_LOCK = "com.shriram.cinecode.service_wake_lock"
+        const val ACTION_WAKE_UNLOCK = "com.shriram.cinecode.service_wake_unlock"
+        const val ACTION_STOP_SERVICE = "com.shriram.cinecode.service_stop"
 
         fun start(context: Context) {
-            val intent = Intent(context, com.termux.app.TermuxService::class.java)
+            val intent = Intent(context, com.shriram.cinecode.app.TermuxService::class.java)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(intent)
             } else {
@@ -72,7 +72,7 @@ open class TermuxService : Service(), LifecycleOwner, ViewModelStoreOwner, Saved
         }
 
         fun stop(context: Context) {
-            val intent = Intent(context, com.termux.app.TermuxService::class.java).setAction(ACTION_STOP_SERVICE)
+            val intent = Intent(context, com.shriram.cinecode.app.TermuxService::class.java).setAction(ACTION_STOP_SERVICE)
             context.startService(intent)
         }
 
@@ -101,7 +101,7 @@ open class TermuxService : Service(), LifecycleOwner, ViewModelStoreOwner, Saved
 
         runStartForeground()
         observeTerminalSessions()
-        com.example.gemini.data.remote.AndroidLocalBridgeServer.instance.start(this)
+        com.shriram.cinecode.data.remote.AndroidLocalBridgeServer.instance.start(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -208,7 +208,7 @@ open class TermuxService : Service(), LifecycleOwner, ViewModelStoreOwner, Saved
         )
 
         // Exit action
-        val exitIntent = Intent(this, com.termux.app.TermuxService::class.java).setAction(ACTION_STOP_SERVICE)
+        val exitIntent = Intent(this, com.shriram.cinecode.app.TermuxService::class.java).setAction(ACTION_STOP_SERVICE)
         val exitPendingIntent = PendingIntent.getService(
             this, 1, exitIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
@@ -216,7 +216,7 @@ open class TermuxService : Service(), LifecycleOwner, ViewModelStoreOwner, Saved
 
         // WakeLock toggle action
         val wakeAction = if (wakeLockHeld) ACTION_WAKE_UNLOCK else ACTION_WAKE_LOCK
-        val toggleWakeLockIntent = Intent(this, com.termux.app.TermuxService::class.java).setAction(wakeAction)
+        val toggleWakeLockIntent = Intent(this, com.shriram.cinecode.app.TermuxService::class.java).setAction(wakeAction)
         val wakePendingIntent = PendingIntent.getService(
             this, 2, toggleWakeLockIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
@@ -311,7 +311,7 @@ open class TermuxService : Service(), LifecycleOwner, ViewModelStoreOwner, Saved
         Log.d(TAG, "actionStopService: Force-killing all background processes and stopping service")
         actionReleaseWakeLock()
         try {
-            com.example.gemini.data.local.LocalServerManager.forceKillAll()
+            com.shriram.cinecode.data.local.LocalServerManager.forceKillAll()
         } catch (e: Exception) {
             Log.w(TAG, "Error force killing server manager: ${e.message}")
         }

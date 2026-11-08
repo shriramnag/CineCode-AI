@@ -1,4 +1,4 @@
-package com.example.gemini.data.local
+package com.shriram.cinecode.data.local
 
 import android.Manifest
 import android.content.Context

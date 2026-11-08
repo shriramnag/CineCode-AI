@@ -1,8 +1,8 @@
-package com.example.gemini.data.remote
+package com.shriram.cinecode.data.remote
 
 import android.content.Context
-import com.example.gemini.BuildConfig
-import com.example.gemini.data.preferences.AuthPreferences
+import com.shriram.cinecode.BuildConfig
+import com.shriram.cinecode.data.preferences.AuthPreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

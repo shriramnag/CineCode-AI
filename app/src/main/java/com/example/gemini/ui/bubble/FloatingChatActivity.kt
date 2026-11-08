@@ -1,4 +1,4 @@
-package com.example.gemini.ui.bubble
+package com.shriram.cinecode.ui.bubble
 
 import android.content.Intent
 import android.graphics.drawable.ColorDrawable
@@ -25,16 +25,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import com.example.gemini.AppViewMode
-import com.example.gemini.MainActivity
-import com.example.gemini.theme.GeminiTheme
-import com.example.gemini.theme.isSystemInDarkThemeRobust
-import com.example.gemini.ui.browser.BrowserScreen
-import com.example.gemini.ui.chat.ChatScreen
-import com.example.gemini.ui.chat.ChatViewModel
-import com.example.gemini.ui.chat.ChatViewModelHolder
-import com.example.gemini.ui.components.LocalTerminalContent
-import com.example.gemini.ui.ide.IdeScreen
+import com.shriram.cinecode.AppViewMode
+import com.shriram.cinecode.MainActivity
+import com.shriram.cinecode.theme.GeminiTheme
+import com.shriram.cinecode.theme.isSystemInDarkThemeRobust
+import com.shriram.cinecode.ui.browser.BrowserScreen
+import com.shriram.cinecode.ui.chat.ChatScreen
+import com.shriram.cinecode.ui.chat.ChatViewModel
+import com.shriram.cinecode.ui.chat.ChatViewModelHolder
+import com.shriram.cinecode.ui.components.LocalTerminalContent
+import com.shriram.cinecode.ui.ide.IdeScreen
 
 class FloatingChatActivity : ComponentActivity() {
 
@@ -216,7 +216,7 @@ fun FloatingChatWindow(
                                     translationX = if (isVisible) 0f else 20000f
                                 }
                         ) {
-                            val terminalSessions by com.example.gemini.data.local.LocalTerminalManager.sessions.collectAsState()
+                            val terminalSessions by com.shriram.cinecode.data.local.LocalTerminalManager.sessions.collectAsState()
                             if (currentViewMode == AppViewMode.TERMINAL || (hasEverOpenedTerminal && terminalSessions.isNotEmpty())) {
                                 LocalTerminalContent(
                                     onClose = { currentViewMode = AppViewMode.CHAT }

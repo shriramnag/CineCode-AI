@@ -1,4 +1,4 @@
-package com.example.gemini.ui.files
+package com.shriram.cinecode.ui.files
 
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -18,7 +18,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
-import com.example.gemini.ui.components.bounceWhenNotScrollable
+import com.shriram.cinecode.ui.components.bounceWhenNotScrollable
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -47,11 +47,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.example.gemini.data.daemon.IdeApiClient
-import com.example.gemini.data.daemon.ProjectItem
-import com.example.gemini.data.daemon.TermuxDaemonManager
-import com.example.gemini.data.files.*
-import com.example.gemini.ui.components.MarkdownDocViewerModal
+import com.shriram.cinecode.data.daemon.IdeApiClient
+import com.shriram.cinecode.data.daemon.ProjectItem
+import com.shriram.cinecode.data.daemon.TermuxDaemonManager
+import com.shriram.cinecode.data.files.*
+import com.shriram.cinecode.ui.components.MarkdownDocViewerModal
 import kotlinx.coroutines.launch
 
 /** Files picked with Copy / Cut, shared by every explorer (copy in the Files screen, paste in a picker). */
@@ -639,7 +639,7 @@ fun FileExplorer(
                 else -> Box(Modifier.fillMaxSize()) {
                     // iOS bounce at both ends, also when the folder fits on screen. Pull-to-refresh rides on it:
                     // pulling down past the top only bounces, until the pull passes refreshPullPx; letting go then refreshes.
-                    val listBounce = com.example.gemini.ui.components.rememberBouncyOverscrollEffect()
+                    val listBounce = com.shriram.cinecode.ui.components.rememberBouncyOverscrollEffect()
                     val refreshPullPx = with(LocalDensity.current) { 72.dp.toPx() }
                     val currentRefreshing by rememberUpdatedState(refreshing)
                     val currentReload by rememberUpdatedState { reload(silent = false) }

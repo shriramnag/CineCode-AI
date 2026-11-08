@@ -1,17 +1,17 @@
-package com.example.gemini.data.jarvis
+package com.shriram.cinecode.data.jarvis
 
 import android.app.Application
 import android.content.Context
 import android.util.Log
-import com.example.gemini.data.agent.ChatSessionStore
-import com.example.gemini.data.agent.claude.ClaudeBridgeClient
-import com.example.gemini.data.agent.claude.ClaudeChatBackend
-import com.example.gemini.data.remote.AgyHubClient
-import com.example.gemini.data.remote.PromptExpansion
-import com.example.gemini.domain.model.AgentKind
-import com.example.gemini.domain.model.MessageRole
-import com.example.gemini.domain.model.ToolCall
-import com.example.gemini.domain.model.ToolType
+import com.shriram.cinecode.data.agent.ChatSessionStore
+import com.shriram.cinecode.data.agent.claude.ClaudeBridgeClient
+import com.shriram.cinecode.data.agent.claude.ClaudeChatBackend
+import com.shriram.cinecode.data.remote.AgyHubClient
+import com.shriram.cinecode.data.remote.PromptExpansion
+import com.shriram.cinecode.domain.model.AgentKind
+import com.shriram.cinecode.domain.model.MessageRole
+import com.shriram.cinecode.domain.model.ToolCall
+import com.shriram.cinecode.domain.model.ToolType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -153,8 +153,8 @@ object JarvisTasks {
                 val id = UUID.randomUUID().toString()
                 val chosen = modelId?.takeIf { it.isNotBlank() } ?: vm.agyBackend.selectedModelId.value
                 val enum = AgyHubClient.resolveModelEnum(chosen)
-                val ws = projectPath ?: (com.example.gemini.data.daemon.TermuxDaemonManager.activeProject.value?.path
-                    ?: com.example.gemini.data.local.LocalEnvironmentManager.getHomeDir(app).absolutePath)
+                val ws = projectPath ?: (com.shriram.cinecode.data.daemon.TermuxDaemonManager.activeProject.value?.path
+                    ?: com.shriram.cinecode.data.local.LocalEnvironmentManager.getHomeDir(app).absolutePath)
                 hub.startCascade(id, enum, if (ws.startsWith("file://")) ws else "file://$ws").getOrThrow()
                 vm.agyBackend.rememberChatModel(id, chosen)
                 hub.sendUserPrompt(id, PromptExpansion.expand(text), enum).getOrThrow()

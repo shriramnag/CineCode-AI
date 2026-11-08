@@ -1,7 +1,7 @@
-package com.example.gemini.data.daemon
+package com.shriram.cinecode.data.daemon
 
 import android.util.Log
-import com.example.gemini.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.preferences.AuthPreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -97,7 +97,7 @@ object GitApiClient {
         get() = AuthPreferences.currentBridgeHttpUrl
         set(value) { AuthPreferences.currentBridgeHttpUrl = value }
 
-    private val client: OkHttpClient get() = com.example.gemini.data.remote.AgyBridgeService.instance.client
+    private val client: OkHttpClient get() = com.shriram.cinecode.data.remote.AgyBridgeService.instance.client
 
     private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
 

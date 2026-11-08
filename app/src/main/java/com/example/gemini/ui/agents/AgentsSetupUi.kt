@@ -1,6 +1,6 @@
-package com.example.gemini.ui.agents
+package com.shriram.cinecode.ui.agents
 
-import com.example.gemini.ui.components.bouncyVerticalScroll
+import com.shriram.cinecode.ui.components.bouncyVerticalScroll
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -46,8 +46,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.example.gemini.domain.model.AgentKind
-import com.example.gemini.ui.components.accent
+import com.shriram.cinecode.domain.model.AgentKind
+import com.shriram.cinecode.ui.components.accent
 
 private data class AgentOption(val agents: Set<AgentKind>, val title: String, val description: String)
 

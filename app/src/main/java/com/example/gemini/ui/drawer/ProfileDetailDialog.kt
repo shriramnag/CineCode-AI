@@ -1,4 +1,4 @@
-package com.example.gemini.ui.drawer
+package com.shriram.cinecode.ui.drawer
 
 import android.content.Intent
 import android.net.Uri
@@ -32,9 +32,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
-import com.example.gemini.data.remote.AgyHubClient
-import com.example.gemini.theme.ClaudeTerracotta
-import com.example.gemini.theme.QuotaGreen
+import com.shriram.cinecode.data.remote.AgyHubClient
+import com.shriram.cinecode.theme.ClaudeTerracotta
+import com.shriram.cinecode.theme.QuotaGreen
 
 /**
  * Safely parses base64 data URIs ("data:image/jpeg;base64,...") into ByteArray for Coil,

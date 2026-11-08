@@ -1,4 +1,4 @@
-package com.example.gemini.data.agent.agy
+package com.shriram.cinecode.data.agent.agy
 
 import android.app.Application
 import android.content.Context
@@ -8,17 +8,17 @@ import android.net.NetworkCapabilities
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.gemini.data.preferences.AuthPreferences
-import com.example.gemini.data.remote.AgyHubClient
-import com.example.gemini.data.remote.AntigravityApiService
-import com.example.gemini.data.remote.GoogleOAuthManager
-import com.example.gemini.data.remote.StreamEvent
-import com.example.gemini.domain.model.AiModel
-import com.example.gemini.domain.model.ChatMessage
-import com.example.gemini.domain.model.ChatAttachment
-import com.example.gemini.domain.model.Conversation
-import com.example.gemini.domain.model.MessageRole
-import com.example.gemini.domain.model.ModelQuota
+import com.shriram.cinecode.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.remote.AgyHubClient
+import com.shriram.cinecode.data.remote.AntigravityApiService
+import com.shriram.cinecode.data.remote.GoogleOAuthManager
+import com.shriram.cinecode.data.remote.StreamEvent
+import com.shriram.cinecode.domain.model.AiModel
+import com.shriram.cinecode.domain.model.ChatMessage
+import com.shriram.cinecode.domain.model.ChatAttachment
+import com.shriram.cinecode.domain.model.Conversation
+import com.shriram.cinecode.domain.model.MessageRole
+import com.shriram.cinecode.domain.model.ModelQuota
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -34,7 +34,7 @@ import kotlinx.serialization.encodeToString
 import android.util.Log
 import org.json.JSONObject
 import java.util.UUID
-import com.example.gemini.data.agent.ChatSessionStore
+import com.shriram.cinecode.data.agent.ChatSessionStore
 import kotlinx.coroutines.CoroutineScope
 
 /** Antigravity skills, installed plugins and the Google plugins catalog. Moved out of ChatViewModel unchanged. */
@@ -49,8 +49,8 @@ class AgyPluginsManager(
 
     private fun loadMcpServers() = mcpManager.loadMcpServers()
 
-    private val _allSkills = MutableStateFlow<List<com.example.gemini.data.remote.dto.SkillDefinitionDto>>(emptyList())
-    val allSkills: StateFlow<List<com.example.gemini.data.remote.dto.SkillDefinitionDto>> = _allSkills.asStateFlow()
+    private val _allSkills = MutableStateFlow<List<com.shriram.cinecode.data.remote.dto.SkillDefinitionDto>>(emptyList())
+    val allSkills: StateFlow<List<com.shriram.cinecode.data.remote.dto.SkillDefinitionDto>> = _allSkills.asStateFlow()
 
     private val _isSkillsLoading = MutableStateFlow(false)
     val isSkillsLoading: StateFlow<Boolean> = _isSkillsLoading.asStateFlow()
@@ -58,14 +58,14 @@ class AgyPluginsManager(
     private val _skillsFilterScope = MutableStateFlow("GLOBAL") // "GLOBAL", "WORKSPACE", "ALL"
     val skillsFilterScope: StateFlow<String> = _skillsFilterScope.asStateFlow()
 
-    private val _installedPlugins = MutableStateFlow<List<com.example.gemini.data.remote.dto.InstalledPluginDto>>(emptyList())
-    val installedPlugins: StateFlow<List<com.example.gemini.data.remote.dto.InstalledPluginDto>> = _installedPlugins.asStateFlow()
+    private val _installedPlugins = MutableStateFlow<List<com.shriram.cinecode.data.remote.dto.InstalledPluginDto>>(emptyList())
+    val installedPlugins: StateFlow<List<com.shriram.cinecode.data.remote.dto.InstalledPluginDto>> = _installedPlugins.asStateFlow()
 
     private val _isInstalledPluginsLoading = MutableStateFlow(false)
     val isInstalledPluginsLoading: StateFlow<Boolean> = _isInstalledPluginsLoading.asStateFlow()
 
-    private val _googlePluginsCatalog = MutableStateFlow<List<com.example.gemini.data.remote.dto.BuildWithGooglePluginItemDto>>(emptyList())
-    val googlePluginsCatalog: StateFlow<List<com.example.gemini.data.remote.dto.BuildWithGooglePluginItemDto>> = _googlePluginsCatalog.asStateFlow()
+    private val _googlePluginsCatalog = MutableStateFlow<List<com.shriram.cinecode.data.remote.dto.BuildWithGooglePluginItemDto>>(emptyList())
+    val googlePluginsCatalog: StateFlow<List<com.shriram.cinecode.data.remote.dto.BuildWithGooglePluginItemDto>> = _googlePluginsCatalog.asStateFlow()
 
     private val _isGooglePluginsLoading = MutableStateFlow(false)
     val isGooglePluginsLoading: StateFlow<Boolean> = _isGooglePluginsLoading.asStateFlow()
@@ -98,7 +98,7 @@ class AgyPluginsManager(
             try {
                 val workspaceUris: List<String> = when (scope) {
                     "WORKSPACE", "ALL" -> {
-                        val currentWs = com.example.gemini.data.daemon.TermuxDaemonManager.activeProject.value?.path
+                        val currentWs = com.shriram.cinecode.data.daemon.TermuxDaemonManager.activeProject.value?.path
                             ?: _currentConversation.value?.workspaceUri
                             ?: ""
                         if (currentWs.isNotBlank()) {

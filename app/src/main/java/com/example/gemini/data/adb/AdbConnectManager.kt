@@ -1,4 +1,4 @@
-package com.example.gemini.data.adb
+package com.shriram.cinecode.data.adb
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -17,12 +17,12 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.RemoteInput
 import androidx.core.content.ContextCompat
-import com.example.gemini.R
-import com.example.gemini.data.local.LocalCommandResult
-import com.example.gemini.data.local.LocalEnvironmentManager
-import com.example.gemini.data.preferences.AuthPreferences
-import com.example.gemini.data.remote.AdbTunnel
-import com.example.gemini.data.remote.RemoteServerManager
+import com.shriram.cinecode.R
+import com.shriram.cinecode.data.local.LocalCommandResult
+import com.shriram.cinecode.data.local.LocalEnvironmentManager
+import com.shriram.cinecode.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.remote.AdbTunnel
+import com.shriram.cinecode.data.remote.RemoteServerManager
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

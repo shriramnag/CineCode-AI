@@ -1,4 +1,4 @@
-package com.example.gemini.ui.ide
+package com.shriram.cinecode.ui.ide
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
@@ -30,13 +30,13 @@ import android.util.Log
 import android.webkit.MimeTypeMap
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.FileProvider
-import com.example.gemini.data.daemon.FileNode
-import com.example.gemini.data.daemon.IdeApiClient
-import com.example.gemini.data.daemon.ProjectItem
-import com.example.gemini.data.preferences.AuthPreferences
-import com.example.gemini.theme.ClaudeTerracotta
-import com.example.gemini.ui.components.AppToastHelper
-import com.example.gemini.ui.components.ChatToastType
+import com.shriram.cinecode.data.daemon.FileNode
+import com.shriram.cinecode.data.daemon.IdeApiClient
+import com.shriram.cinecode.data.daemon.ProjectItem
+import com.shriram.cinecode.data.preferences.AuthPreferences
+import com.shriram.cinecode.theme.ClaudeTerracotta
+import com.shriram.cinecode.ui.components.AppToastHelper
+import com.shriram.cinecode.ui.components.ChatToastType
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -76,7 +76,7 @@ fun ProjectSidebar(
     var showDeleteDialog by remember { mutableStateOf<FileNode?>(null) }
     var showDetailsDialog by remember { mutableStateOf<FileNode?>(null) }
     var expandedPaths by remember { mutableStateOf(setOf<String>()) }
-    val daemonStatus by com.example.gemini.data.daemon.TermuxDaemonManager.status.collectAsState()
+    val daemonStatus by com.shriram.cinecode.data.daemon.TermuxDaemonManager.status.collectAsState()
 
     Column(
         modifier = modifier
@@ -394,7 +394,7 @@ fun ProjectSidebar(
                         .padding(16.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (daemonStatus != com.example.gemini.data.daemon.DaemonStatus.RUNNING) {
+                    if (daemonStatus != com.shriram.cinecode.data.daemon.DaemonStatus.RUNNING) {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
@@ -402,7 +402,7 @@ fun ProjectSidebar(
                             Icon(
                                 imageVector = Icons.Default.CloudOff,
                                 contentDescription = null,
-                                tint = com.example.gemini.theme.AppColors.danger,
+                                tint = com.shriram.cinecode.theme.AppColors.danger,
                                 modifier = Modifier.size(32.dp)
                             )
                             Spacer(modifier = Modifier.height(8.dp))
@@ -630,7 +630,7 @@ fun ProjectSidebar(
 
     // --- 4. File / Folder Details Dialog ---
     showDetailsDialog?.let { node ->
-        com.example.gemini.ui.components.FileDetailsDialog(
+        com.shriram.cinecode.ui.components.FileDetailsDialog(
             name = node.name,
             path = node.path,
             isDir = node.isDir,
@@ -778,7 +778,7 @@ fun FileTreeNodeItem(
                                 Icon(
                                     imageVector = Icons.Default.Terminal,
                                     contentDescription = null,
-                                    tint = com.example.gemini.theme.AppColors.success,
+                                    tint = com.shriram.cinecode.theme.AppColors.success,
                                     modifier = Modifier.size(18.dp)
                                 )
                             },

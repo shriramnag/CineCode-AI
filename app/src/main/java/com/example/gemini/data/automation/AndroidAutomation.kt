@@ -1,4 +1,4 @@
-package com.example.gemini.data.automation
+package com.shriram.cinecode.data.automation
 
 import android.accessibilityservice.AccessibilityService
 import android.app.KeyguardManager
@@ -19,7 +19,7 @@ import android.util.DisplayMetrics
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction
-import com.example.gemini.data.adb.AdbConnectManager
+import com.shriram.cinecode.data.adb.AdbConnectManager
 import kotlinx.coroutines.delay
 import org.json.JSONArray
 import org.json.JSONObject

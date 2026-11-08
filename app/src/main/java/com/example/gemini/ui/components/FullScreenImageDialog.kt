@@ -1,4 +1,4 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import android.content.Context
 import android.content.Intent
@@ -56,14 +56,14 @@ fun FullScreenImageDialog(
     val dialogSnackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
-    val memKey = remember(imageUrl) { com.example.gemini.data.remote.HubMediaResolver.normalizeKey(imageUrl) }
+    val memKey = remember(imageUrl) { com.shriram.cinecode.data.remote.HubMediaResolver.normalizeKey(imageUrl) }
     var resolvedUri by remember(imageUrl) {
-        mutableStateOf(if (imageUrl.isNotBlank()) com.example.gemini.data.remote.HubMediaResolver.getResolvedUriSync(context, imageUrl) else "")
+        mutableStateOf(if (imageUrl.isNotBlank()) com.shriram.cinecode.data.remote.HubMediaResolver.getResolvedUriSync(context, imageUrl) else "")
     }
 
     LaunchedEffect(imageUrl) {
-        if (imageUrl.isNotBlank() && !com.example.gemini.data.remote.HubMediaResolver.isLocalOrCached(context, imageUrl)) {
-            val res = com.example.gemini.data.remote.HubMediaResolver.resolveMediaUri(context, imageUrl)
+        if (imageUrl.isNotBlank() && !com.shriram.cinecode.data.remote.HubMediaResolver.isLocalOrCached(context, imageUrl)) {
+            val res = com.shriram.cinecode.data.remote.HubMediaResolver.resolveMediaUri(context, imageUrl)
             if (res.isNotBlank()) {
                 resolvedUri = res
             }
@@ -72,7 +72,7 @@ fun FullScreenImageDialog(
 
     val finalUri = resolvedUri.ifBlank { imageUrl }
     val coilData: Any? = remember(finalUri, memKey) {
-        val cachedBytes = com.example.gemini.data.remote.HubMediaResolver.getImageBytes(memKey)
+        val cachedBytes = com.shriram.cinecode.data.remote.HubMediaResolver.getImageBytes(memKey)
         when {
             cachedBytes != null -> cachedBytes
             finalUri.startsWith("data:image/") -> {
@@ -99,7 +99,7 @@ fun FullScreenImageDialog(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(com.example.gemini.theme.AppColors.terminalBg.copy(alpha = 0.96f))
+                .background(com.shriram.cinecode.theme.AppColors.terminalBg.copy(alpha = 0.96f))
         ) {
             // Main Zoomable & Pannable Image Area
             Box(

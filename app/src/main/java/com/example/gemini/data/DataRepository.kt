@@ -1,4 +1,4 @@
-package com.example.gemini.data
+package com.shriram.cinecode.data
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow

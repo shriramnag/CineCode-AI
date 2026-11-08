@@ -1,4 +1,4 @@
-package com.example.gemini.data.local
+package com.shriram.cinecode.data.local
 
 data class DiscoveredPackageInfo(
     val url: String,

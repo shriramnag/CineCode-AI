@@ -1,9 +1,9 @@
-package com.example.gemini.data.agent
+package com.shriram.cinecode.data.agent
 
-import com.example.gemini.domain.model.ChatAttachment
-import com.example.gemini.domain.model.ChatMessage
-import com.example.gemini.domain.model.Conversation
-import com.example.gemini.domain.model.ToolCall
+import com.shriram.cinecode.domain.model.ChatAttachment
+import com.shriram.cinecode.domain.model.ChatMessage
+import com.shriram.cinecode.domain.model.Conversation
+import com.shriram.cinecode.domain.model.ToolCall
 import kotlinx.coroutines.flow.MutableStateFlow
 
 /**

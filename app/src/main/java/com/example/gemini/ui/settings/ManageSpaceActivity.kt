@@ -1,4 +1,4 @@
-package com.example.gemini.ui.settings
+package com.shriram.cinecode.ui.settings
 
 import android.app.ActivityManager
 import android.app.usage.StorageStatsManager
@@ -69,10 +69,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gemini.data.preferences.AuthPreferences
-import com.example.gemini.theme.ClaudeTerracotta
-import com.example.gemini.theme.GeminiTheme
-import com.example.gemini.theme.isSystemInDarkThemeRobust
+import com.shriram.cinecode.data.preferences.AuthPreferences
+import com.shriram.cinecode.theme.ClaudeTerracotta
+import com.shriram.cinecode.theme.GeminiTheme
+import com.shriram.cinecode.theme.isSystemInDarkThemeRobust
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

@@ -1,4 +1,4 @@
-package com.example.gemini.ui.onboarding
+package com.shriram.cinecode.ui.onboarding
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -66,9 +66,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.example.gemini.R
-import com.example.gemini.data.preferences.TerminalLauncherManager
-import com.example.gemini.theme.ClaudeTerracotta
+import com.shriram.cinecode.R
+import com.shriram.cinecode.data.preferences.TerminalLauncherManager
+import com.shriram.cinecode.theme.ClaudeTerracotta
 
 @Composable
 fun TerminalLauncherOnboardingDialog(

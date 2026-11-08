@@ -1,4 +1,4 @@
-package com.example.gemini.ui.settings
+package com.shriram.cinecode.ui.settings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -24,9 +24,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gemini.theme.AppTheme
-import com.example.gemini.theme.BuiltInThemes
-import com.example.gemini.theme.ThemeManager
+import com.shriram.cinecode.theme.AppTheme
+import com.shriram.cinecode.theme.BuiltInThemes
+import com.shriram.cinecode.theme.ThemeManager
 
 /**
  * Settings → Appearance: pick the light theme and the dark theme from previews of every built-in and custom theme.

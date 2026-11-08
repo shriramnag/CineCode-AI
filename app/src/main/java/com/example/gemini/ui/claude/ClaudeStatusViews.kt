@@ -1,4 +1,4 @@
-package com.example.gemini.ui.claude
+package com.shriram.cinecode.ui.claude
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Row
@@ -18,12 +18,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gemini.data.agent.claude.ClaudeStatus
-import com.example.gemini.domain.model.AgentKind
-import com.example.gemini.ui.agents.AgentActionPill
-import com.example.gemini.ui.agents.AgentSetupPrompt
-import com.example.gemini.ui.agents.AgentStatusDot
-import com.example.gemini.ui.components.ClaudeAccent
+import com.shriram.cinecode.data.agent.claude.ClaudeStatus
+import com.shriram.cinecode.domain.model.AgentKind
+import com.shriram.cinecode.ui.agents.AgentActionPill
+import com.shriram.cinecode.ui.agents.AgentSetupPrompt
+import com.shriram.cinecode.ui.agents.AgentStatusDot
+import com.shriram.cinecode.ui.components.ClaudeAccent
 
 /** Empty Claude chat when Claude Code is not ready: what is wrong and the one action that fixes it. */
 @Composable

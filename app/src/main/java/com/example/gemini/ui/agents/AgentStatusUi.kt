@@ -1,4 +1,4 @@
-package com.example.gemini.ui.agents
+package com.shriram.cinecode.ui.agents
 
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -47,14 +47,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gemini.data.agent.claude.ClaudeCliStatus
-import com.example.gemini.data.agent.claude.ClaudeStatus
-import com.example.gemini.data.remote.AgyHubClient
-import com.example.gemini.data.remote.SystemConnectionState
-import com.example.gemini.data.remote.SystemStatus
-import com.example.gemini.domain.model.AgentKind
-import com.example.gemini.ui.components.accent
-import com.example.gemini.ui.components.label
+import com.shriram.cinecode.data.agent.claude.ClaudeCliStatus
+import com.shriram.cinecode.data.agent.claude.ClaudeStatus
+import com.shriram.cinecode.data.remote.AgyHubClient
+import com.shriram.cinecode.data.remote.SystemConnectionState
+import com.shriram.cinecode.data.remote.SystemStatus
+import com.shriram.cinecode.domain.model.AgentKind
+import com.shriram.cinecode.ui.components.accent
+import com.shriram.cinecode.ui.components.label
 
 /** One agent's health: drives the split status dot, its popup, the accounts dialog and the new-chat picker. */
 data class AgentStatusEntry(

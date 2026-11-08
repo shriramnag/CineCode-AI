@@ -1,4 +1,4 @@
-package com.example.gemini.ui.ide
+package com.shriram.cinecode.ui.ide
 
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
@@ -25,8 +25,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gemini.data.daemon.*
-import com.example.gemini.theme.ClaudeTerracotta
+import com.shriram.cinecode.data.daemon.*
+import com.shriram.cinecode.theme.ClaudeTerracotta
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
@@ -578,7 +578,7 @@ fun GitSourceControlView(
                                         onClick = { showDiscardAllDialog = true },
                                         modifier = Modifier.size(24.dp)
                                     ) {
-                                        Icon(imageVector = Icons.Default.Undo, contentDescription = "Discard All", modifier = Modifier.size(13.dp), tint = com.example.gemini.theme.AppColors.danger)
+                                        Icon(imageVector = Icons.Default.Undo, contentDescription = "Discard All", modifier = Modifier.size(13.dp), tint = com.shriram.cinecode.theme.AppColors.danger)
                                     }
                                     IconButton(
                                         onClick = {
@@ -590,7 +590,7 @@ fun GitSourceControlView(
                                         },
                                         modifier = Modifier.size(24.dp)
                                     ) {
-                                        Icon(imageVector = Icons.Default.Add, contentDescription = "Stage All", modifier = Modifier.size(14.dp), tint = com.example.gemini.theme.AppColors.success)
+                                        Icon(imageVector = Icons.Default.Add, contentDescription = "Stage All", modifier = Modifier.size(14.dp), tint = com.shriram.cinecode.theme.AppColors.success)
                                     }
                                 }
                             }
@@ -634,7 +634,7 @@ fun GitSourceControlView(
                                         onClick = { showDiscardAllUntrackedDialog = true },
                                         modifier = Modifier.size(24.dp)
                                     ) {
-                                        Icon(imageVector = Icons.Default.Undo, contentDescription = "Discard All Untracked", modifier = Modifier.size(13.dp), tint = com.example.gemini.theme.AppColors.danger)
+                                        Icon(imageVector = Icons.Default.Undo, contentDescription = "Discard All Untracked", modifier = Modifier.size(13.dp), tint = com.shriram.cinecode.theme.AppColors.danger)
                                     }
                                     IconButton(
                                         onClick = {
@@ -646,7 +646,7 @@ fun GitSourceControlView(
                                         },
                                         modifier = Modifier.size(24.dp)
                                     ) {
-                                        Icon(imageVector = Icons.Default.Add, contentDescription = "Stage All Untracked", modifier = Modifier.size(14.dp), tint = com.example.gemini.theme.AppColors.success)
+                                        Icon(imageVector = Icons.Default.Add, contentDescription = "Stage All Untracked", modifier = Modifier.size(14.dp), tint = com.shriram.cinecode.theme.AppColors.success)
                                     }
                                 }
                             }
@@ -685,7 +685,7 @@ fun GitSourceControlView(
                             contentAlignment = Alignment.Center
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(imageVector = Icons.Default.CheckCircle, contentDescription = null, tint = com.example.gemini.theme.AppColors.success, modifier = Modifier.size(28.dp))
+                                Icon(imageVector = Icons.Default.CheckCircle, contentDescription = null, tint = com.shriram.cinecode.theme.AppColors.success, modifier = Modifier.size(28.dp))
                                 Spacer(modifier = Modifier.height(6.dp))
                                 Text("Working tree is clean", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
@@ -781,20 +781,20 @@ fun GitSourceControlView(
                     if (configPromptReason != null) {
                         Surface(
                             shape = RoundedCornerShape(8.dp),
-                            color = com.example.gemini.theme.AppColors.warningContainer,
-                            border = androidx.compose.foundation.BorderStroke(1.dp, com.example.gemini.theme.AppColors.warning),
+                            color = com.shriram.cinecode.theme.AppColors.warningContainer,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, com.shriram.cinecode.theme.AppColors.warning),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(
                                 modifier = Modifier.padding(10.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(Icons.Default.Info, contentDescription = null, tint = com.example.gemini.theme.AppColors.warning, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Default.Info, contentDescription = null, tint = com.shriram.cinecode.theme.AppColors.warning, modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = configPromptReason!!,
                                     fontSize = 12.sp,
-                                    color = com.example.gemini.theme.AppColors.warning,
+                                    color = com.shriram.cinecode.theme.AppColors.warning,
                                     lineHeight = 16.sp
                                 )
                             }
@@ -973,7 +973,7 @@ fun GitSourceControlView(
     if (executionError != null) {
         AlertDialog(
             onDismissRequest = { executionError = null },
-            icon = { Icon(Icons.Default.ErrorOutline, contentDescription = null, tint = com.example.gemini.theme.AppColors.danger) },
+            icon = { Icon(Icons.Default.ErrorOutline, contentDescription = null, tint = com.shriram.cinecode.theme.AppColors.danger) },
             title = { Text(executionError!!.first, fontWeight = FontWeight.Bold, fontSize = 16.sp) },
             text = {
                 Column {
@@ -1153,7 +1153,7 @@ fun GitSourceControlView(
         val fileName = File(targetPath).name
         AlertDialog(
             onDismissRequest = { pendingDiscardFile = null },
-            icon = { Icon(Icons.Default.Warning, contentDescription = null, tint = com.example.gemini.theme.AppColors.danger) },
+            icon = { Icon(Icons.Default.Warning, contentDescription = null, tint = com.shriram.cinecode.theme.AppColors.danger) },
             title = { Text("Discard Changes", fontWeight = FontWeight.Bold) },
             text = { Text("Are you sure you want to discard all changes in '$fileName'? This action cannot be undone.") },
             confirmButton = {
@@ -1169,7 +1169,7 @@ fun GitSourceControlView(
                             isOperating = false
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = com.example.gemini.theme.AppColors.danger)
+                    colors = ButtonDefaults.buttonColors(containerColor = com.shriram.cinecode.theme.AppColors.danger)
                 ) {
                     Text("Discard")
                 }
@@ -1186,7 +1186,7 @@ fun GitSourceControlView(
     if (showDiscardAllDialog) {
         AlertDialog(
             onDismissRequest = { showDiscardAllDialog = false },
-            icon = { Icon(Icons.Default.Warning, contentDescription = null, tint = com.example.gemini.theme.AppColors.danger) },
+            icon = { Icon(Icons.Default.Warning, contentDescription = null, tint = com.shriram.cinecode.theme.AppColors.danger) },
             title = { Text("Discard All Changes", fontWeight = FontWeight.Bold) },
             text = { Text("Are you sure you want to discard all unstaged changes? All uncommitted edits will be lost permanently.") },
             confirmButton = {
@@ -1201,7 +1201,7 @@ fun GitSourceControlView(
                             isOperating = false
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = com.example.gemini.theme.AppColors.danger)
+                    colors = ButtonDefaults.buttonColors(containerColor = com.shriram.cinecode.theme.AppColors.danger)
                 ) {
                     Text("Discard All")
                 }
@@ -1218,7 +1218,7 @@ fun GitSourceControlView(
     if (showDiscardAllUntrackedDialog) {
         AlertDialog(
             onDismissRequest = { showDiscardAllUntrackedDialog = false },
-            icon = { Icon(Icons.Default.Warning, contentDescription = null, tint = com.example.gemini.theme.AppColors.danger) },
+            icon = { Icon(Icons.Default.Warning, contentDescription = null, tint = com.shriram.cinecode.theme.AppColors.danger) },
             title = { Text("Discard Untracked Files", fontWeight = FontWeight.Bold) },
             text = { Text("Are you sure you want to delete all untracked files? This action cannot be undone.") },
             confirmButton = {
@@ -1234,7 +1234,7 @@ fun GitSourceControlView(
                             isOperating = false
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = com.example.gemini.theme.AppColors.danger)
+                    colors = ButtonDefaults.buttonColors(containerColor = com.shriram.cinecode.theme.AppColors.danger)
                 ) {
                     Text("Discard Untracked")
                 }
@@ -1252,7 +1252,7 @@ fun GitSourceControlView(
     if (showUnstageAllDialog) {
         AlertDialog(
             onDismissRequest = { showUnstageAllDialog = false },
-            icon = { Icon(Icons.Default.RemoveCircleOutline, contentDescription = null, tint = com.example.gemini.theme.AppColors.danger) },
+            icon = { Icon(Icons.Default.RemoveCircleOutline, contentDescription = null, tint = com.shriram.cinecode.theme.AppColors.danger) },
             title = { Text("Unstage All Changes", fontWeight = FontWeight.Bold) },
             text = { Text("Are you sure you want to unstage all files from the staging area?") },
             confirmButton = {
@@ -1484,11 +1484,11 @@ private fun GitFileRow(
     val parentDir = remember(file.path) { File(file.path).parent ?: "" }
 
     val (statusBg, statusFg) = when (file.status) {
-        "M" -> Pair(com.example.gemini.theme.AppColors.warningContainer, com.example.gemini.theme.AppColors.warning)
-        "A", "U" -> Pair(com.example.gemini.theme.AppColors.successContainer, com.example.gemini.theme.AppColors.success)
-        "D" -> Pair(com.example.gemini.theme.AppColors.dangerContainer, com.example.gemini.theme.AppColors.danger)
-        "R" -> Pair(com.example.gemini.theme.AppColors.infoContainer, com.example.gemini.theme.AppColors.info)
-        else -> Pair(com.example.gemini.theme.AppColors.fill, com.example.gemini.theme.AppColors.textSecondary)
+        "M" -> Pair(com.shriram.cinecode.theme.AppColors.warningContainer, com.shriram.cinecode.theme.AppColors.warning)
+        "A", "U" -> Pair(com.shriram.cinecode.theme.AppColors.successContainer, com.shriram.cinecode.theme.AppColors.success)
+        "D" -> Pair(com.shriram.cinecode.theme.AppColors.dangerContainer, com.shriram.cinecode.theme.AppColors.danger)
+        "R" -> Pair(com.shriram.cinecode.theme.AppColors.infoContainer, com.shriram.cinecode.theme.AppColors.info)
+        else -> Pair(com.shriram.cinecode.theme.AppColors.fill, com.shriram.cinecode.theme.AppColors.textSecondary)
     }
 
     Row(
@@ -1543,7 +1543,7 @@ private fun GitFileRow(
                 Icon(
                     imageVector = Icons.Default.Undo,
                     contentDescription = "Discard",
-                    tint = com.example.gemini.theme.AppColors.danger,
+                    tint = com.shriram.cinecode.theme.AppColors.danger,
                     modifier = Modifier.size(13.dp)
                 )
             }
@@ -1605,8 +1605,8 @@ private fun CommitLogRow(
                     Spacer(modifier = Modifier.width(4.dp))
                     Surface(
                         shape = RoundedCornerShape(4.dp),
-                        color = com.example.gemini.theme.AppColors.warningContainer,
-                        border = androidx.compose.foundation.BorderStroke(0.5.dp, com.example.gemini.theme.AppColors.warning)
+                        color = com.shriram.cinecode.theme.AppColors.warningContainer,
+                        border = androidx.compose.foundation.BorderStroke(0.5.dp, com.shriram.cinecode.theme.AppColors.warning)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -1615,7 +1615,7 @@ private fun CommitLogRow(
                             Icon(
                                 imageVector = Icons.Default.CloudOff,
                                 contentDescription = null,
-                                tint = com.example.gemini.theme.AppColors.warning,
+                                tint = com.shriram.cinecode.theme.AppColors.warning,
                                 modifier = Modifier.size(9.dp)
                             )
                             Spacer(modifier = Modifier.width(2.dp))
@@ -1623,7 +1623,7 @@ private fun CommitLogRow(
                                 text = "Not pushed",
                                 fontSize = 9.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = com.example.gemini.theme.AppColors.warning
+                                color = com.shriram.cinecode.theme.AppColors.warning
                             )
                         }
                     }
@@ -1692,10 +1692,10 @@ private fun CommitLogRow(
 
                         details.changedFiles.forEach { fileChange ->
                             val (badgeBg, badgeFg) = when (fileChange.status) {
-                                "M" -> Pair(com.example.gemini.theme.AppColors.warningContainer, com.example.gemini.theme.AppColors.warning)
-                                "A" -> Pair(com.example.gemini.theme.AppColors.successContainer, com.example.gemini.theme.AppColors.success)
-                                "D" -> Pair(com.example.gemini.theme.AppColors.dangerContainer, com.example.gemini.theme.AppColors.danger)
-                                else -> Pair(com.example.gemini.theme.AppColors.fill, com.example.gemini.theme.AppColors.textSecondary)
+                                "M" -> Pair(com.shriram.cinecode.theme.AppColors.warningContainer, com.shriram.cinecode.theme.AppColors.warning)
+                                "A" -> Pair(com.shriram.cinecode.theme.AppColors.successContainer, com.shriram.cinecode.theme.AppColors.success)
+                                "D" -> Pair(com.shriram.cinecode.theme.AppColors.dangerContainer, com.shriram.cinecode.theme.AppColors.danger)
+                                else -> Pair(com.shriram.cinecode.theme.AppColors.fill, com.shriram.cinecode.theme.AppColors.textSecondary)
                             }
 
                             Row(

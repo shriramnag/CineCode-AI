@@ -1,4 +1,4 @@
-package com.example.gemini.ui.settings
+package com.shriram.cinecode.ui.settings
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -14,10 +14,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.example.gemini.ui.browser.PluginRepo
-import com.example.gemini.ui.browser.PluginRepositories
-import com.example.gemini.ui.browser.PluginVersions
-import com.example.gemini.ui.browser.RepoPlugin
+import com.shriram.cinecode.ui.browser.PluginRepo
+import com.shriram.cinecode.ui.browser.PluginRepositories
+import com.shriram.cinecode.ui.browser.PluginVersions
+import com.shriram.cinecode.ui.browser.RepoPlugin
 import kotlinx.coroutines.launch
 
 /**
@@ -145,7 +145,7 @@ private fun RepoPluginRow(repo: PluginRepo, plugin: RepoPlugin, busy: Boolean, o
 
 /** Real progress of a repository install or update; the bar only moves without a percentage while the size is unknown. */
 @Composable
-internal fun PluginInstallProgress(progress: com.example.gemini.ui.browser.RepoInstallProgress, modifier: Modifier = Modifier) {
+internal fun PluginInstallProgress(progress: com.shriram.cinecode.ui.browser.RepoInstallProgress, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     fun size(bytes: Long) = android.text.format.Formatter.formatShortFileSize(context, bytes)
     val fraction = progress.fraction

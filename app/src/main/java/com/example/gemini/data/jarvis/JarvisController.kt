@@ -1,4 +1,4 @@
-package com.example.gemini.data.jarvis
+package com.shriram.cinecode.data.jarvis
 
 import android.Manifest
 import android.app.Application
@@ -10,25 +10,25 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
 import androidx.core.content.ContextCompat
-import com.example.gemini.data.agent.ChatSessionStore
-import com.example.gemini.data.agent.claude.ClaudeBridgeClient
-import com.example.gemini.data.agent.claude.ClaudeChatBackend
-import com.example.gemini.data.audio.SpeechTranscriber
-import com.example.gemini.data.remote.AgyHubClient
-import com.example.gemini.data.remote.PromptExpansion
-import com.example.gemini.domain.model.AgentKind
-import com.example.gemini.domain.model.ChatMessage
-import com.example.gemini.domain.model.Conversation
-import com.example.gemini.domain.model.ChoiceOption
-import com.example.gemini.domain.model.ChoiceQuestion
-import com.example.gemini.domain.model.ChoiceQuestionnaire
-import com.example.gemini.data.remote.dto.AskQuestionOptionDto
-import com.example.gemini.data.remote.dto.AskQuestionResponseItemDto
-import com.example.gemini.data.agent.ChatCompletionMonitor
-import com.example.gemini.domain.model.MessageRole
-import com.example.gemini.domain.model.ToolCall
-import com.example.gemini.domain.model.ToolType
-import com.example.gemini.ui.chat.ChatViewModel
+import com.shriram.cinecode.data.agent.ChatSessionStore
+import com.shriram.cinecode.data.agent.claude.ClaudeBridgeClient
+import com.shriram.cinecode.data.agent.claude.ClaudeChatBackend
+import com.shriram.cinecode.data.audio.SpeechTranscriber
+import com.shriram.cinecode.data.remote.AgyHubClient
+import com.shriram.cinecode.data.remote.PromptExpansion
+import com.shriram.cinecode.domain.model.AgentKind
+import com.shriram.cinecode.domain.model.ChatMessage
+import com.shriram.cinecode.domain.model.Conversation
+import com.shriram.cinecode.domain.model.ChoiceOption
+import com.shriram.cinecode.domain.model.ChoiceQuestion
+import com.shriram.cinecode.domain.model.ChoiceQuestionnaire
+import com.shriram.cinecode.data.remote.dto.AskQuestionOptionDto
+import com.shriram.cinecode.data.remote.dto.AskQuestionResponseItemDto
+import com.shriram.cinecode.data.agent.ChatCompletionMonitor
+import com.shriram.cinecode.domain.model.MessageRole
+import com.shriram.cinecode.domain.model.ToolCall
+import com.shriram.cinecode.domain.model.ToolType
+import com.shriram.cinecode.ui.chat.ChatViewModel
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -1382,8 +1382,8 @@ object JarvisController {
     }
 
     private fun defaultWorkspace(): String {
-        val p = com.example.gemini.data.daemon.TermuxDaemonManager.activeProject.value?.path
-            ?: com.example.gemini.data.local.LocalEnvironmentManager.getHomeDir(app).absolutePath
+        val p = com.shriram.cinecode.data.daemon.TermuxDaemonManager.activeProject.value?.path
+            ?: com.shriram.cinecode.data.local.LocalEnvironmentManager.getHomeDir(app).absolutePath
         return if (p.startsWith("file://")) p else "file://$p"
     }
 
@@ -1449,7 +1449,7 @@ object JarvisController {
         AgentKind.CLAUDE -> vm.claudeBackend.loadMessages(id)
         AgentKind.AGY -> {
             val steps = hub.getCascadeTrajectorySteps(id).getOrNull().orEmpty()
-            com.example.gemini.domain.chat.TrajectoryEngine().ingestStepsDirect(steps, id)
+            com.shriram.cinecode.domain.chat.TrajectoryEngine().ingestStepsDirect(steps, id)
         }
     }
 

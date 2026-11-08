@@ -1,4 +1,4 @@
-package com.example.gemini.data.adb
+package com.shriram.cinecode.data.adb
 
 import android.app.Service
 import android.content.Intent
@@ -31,7 +31,7 @@ class AdbPairingService : Service() {
     }
 
     companion object {
-        const val ACTION_STOP = "com.example.gemini.adb.STOP_PAIRING"
-        const val ACTION_CODE = "com.example.gemini.adb.PAIRING_CODE"
+        const val ACTION_STOP = "com.shriram.cinecode.adb.STOP_PAIRING"
+        const val ACTION_CODE = "com.shriram.cinecode.adb.PAIRING_CODE"
     }
 }

@@ -1,18 +1,18 @@
-package com.example.gemini.data.agent.claude
+package com.shriram.cinecode.data.agent.claude
 
 import android.app.Application
 import android.util.Base64
 import android.util.Log
-import com.example.gemini.data.agent.AgentChatBackend
-import com.example.gemini.data.agent.ChatSessionStore
-import com.example.gemini.data.remote.SlashCommandItem
-import com.example.gemini.data.remote.dto.AskQuestionResponseItemDto
-import com.example.gemini.domain.model.AgentKind
-import com.example.gemini.domain.model.AiModel
-import com.example.gemini.domain.model.ChatAttachment
-import com.example.gemini.domain.model.ChatMessage
-import com.example.gemini.domain.model.Conversation
-import com.example.gemini.domain.model.ToolCall
+import com.shriram.cinecode.data.agent.AgentChatBackend
+import com.shriram.cinecode.data.agent.ChatSessionStore
+import com.shriram.cinecode.data.remote.SlashCommandItem
+import com.shriram.cinecode.data.remote.dto.AskQuestionResponseItemDto
+import com.shriram.cinecode.domain.model.AgentKind
+import com.shriram.cinecode.domain.model.AiModel
+import com.shriram.cinecode.domain.model.ChatAttachment
+import com.shriram.cinecode.domain.model.ChatMessage
+import com.shriram.cinecode.domain.model.Conversation
+import com.shriram.cinecode.domain.model.ToolCall
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -218,7 +218,7 @@ class ClaudeChatBackend(
     private var replayUntilSeq: Long? = null
     private var replayDeadline: Job? = null
     // messages sent while Claude was replying, not delivered yet: chat id → (uuid → entry); kept across chat switches
-    private val queuedByChat = HashMap<String, LinkedHashMap<String, com.example.gemini.domain.model.QueuedMessage>>()
+    private val queuedByChat = HashMap<String, LinkedHashMap<String, com.shriram.cinecode.domain.model.QueuedMessage>>()
     private var loopJob: Job? = null
     private val titleRefreshes = HashMap<String, Job>()
 
@@ -305,7 +305,7 @@ class ClaudeChatBackend(
     private fun sendPrompt(conv: Conversation, text: String, atts: List<ChatAttachment>) {
         val displayText = text.ifBlank { if (atts.any { it.isImage }) "Image" else "Attachment" }
         val title = if (conv.title == "New Chat" || conv.title.isBlank()) {
-            val first = com.example.gemini.data.remote.PromptExpansion.collapse(displayText).lines().firstOrNull { it.isNotBlank() } ?: "Chat"
+            val first = com.shriram.cinecode.data.remote.PromptExpansion.collapse(displayText).lines().firstOrNull { it.isNotBlank() } ?: "Chat"
             first.take(40) + if (first.length > 40) "..." else ""
         } else conv.title
         val updated = conv.copy(title = title, updatedAt = System.currentTimeMillis(), modelId = _selectedModelId.value)
@@ -326,7 +326,7 @@ class ClaudeChatBackend(
                 // Claude is replying: the CLI queues it (command_lifecycle "queued") and delivers it at the next tool
                 // boundary, or as the next turn. Its replay adds it to the chat once it is delivered ("started").
                 synchronized(queuedByChat) {
-                    queuedByChat.getOrPut(conv.id) { LinkedHashMap() }[uuid] = com.example.gemini.domain.model.QueuedMessage(
+                    queuedByChat.getOrPut(conv.id) { LinkedHashMap() }[uuid] = com.shriram.cinecode.domain.model.QueuedMessage(
                         id = uuid,
                         text = displayText,
                         attachmentCount = atts.size,
@@ -356,9 +356,9 @@ class ClaudeChatBackend(
         }
     }
 
-    private val _queuedMessages = MutableStateFlow<List<com.example.gemini.domain.model.QueuedMessage>>(emptyList())
+    private val _queuedMessages = MutableStateFlow<List<com.shriram.cinecode.domain.model.QueuedMessage>>(emptyList())
     /** The open chat's messages waiting for Claude to finish (shown in the queued-messages card). */
-    val queuedMessages: StateFlow<List<com.example.gemini.domain.model.QueuedMessage>> = _queuedMessages.asStateFlow()
+    val queuedMessages: StateFlow<List<com.shriram.cinecode.domain.model.QueuedMessage>> = _queuedMessages.asStateFlow()
 
     private fun publishQueue() {
         val id = attachedId ?: store.currentConversation.value?.id
@@ -929,7 +929,7 @@ class ClaudeChatBackend(
                 AiModel(
                     id = m.value,
                     displayName = resolved?.let { "Default ($it)" } ?: m.displayName.ifBlank { m.value },
-                    family = com.example.gemini.domain.model.ModelFamily.CLAUDE,
+                    family = com.shriram.cinecode.domain.model.ModelFamily.CLAUDE,
                     description = m.description,
                     key = m.value,
                     baseName = m.displayName.ifBlank { m.value }
@@ -965,7 +965,7 @@ class ClaudeChatBackend(
                 AiModel(
                     id = ref,
                     displayName = m.name?.takeIf { it.isNotBlank() } ?: m.id,
-                    family = com.example.gemini.domain.model.ModelFamily.CLAUDE,
+                    family = com.shriram.cinecode.domain.model.ModelFamily.CLAUDE,
                     description = listOfNotNull(p.name, m.contextLabel(p)).joinToString(" · "),
                     key = ref,
                     baseName = m.id
@@ -1549,7 +1549,7 @@ class ClaudeChatBackend(
         if (transcript.sessionCostUsd > 0) _sessionCost.value = transcript.sessionCostUsd
         _needsLogin.value = transcript.needsLogin
         transcript.sessionModel?.let { _activeModel.value = it }
-        com.example.gemini.ui.chat.ChatFeedCache.prewarm(msgs)
+        com.shriram.cinecode.ui.chat.ChatFeedCache.prewarm(msgs)
     }
 
     private fun upsertLocal(conv: Conversation) {
@@ -1559,7 +1559,7 @@ class ClaudeChatBackend(
     }
 
     private fun defaultWorkspaceUri(): String {
-        val path = com.example.gemini.data.daemon.TermuxDaemonManager.activeProject.value?.path.orEmpty()
+        val path = com.shriram.cinecode.data.daemon.TermuxDaemonManager.activeProject.value?.path.orEmpty()
         return if (path.isBlank()) "" else if (path.startsWith("file://")) path else "file://$path"
     }
 

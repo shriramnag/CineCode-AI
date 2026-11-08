@@ -1,9 +1,9 @@
-package com.termux.app
+package com.shriram.cinecode.app
 
-import com.example.gemini.data.service.TermuxService as CoreTermuxService
+import com.shriram.cinecode.data.service.TermuxService as CoreTermuxService
 
 /**
- * Direct com.termux.app.TermuxService implementation for shell commands
- * (e.g., termux-wake-lock, termux-wake-unlock) targeting explicit component com.termux.app.TermuxService.
+ * Direct com.shriram.cinecode.app.TermuxService implementation for shell commands
+ * (e.g., termux-wake-lock, termux-wake-unlock) targeting explicit component com.shriram.cinecode.app.TermuxService.
  */
 class TermuxService : CoreTermuxService()

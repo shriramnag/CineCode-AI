@@ -1,4 +1,4 @@
-package com.example.gemini.domain.model
+package com.shriram.cinecode.domain.model
 
 import kotlinx.serialization.Serializable
 import java.util.UUID

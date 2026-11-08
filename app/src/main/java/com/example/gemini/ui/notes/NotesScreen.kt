@@ -1,4 +1,4 @@
-package com.example.gemini.ui.notes
+package com.shriram.cinecode.ui.notes
 
 import android.text.format.DateUtils
 import androidx.activity.compose.BackHandler
@@ -14,7 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import com.example.gemini.ui.components.bouncyVerticalScroll
+import com.shriram.cinecode.ui.components.bouncyVerticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.*
@@ -36,11 +36,11 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gemini.data.notes.Note
-import com.example.gemini.data.notes.NoteKind
-import com.example.gemini.data.notes.NotesRepository
-import com.example.gemini.data.notes.TodoItem
-import com.example.gemini.theme.ClaudeTerracotta
+import com.shriram.cinecode.data.notes.Note
+import com.shriram.cinecode.data.notes.NoteKind
+import com.shriram.cinecode.data.notes.NotesRepository
+import com.shriram.cinecode.data.notes.TodoItem
+import com.shriram.cinecode.theme.ClaudeTerracotta
 import kotlinx.coroutines.launch
 
 private enum class NotesFilter(val label: String) { ALL("All"), NOTES("Notes"), TODOS("To-dos") }
@@ -141,7 +141,7 @@ private fun NotesList(
     onNew: (NoteKind) -> Unit
 ) {
     var filter by rememberSaveable { mutableStateOf(NotesFilter.ALL) }
-    val chipsBounce = com.example.gemini.ui.components.rememberBouncyOverscrollEffect()
+    val chipsBounce = com.shriram.cinecode.ui.components.rememberBouncyOverscrollEffect()
     var searching by rememberSaveable { mutableStateOf(false) }
     var query by rememberSaveable { mutableStateOf("") }
     var showNewMenu by remember { mutableStateOf(false) }
@@ -222,7 +222,7 @@ private fun NotesList(
                     }
                 )
             } else {
-                val listBounce = com.example.gemini.ui.components.rememberBouncyLazyScroll(listState)
+                val listBounce = com.shriram.cinecode.ui.components.rememberBouncyLazyScroll(listState)
                 LazyColumn(
                     state = listState,
                     modifier = Modifier.fillMaxSize().then(listBounce.modifier),

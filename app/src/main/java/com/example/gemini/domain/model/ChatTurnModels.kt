@@ -1,6 +1,6 @@
-package com.example.gemini.domain.model
+package com.shriram.cinecode.domain.model
 
-import com.example.gemini.data.remote.dto.CortexRequestedInteractionDto
+import com.shriram.cinecode.data.remote.dto.CortexRequestedInteractionDto
 import kotlinx.serialization.Serializable
 
 /**

@@ -1,4 +1,4 @@
-package com.example.gemini.ui.files
+package com.shriram.cinecode.ui.files
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -36,10 +36,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
-import com.example.gemini.data.files.ExplorerEntry
-import com.example.gemini.data.files.FileExplorerApi
-import com.example.gemini.data.files.FileKind
-import com.example.gemini.data.files.FileKinds
+import com.shriram.cinecode.data.files.ExplorerEntry
+import com.shriram.cinecode.data.files.FileExplorerApi
+import com.shriram.cinecode.data.files.FileKind
+import com.shriram.cinecode.data.files.FileKinds
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -316,7 +316,7 @@ internal fun BreadcrumbBar(
         ) {
             Row(
                 Modifier
-                    .horizontalScroll(scroll, overscrollEffect = com.example.gemini.ui.components.rememberBouncyOverscrollEffect())
+                    .horizontalScroll(scroll, overscrollEffect = com.shriram.cinecode.ui.components.rememberBouncyOverscrollEffect())
                     .padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {

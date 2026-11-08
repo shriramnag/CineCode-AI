@@ -1,4 +1,4 @@
-package com.example.gemini.ui.chat
+package com.shriram.cinecode.ui.chat
 
 import android.app.Application
 import androidx.lifecycle.ViewModelProvider

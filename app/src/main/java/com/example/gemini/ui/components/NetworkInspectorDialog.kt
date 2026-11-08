@@ -1,4 +1,4 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -37,8 +37,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.example.gemini.data.remote.inspector.NetworkInspectorManager
-import com.example.gemini.data.remote.inspector.NetworkLogEntry
+import com.shriram.cinecode.data.remote.inspector.NetworkInspectorManager
+import com.shriram.cinecode.data.remote.inspector.NetworkLogEntry
 
 enum class NetworkFilterType(val label: String) {
     ALL("All"),
@@ -109,13 +109,13 @@ fun NetworkInspectorDialog(
                             modifier = Modifier
                                 .size(32.dp)
                                 .clip(CircleShape)
-                                .background(com.example.gemini.theme.AppColors.info.copy(alpha = 0.15f)),
+                                .background(com.shriram.cinecode.theme.AppColors.info.copy(alpha = 0.15f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Language,
                                 contentDescription = null,
-                                tint = com.example.gemini.theme.AppColors.info,
+                                tint = com.shriram.cinecode.theme.AppColors.info,
                                 modifier = Modifier.size(18.dp)
                             )
                         }
@@ -279,12 +279,12 @@ private fun NetworkLogItemRow(
     onClick: () -> Unit
 ) {
     val methodColor = when (entry.method.uppercase()) {
-        "GRPC" -> com.example.gemini.theme.AppColors.accentAlt // Purple
-        "GET" -> com.example.gemini.theme.AppColors.success // Green
-        "POST" -> com.example.gemini.theme.AppColors.info // Blue
-        "PUT", "PATCH" -> com.example.gemini.theme.AppColors.warning // Amber
-        "DELETE" -> com.example.gemini.theme.AppColors.danger // Red
-        else -> com.example.gemini.theme.AppColors.textSecondary
+        "GRPC" -> com.shriram.cinecode.theme.AppColors.accentAlt // Purple
+        "GET" -> com.shriram.cinecode.theme.AppColors.success // Green
+        "POST" -> com.shriram.cinecode.theme.AppColors.info // Blue
+        "PUT", "PATCH" -> com.shriram.cinecode.theme.AppColors.warning // Amber
+        "DELETE" -> com.shriram.cinecode.theme.AppColors.danger // Red
+        else -> com.shriram.cinecode.theme.AppColors.textSecondary
     }
 
     val isConnected = entry.isConnected
@@ -313,9 +313,9 @@ private fun NetworkLogItemRow(
     }
 
     val statusColor = when {
-        isConnected -> com.example.gemini.theme.AppColors.success
-        !entry.isSuccess -> com.example.gemini.theme.AppColors.danger
-        else -> com.example.gemini.theme.AppColors.success
+        isConnected -> com.shriram.cinecode.theme.AppColors.success
+        !entry.isSuccess -> com.shriram.cinecode.theme.AppColors.danger
+        else -> com.shriram.cinecode.theme.AppColors.success
     }
 
     Row(
@@ -357,13 +357,13 @@ private fun NetworkLogItemRow(
                     Spacer(modifier = Modifier.width(6.dp))
                     Surface(
                         shape = RoundedCornerShape(3.dp),
-                        color = com.example.gemini.theme.AppColors.success.copy(alpha = 0.15f)
+                        color = com.shriram.cinecode.theme.AppColors.success.copy(alpha = 0.15f)
                     ) {
                         Text(
                             text = if (isConnected) "STREAMING" else "STREAM",
                             fontSize = 8.5.sp,
                             fontWeight = FontWeight.Bold,
-                            color = com.example.gemini.theme.AppColors.success,
+                            color = com.shriram.cinecode.theme.AppColors.success,
                             modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
                         )
                     }
@@ -392,7 +392,7 @@ private fun NetworkLogItemRow(
         Column(horizontalAlignment = Alignment.End) {
             Surface(
                 shape = RoundedCornerShape(4.dp),
-                color = if (isConnected) com.example.gemini.theme.AppColors.success.copy(alpha = 0.15f) else statusColor.copy(alpha = 0.12f)
+                color = if (isConnected) com.shriram.cinecode.theme.AppColors.success.copy(alpha = 0.15f) else statusColor.copy(alpha = 0.12f)
             ) {
                 Text(
                     text = when {
@@ -405,7 +405,7 @@ private fun NetworkLogItemRow(
                     },
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (isConnected) com.example.gemini.theme.AppColors.success else statusColor,
+                    color = if (isConnected) com.shriram.cinecode.theme.AppColors.success else statusColor,
                     modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp)
                 )
             }
@@ -416,7 +416,7 @@ private fun NetworkLogItemRow(
                 text = liveDurationText,
                 fontSize = 10.5.sp,
                 fontWeight = FontWeight.Medium,
-                color = if (isConnected) com.example.gemini.theme.AppColors.success else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                color = if (isConnected) com.shriram.cinecode.theme.AppColors.success else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                 fontFamily = FontFamily.Monospace
             )
         }

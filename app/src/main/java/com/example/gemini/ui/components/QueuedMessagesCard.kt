@@ -1,4 +1,4 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -33,8 +33,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gemini.domain.model.QueuedMessage
-import com.example.gemini.theme.AppColors
+import com.shriram.cinecode.domain.model.QueuedMessage
+import com.shriram.cinecode.theme.AppColors
 
 /**
  * Messages sent while the agent was working, waiting to be delivered (above the input box).

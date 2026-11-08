@@ -1,16 +1,16 @@
-package com.example.gemini.data.jarvis
+package com.shriram.cinecode.data.jarvis
 
 import android.content.Context
-import com.example.gemini.data.agent.ChatCompletionMonitor
-import com.example.gemini.data.daemon.IdeApiClient
-import com.example.gemini.data.daemon.FileNode
-import com.example.gemini.data.daemon.ProjectItem
-import com.example.gemini.data.daemon.TermuxDaemonManager
-import com.example.gemini.domain.model.AgentKind
-import com.example.gemini.domain.model.AiModel
-import com.example.gemini.domain.model.ChatMessage
-import com.example.gemini.domain.model.Conversation
-import com.example.gemini.domain.model.MessageRole
+import com.shriram.cinecode.data.agent.ChatCompletionMonitor
+import com.shriram.cinecode.data.daemon.IdeApiClient
+import com.shriram.cinecode.data.daemon.FileNode
+import com.shriram.cinecode.data.daemon.ProjectItem
+import com.shriram.cinecode.data.daemon.TermuxDaemonManager
+import com.shriram.cinecode.domain.model.AgentKind
+import com.shriram.cinecode.domain.model.AiModel
+import com.shriram.cinecode.domain.model.ChatMessage
+import com.shriram.cinecode.domain.model.Conversation
+import com.shriram.cinecode.domain.model.MessageRole
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -349,7 +349,7 @@ object JarvisMcp {
                     if (u.isEmpty()) return error("url is required")
                     if (!u.startsWith("http://") && !u.startsWith("https://")) u = "https://$u"
                     withContext(Dispatchers.Main) {
-                        com.example.gemini.ui.browser.BrowserSessionManager.instance.openUrl(u, newTab = args.optBoolean("new_tab", true))
+                        com.shriram.cinecode.ui.browser.BrowserSessionManager.instance.openUrl(u, newTab = args.optBoolean("new_tab", true))
                     }
                     vm.requestViewMode("BROWSER")
                     text("Opened $u.")
@@ -789,20 +789,20 @@ object JarvisMcp {
 
     private fun openSettings(args: JSONObject): JSONObject {
         val want = args.optString("section").trim().lowercase().replace(' ', '_')
-        val all = com.example.gemini.ui.settings.SettingsSection.values()
-            .filter { it != com.example.gemini.ui.settings.SettingsSection.CLAUDE_PAGE }
+        val all = com.shriram.cinecode.ui.settings.SettingsSection.values()
+            .filter { it != com.shriram.cinecode.ui.settings.SettingsSection.CLAUDE_PAGE }
         val s = all.firstOrNull { it.name.lowercase() == want }
             ?: all.firstOrNull { it.title.lowercase().contains(want.replace('_', ' ')) }
             ?: all.firstOrNull { it.name.lowercase().contains(want) || want.contains(it.name.lowercase()) }
             ?: when (want) {
-                "theme", "dark_mode", "font" -> com.example.gemini.ui.settings.SettingsSection.APPEARANCE
-                "voice", "hands_free" -> com.example.gemini.ui.settings.SettingsSection.JARVIS
-                "plugins" -> com.example.gemini.ui.settings.SettingsSection.WEBVIEW_EXTENSIONS
-                "permissions", "approvals" -> com.example.gemini.ui.settings.SettingsSection.COMMANDS
-                "server", "remote" -> com.example.gemini.ui.settings.SettingsSection.SERVERS
+                "theme", "dark_mode", "font" -> com.shriram.cinecode.ui.settings.SettingsSection.APPEARANCE
+                "voice", "hands_free" -> com.shriram.cinecode.ui.settings.SettingsSection.JARVIS
+                "plugins" -> com.shriram.cinecode.ui.settings.SettingsSection.WEBVIEW_EXTENSIONS
+                "permissions", "approvals" -> com.shriram.cinecode.ui.settings.SettingsSection.COMMANDS
+                "server", "remote" -> com.shriram.cinecode.ui.settings.SettingsSection.SERVERS
                 else -> null
             }
-            ?: return error("No settings page \"$want\". Pages: ${all.filter { it != com.example.gemini.ui.settings.SettingsSection.MAIN }.joinToString { it.name.lowercase() }}")
+            ?: return error("No settings page \"$want\". Pages: ${all.filter { it != com.shriram.cinecode.ui.settings.SettingsSection.MAIN }.joinToString { it.name.lowercase() }}")
         JarvisController.requestSettings(s.name)
         return text("Opened Settings → ${s.title}.")
     }
@@ -892,7 +892,7 @@ object JarvisMcp {
     private fun roleName(m: ChatMessage) = when (m.role) { MessageRole.USER -> "user"; MessageRole.ASSISTANT -> "assistant"; else -> m.role.name.lowercase() }
 
     private fun cleanText(s: String, max: Int): String {
-        val collapsed = com.example.gemini.data.remote.PromptExpansion.collapse(s).trim()
+        val collapsed = com.shriram.cinecode.data.remote.PromptExpansion.collapse(s).trim()
         return if (collapsed.length > max) collapsed.take(max) + "…" else collapsed
     }
 
@@ -1064,11 +1064,11 @@ object JarvisMcp {
             // ---- app (only when the user allowed it)
             choice("theme_mode", "Light, dark or follow the system", false, listOf("LIGHT", "DARK", "SYSTEM"), { vm.themeMode.value }, { vm.setThemeMode(it) }),
             Setting("theme", "Color theme by id or name (switches the app to its light or dark side). Creating themes: the theme_mcp tools.",
-                com.example.gemini.theme.BuiltInThemes.all.joinToString("|") { it.id } + "|or a custom theme's name", false,
-                get = { com.example.gemini.theme.ThemeManager.current.let { "${it.id} (${it.name}, ${if (it.dark) "dark" else "light"})" } },
+                com.shriram.cinecode.theme.BuiltInThemes.all.joinToString("|") { it.id } + "|or a custom theme's name", false,
+                get = { com.shriram.cinecode.theme.ThemeManager.current.let { "${it.id} (${it.name}, ${if (it.dark) "dark" else "light"})" } },
                 set = { v ->
-                    com.example.gemini.theme.ThemeManager.find(v)?.let { com.example.gemini.theme.ThemeManager.select(it); null }
-                        ?: "No theme \"$v\". Themes: ${com.example.gemini.theme.ThemeManager.all().joinToString { "${it.name} (${it.id})" }}"
+                    com.shriram.cinecode.theme.ThemeManager.find(v)?.let { com.shriram.cinecode.theme.ThemeManager.select(it); null }
+                        ?: "No theme \"$v\". Themes: ${com.shriram.cinecode.theme.ThemeManager.all().joinToString { "${it.name} (${it.id})" }}"
                 }),
             Setting("chat_font_scale", "Chat text size", "0.8-1.6", false, get = { vm.chatFontScale.first() }, set = { v ->
                 v.trim().removeSuffix("x").toFloatOrNull()?.let { vm.setChatFontScale(it.coerceIn(0.8f, 1.6f)); null } ?: "Not a number."

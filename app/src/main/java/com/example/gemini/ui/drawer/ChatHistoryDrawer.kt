@@ -1,6 +1,6 @@
-package com.example.gemini.ui.drawer
+package com.shriram.cinecode.ui.drawer
 
-import com.example.gemini.ui.components.accent
+import com.shriram.cinecode.ui.components.accent
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import androidx.compose.animation.AnimatedVisibility
@@ -42,8 +42,8 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.Public
-import com.example.gemini.ui.components.AppToastHelper
-import com.example.gemini.ui.components.ChatToastType
+import com.shriram.cinecode.ui.components.AppToastHelper
+import com.shriram.cinecode.ui.components.ChatToastType
 import android.widget.Toast
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Settings
@@ -67,18 +67,18 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
-import com.example.gemini.data.remote.AgyHubClient
-import com.example.gemini.domain.model.Conversation
+import com.shriram.cinecode.data.remote.AgyHubClient
+import com.shriram.cinecode.domain.model.Conversation
 import androidx.compose.foundation.border
 import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.Description
-import com.example.gemini.theme.ClaudeTerracotta
-import com.example.gemini.theme.GeminiBlue
+import com.shriram.cinecode.theme.ClaudeTerracotta
+import com.shriram.cinecode.theme.GeminiBlue
 import androidx.compose.material.icons.outlined.Share
-import com.example.gemini.ui.components.ConversationExportHelper
-import com.example.gemini.ui.components.ConversationShareHelper
-import com.example.gemini.ui.components.DrawerEngineWarmingUpView
-import com.example.gemini.ui.components.SidebarChatListSkeleton
+import com.shriram.cinecode.ui.components.ConversationExportHelper
+import com.shriram.cinecode.ui.components.ConversationShareHelper
+import com.shriram.cinecode.ui.components.DrawerEngineWarmingUpView
+import com.shriram.cinecode.ui.components.SidebarChatListSkeleton
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -87,10 +87,10 @@ import java.util.*
 fun ChatHistoryDrawer(
     conversations: List<Conversation>,
     currentConversationId: String?,
-    activeInstances: List<com.example.gemini.data.remote.AgyActiveInstance> = emptyList(),
+    activeInstances: List<com.shriram.cinecode.data.remote.AgyActiveInstance> = emptyList(),
     isLoading: Boolean = false,
     hasReceivedInitialSync: Boolean = false,
-    systemConnectionState: com.example.gemini.data.remote.SystemConnectionState = com.example.gemini.data.remote.SystemConnectionState.Offline,
+    systemConnectionState: com.shriram.cinecode.data.remote.SystemConnectionState = com.shriram.cinecode.data.remote.SystemConnectionState.Offline,
     errorMessage: String? = null,
     isStreaming: Boolean = false,
     authInfo: AgyHubClient.AgyAuthInfo = AgyHubClient.AgyAuthInfo(),
@@ -126,7 +126,7 @@ fun ChatHistoryDrawer(
     var isSearchActive by remember { mutableStateOf(false) }
     var showFullSearchDialog by remember { mutableStateOf(false) }
     var instanceToTerminate by remember {
-        mutableStateOf<Pair<com.example.gemini.data.remote.AgyActiveInstance, String>?>(
+        mutableStateOf<Pair<com.shriram.cinecode.data.remote.AgyActiveInstance, String>?>(
             null
         )
     }
@@ -142,7 +142,7 @@ fun ChatHistoryDrawer(
     }
     val context = LocalContext.current
 
-    var agentFilter by remember { mutableStateOf<com.example.gemini.domain.model.AgentKind?>(null) }
+    var agentFilter by remember { mutableStateOf<com.shriram.cinecode.domain.model.AgentKind?>(null) }
     val hasBothAgents = remember(conversations) { conversations.map { it.agent }.distinct().size > 1 }
     var jarvisFilter by remember { mutableStateOf(false) }
     if (!jarvisEnabled && jarvisFilter) jarvisFilter = false
@@ -458,15 +458,15 @@ fun ChatHistoryDrawer(
                     onClick = {
                         showExitConfirmDialog = false
                         try {
-                            com.example.gemini.data.service.TermuxService.stop(context)
+                            com.shriram.cinecode.data.service.TermuxService.stop(context)
                         } catch (e: Exception) {
                             Log.e("ChatHistoryDrawer", "Error stopping service", e)
                             try {
-                                com.example.gemini.data.local.LocalServerManager.forceKillAll()
+                                com.shriram.cinecode.data.local.LocalServerManager.forceKillAll()
                             } catch (_: Exception) {
                             }
                             try {
-                                com.example.gemini.data.local.LocalTerminalManager.closeAll()
+                                com.shriram.cinecode.data.local.LocalTerminalManager.closeAll()
                             } catch (_: Exception) {
                             }
                             (context as? android.app.Activity)?.finishAffinity()
@@ -818,10 +818,10 @@ fun ChatHistoryDrawer(
                         .padding(horizontal = 12.dp, vertical = 2.dp),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    listOf<Pair<com.example.gemini.domain.model.AgentKind?, String>>(
+                    listOf<Pair<com.shriram.cinecode.domain.model.AgentKind?, String>>(
                         null to "All",
-                        com.example.gemini.domain.model.AgentKind.AGY to "Antigravity",
-                        com.example.gemini.domain.model.AgentKind.CLAUDE to "Claude"
+                        com.shriram.cinecode.domain.model.AgentKind.AGY to "Antigravity",
+                        com.shriram.cinecode.domain.model.AgentKind.CLAUDE to "Claude"
                     ).forEach { (agent, label) ->
                         val selected = !jarvisFilter && agentFilter == agent
                         val accent = agent?.accent() ?: ClaudeTerracotta
@@ -838,7 +838,7 @@ fun ChatHistoryDrawer(
                         )
                     }
                     if (jarvisEnabled) {
-                        val jarvisAccent = com.example.gemini.theme.AppColors.accentTeal
+                        val jarvisAccent = com.shriram.cinecode.theme.AppColors.accentTeal
                         Text(
                             text = "Jarvis",
                             fontSize = 11.5.sp,
@@ -854,9 +854,9 @@ fun ChatHistoryDrawer(
                 }
             }
 
-            val isEngineConnecting = agyEnabled && (systemConnectionState.status == com.example.gemini.data.remote.SystemStatus.STARTING ||
-                    systemConnectionState.status == com.example.gemini.data.remote.SystemStatus.ACQUIRING_CSRF ||
-                    (systemConnectionState.status == com.example.gemini.data.remote.SystemStatus.OFFLINE && isInitialGracePeriod)) && conversations.isEmpty()
+            val isEngineConnecting = agyEnabled && (systemConnectionState.status == com.shriram.cinecode.data.remote.SystemStatus.STARTING ||
+                    systemConnectionState.status == com.shriram.cinecode.data.remote.SystemStatus.ACQUIRING_CSRF ||
+                    (systemConnectionState.status == com.shriram.cinecode.data.remote.SystemStatus.OFFLINE && isInitialGracePeriod)) && conversations.isEmpty()
             val showSkeleton =
                 agyEnabled && (!hasReceivedInitialSync || isLoading) && conversations.isEmpty() && errorMessage.isNullOrBlank()
 
@@ -932,7 +932,7 @@ fun ChatHistoryDrawer(
 
                     else -> {
                         // iOS-style bounce at both ends, also when the chats fit and the list cannot scroll
-                        val chatListBounce = com.example.gemini.ui.components.rememberBouncyLazyScroll(listState)
+                        val chatListBounce = com.shriram.cinecode.ui.components.rememberBouncyLazyScroll(listState)
                         LazyColumn(
                             state = listState,
                             modifier = Modifier
@@ -948,7 +948,7 @@ fun ChatHistoryDrawer(
                                     val conv = item.conv
                                     val isSelected = conv.id == currentConversationId
                                     val activeInst = activeInstances.find { it.conversationId == conv.id }
-                                    val isActivelyRunning = conv.isRunning && (systemConnectionState.isHubOnline || conv.agent == com.example.gemini.domain.model.AgentKind.CLAUDE)
+                                    val isActivelyRunning = conv.isRunning && (systemConnectionState.isHubOnline || conv.agent == com.shriram.cinecode.domain.model.AgentKind.CLAUDE)
                                     val isScheduledOrBackground =
                                         systemConnectionState.isHubOnline && !isActivelyRunning && (conv.notFullyIdle || conv.hasActivity || activeInst != null)
 
@@ -1057,7 +1057,7 @@ fun ChatHistoryDrawer(
                                         val conv = item.conv
                                         val isSelected = conv.id == currentConversationId
                                         val activeInst = activeInstances.find { it.conversationId == conv.id }
-                                        val isActivelyRunning = conv.isRunning && (systemConnectionState.isHubOnline || conv.agent == com.example.gemini.domain.model.AgentKind.CLAUDE)
+                                        val isActivelyRunning = conv.isRunning && (systemConnectionState.isHubOnline || conv.agent == com.shriram.cinecode.domain.model.AgentKind.CLAUDE)
                                         val isScheduledOrBackground =
                                             systemConnectionState.isHubOnline && !isActivelyRunning && (conv.notFullyIdle || conv.hasActivity || activeInst != null)
 
@@ -1220,7 +1220,7 @@ fun ChatHistoryDrawer(
                     }
                 } else {
                     when (systemConnectionState.status) {
-                        com.example.gemini.data.remote.SystemStatus.READY -> {
+                        com.shriram.cinecode.data.remote.SystemStatus.READY -> {
                             // Profile avatar button with real display name
                             Surface(
                                 onClick = { showProfileDialog = true },
@@ -1297,7 +1297,7 @@ fun ChatHistoryDrawer(
                             }
                         }
 
-                        com.example.gemini.data.remote.SystemStatus.UNAUTHENTICATED -> {
+                        com.shriram.cinecode.data.remote.SystemStatus.UNAUTHENTICATED -> {
                             // Not logged in (UNAUTHENTICATED) -> Sign In button
                             FilledTonalButton(
                                 onClick = onLogin,
@@ -1327,7 +1327,7 @@ fun ChatHistoryDrawer(
                             // All intermediate or offline states (OFFLINE, STARTING, ACQUIRING_CSRF, CHECKING_AUTH, ERROR)
                             val statusObj = systemConnectionState.status
                             Surface(
-                                onClick = if (statusObj == com.example.gemini.data.remote.SystemStatus.OFFLINE || statusObj == com.example.gemini.data.remote.SystemStatus.ERROR) onRetry else onCheckAuth,
+                                onClick = if (statusObj == com.shriram.cinecode.data.remote.SystemStatus.OFFLINE || statusObj == com.shriram.cinecode.data.remote.SystemStatus.ERROR) onRetry else onCheckAuth,
                                 shape = RoundedCornerShape(14.dp),
                                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                                 modifier = Modifier.height(30.dp)
@@ -1438,7 +1438,7 @@ private fun buildVisibleChatTree(
 private fun ChatHistoryItemRow(
     conv: Conversation,
     isSelected: Boolean,
-    activeInst: com.example.gemini.data.remote.AgyActiveInstance?,
+    activeInst: com.shriram.cinecode.data.remote.AgyActiveInstance?,
     isActivelyRunning: Boolean,
     isScheduledOrBackground: Boolean,
     depth: Int = 0,
@@ -1449,14 +1449,14 @@ private fun ChatHistoryItemRow(
     onSelectConversation: (String) -> Unit,
     onForkConversation: (String) -> Unit,
     onRequestDelete: (Conversation) -> Unit,
-    onTerminateInstance: (com.example.gemini.data.remote.AgyActiveInstance, String) -> Unit,
+    onTerminateInstance: (com.shriram.cinecode.data.remote.AgyActiveInstance, String) -> Unit,
     claudeActions: ClaudeDrawerActions? = null
 ) {
     val isSubagent = depth > 0
     val startPadding = if (isSubagent) (12 + (depth * 14)).dp else 0.dp
     val statusDotColor = when {
-        isActivelyRunning -> com.example.gemini.theme.AppColors.success
-        isScheduledOrBackground -> com.example.gemini.theme.AppColors.warning
+        isActivelyRunning -> com.shriram.cinecode.theme.AppColors.success
+        isScheduledOrBackground -> com.shriram.cinecode.theme.AppColors.warning
         else -> null
     }
     Row(
@@ -1542,8 +1542,8 @@ private fun ChatHistoryItemRow(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                if (conv.agent == com.example.gemini.domain.model.AgentKind.CLAUDE) {
-                    com.example.gemini.ui.components.ClaudeBadge(modifier = Modifier.padding(start = 6.dp))
+                if (conv.agent == com.shriram.cinecode.domain.model.AgentKind.CLAUDE) {
+                    com.shriram.cinecode.ui.components.ClaudeBadge(modifier = Modifier.padding(start = 6.dp))
                 }
                 if (subagents.isNotEmpty()) {
                     Surface(
@@ -1596,8 +1596,8 @@ private fun ChatHistoryItemRow(
         if (activeInst != null) {
             Surface(
                 shape = RoundedCornerShape(4.dp),
-                color = com.example.gemini.theme.AppColors.success.copy(alpha = 0.15f),
-                border = BorderStroke(1.dp, com.example.gemini.theme.AppColors.success.copy(alpha = 0.5f)),
+                color = com.shriram.cinecode.theme.AppColors.success.copy(alpha = 0.15f),
+                border = BorderStroke(1.dp, com.shriram.cinecode.theme.AppColors.success.copy(alpha = 0.5f)),
                 modifier = Modifier
                     .clip(RoundedCornerShape(4.dp))
                     .clickable {
@@ -1611,14 +1611,14 @@ private fun ChatHistoryItemRow(
                     Box(
                         modifier = Modifier
                             .size(6.dp)
-                            .background(com.example.gemini.theme.AppColors.success, CircleShape)
+                            .background(com.shriram.cinecode.theme.AppColors.success, CircleShape)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = "RUNNING",
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Bold,
-                        color = com.example.gemini.theme.AppColors.success
+                        color = com.shriram.cinecode.theme.AppColors.success
                     )
                 }
             }
@@ -1635,12 +1635,12 @@ private fun ChatHistoryItemRow(
 
         var menuExpanded by remember { mutableStateOf(false) }
         var showRename by remember { mutableStateOf(false) }
-        val isClaudeConv = conv.agent == com.example.gemini.domain.model.AgentKind.CLAUDE
+        val isClaudeConv = conv.agent == com.shriram.cinecode.domain.model.AgentKind.CLAUDE
         val clipboardManager = LocalClipboardManager.current
         val context = LocalContext.current
 
         val scope = rememberCoroutineScope()
-        val snackbarHostState = com.example.gemini.ui.components.LocalSnackbarHostState.current
+        val snackbarHostState = com.shriram.cinecode.ui.components.LocalSnackbarHostState.current
 
         if (showRename && claudeActions != null) {
             var newTitle by remember { mutableStateOf(conv.title) }
@@ -1762,7 +1762,7 @@ private fun ChatHistoryItemRow(
                     },
                     onClick = {
                         menuExpanded = false
-                        com.example.gemini.ui.components.AppToastHelper.showToast("Exporting Markdown...", com.example.gemini.ui.components.ChatToastType.INFO)
+                        com.shriram.cinecode.ui.components.AppToastHelper.showToast("Exporting Markdown...", com.shriram.cinecode.ui.components.ChatToastType.INFO)
                         scope.launch(Dispatchers.IO) {
                             ConversationExportHelper.exportConversation(
                                 context = context,
@@ -1781,13 +1781,13 @@ private fun ChatHistoryItemRow(
                         Icon(
                             imageVector = Icons.Outlined.Code,
                             contentDescription = null,
-                            tint = com.example.gemini.theme.AppColors.success,
+                            tint = com.shriram.cinecode.theme.AppColors.success,
                             modifier = Modifier.size(18.dp)
                         )
                     },
                     onClick = {
                         menuExpanded = false
-                        com.example.gemini.ui.components.AppToastHelper.showToast("Exporting HTML...", com.example.gemini.ui.components.ChatToastType.INFO)
+                        com.shriram.cinecode.ui.components.AppToastHelper.showToast("Exporting HTML...", com.shriram.cinecode.ui.components.ChatToastType.INFO)
                         scope.launch(Dispatchers.IO) {
                             ConversationExportHelper.exportConversation(
                                 context = context,
@@ -1812,7 +1812,7 @@ private fun ChatHistoryItemRow(
                     },
                     onClick = {
                         menuExpanded = false
-                        com.example.gemini.ui.components.AppToastHelper.showToast("Preparing .antigem share...", com.example.gemini.ui.components.ChatToastType.INFO)
+                        com.shriram.cinecode.ui.components.AppToastHelper.showToast("Preparing .antigem share...", com.shriram.cinecode.ui.components.ChatToastType.INFO)
                         scope.launch(Dispatchers.IO) {
                             ConversationShareHelper.shareConversation(
                                 context = context,
@@ -2319,7 +2319,7 @@ fun SearchChatsDialog(
 
 /** Claude-specific chat actions for the sidebar (Claude chats are loaded and renamed through the bridge). */
 class ClaudeDrawerActions(
-    val loadMessages: suspend (String) -> List<com.example.gemini.domain.model.ChatMessage>,
+    val loadMessages: suspend (String) -> List<com.shriram.cinecode.domain.model.ChatMessage>,
     val rename: (String, String) -> Unit,
     /** Stops the chat's process (when idle) so its next message starts one with the current provider settings; the callback gets a message. */
     val restart: (String, (String) -> Unit) -> Unit

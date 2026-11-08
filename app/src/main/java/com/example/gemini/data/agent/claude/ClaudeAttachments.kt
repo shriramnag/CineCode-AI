@@ -1,7 +1,7 @@
-package com.example.gemini.data.agent.claude
+package com.shriram.cinecode.data.agent.claude
 
-import com.example.gemini.data.preferences.AuthPreferences
-import com.example.gemini.domain.model.ChatAttachment
+import com.shriram.cinecode.data.preferences.AuthPreferences
+import com.shriram.cinecode.domain.model.ChatAttachment
 
 /**
  * Attachments saved on the bridge are listed in the prompt in an `<attached-files>` block (Claude reads them with

@@ -1,4 +1,4 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import com.example.gemini.data.remote.core.AntiGemLiveDiagnostics
+import com.shriram.cinecode.data.remote.core.AntiGemLiveDiagnostics
 import kotlin.math.roundToInt
 
 @Composable
@@ -69,8 +69,8 @@ fun FloatingDiagnosticsOverlay(
         ) {
             Surface(
                 shape = RoundedCornerShape(16.dp),
-                color = com.example.gemini.theme.AppColors.editorPanel.copy(alpha = 0.93f),
-                border = BorderStroke(1.dp, if (snapshot.isLagging || snapshot.agyQueued > 0) com.example.gemini.theme.AppColors.danger else com.example.gemini.theme.AppColors.success.copy(alpha = 0.27f)),
+                color = com.shriram.cinecode.theme.AppColors.editorPanel.copy(alpha = 0.93f),
+                border = BorderStroke(1.dp, if (snapshot.isLagging || snapshot.agyQueued > 0) com.shriram.cinecode.theme.AppColors.danger else com.shriram.cinecode.theme.AppColors.success.copy(alpha = 0.27f)),
                 shadowElevation = 8.dp,
                 modifier = Modifier
                     .clip(RoundedCornerShape(16.dp))
@@ -89,14 +89,14 @@ fun FloatingDiagnosticsOverlay(
                             modifier = Modifier
                                 .size(8.dp)
                                 .clip(CircleShape)
-                                .background(if (snapshot.isLagging || snapshot.agyQueued > 0) com.example.gemini.theme.AppColors.danger else com.example.gemini.theme.AppColors.success)
+                                .background(if (snapshot.isLagging || snapshot.agyQueued > 0) com.shriram.cinecode.theme.AppColors.danger else com.shriram.cinecode.theme.AppColors.success)
                         )
 
                         Text(
                             text = "🧵 ${snapshot.activeJvmThreads}",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = com.example.gemini.theme.AppColors.editorText,
+                            color = com.shriram.cinecode.theme.AppColors.editorText,
                             fontFamily = FontFamily.Monospace
                         )
 
@@ -104,7 +104,7 @@ fun FloatingDiagnosticsOverlay(
                             text = "⚡${snapshot.agyRunning + snapshot.ideRunning}r",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (snapshot.agyRunning > 0) com.example.gemini.theme.AppColors.info else com.example.gemini.theme.AppColors.editorMuted,
+                            color = if (snapshot.agyRunning > 0) com.shriram.cinecode.theme.AppColors.info else com.shriram.cinecode.theme.AppColors.editorMuted,
                             fontFamily = FontFamily.Monospace
                         )
 
@@ -113,7 +113,7 @@ fun FloatingDiagnosticsOverlay(
                                 text = "⏳${snapshot.agyQueued + snapshot.ideQueued}q",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = com.example.gemini.theme.AppColors.danger,
+                                color = com.shriram.cinecode.theme.AppColors.danger,
                                 fontFamily = FontFamily.Monospace
                             )
                         }
@@ -121,14 +121,14 @@ fun FloatingDiagnosticsOverlay(
                         Text(
                             text = "🔌${snapshot.agyConns + snapshot.ideConns}c",
                             fontSize = 11.sp,
-                            color = com.example.gemini.theme.AppColors.editorMuted,
+                            color = com.shriram.cinecode.theme.AppColors.editorMuted,
                             fontFamily = FontFamily.Monospace
                         )
 
                         Text(
                             text = if (snapshot.ioLagMs >= 0) "${snapshot.ioLagMs}ms" else "ERR",
                             fontSize = 10.sp,
-                            color = if (snapshot.isLagging) com.example.gemini.theme.AppColors.danger else com.example.gemini.theme.AppColors.success,
+                            color = if (snapshot.isLagging) com.shriram.cinecode.theme.AppColors.danger else com.shriram.cinecode.theme.AppColors.success,
                             fontFamily = FontFamily.Monospace
                         )
                     }
@@ -141,13 +141,13 @@ fun FloatingDiagnosticsOverlay(
                                 .widthIn(max = 280.dp),
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            HorizontalDivider(color = com.example.gemini.theme.AppColors.editorText.copy(alpha = 0.2f), thickness = 0.5.dp)
+                            HorizontalDivider(color = com.shriram.cinecode.theme.AppColors.editorText.copy(alpha = 0.2f), thickness = 0.5.dp)
 
                             // Groups
                             Text(
                                 text = "Thread Groups: ${snapshot.threadGroupSummary}",
                                 fontSize = 10.sp,
-                                color = com.example.gemini.theme.AppColors.editorMuted,
+                                color = com.shriram.cinecode.theme.AppColors.editorMuted,
                                 fontFamily = FontFamily.Monospace
                             )
 
@@ -160,13 +160,13 @@ fun FloatingDiagnosticsOverlay(
                                     text = "AgyGrpc Hub:",
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = com.example.gemini.theme.AppColors.editorInfoText,
+                                    color = com.shriram.cinecode.theme.AppColors.editorInfoText,
                                     fontFamily = FontFamily.Monospace
                                 )
                                 Text(
                                     text = "Run=${snapshot.agyRunning} | Q=${snapshot.agyQueued} | Pool=${snapshot.agyConns} (${snapshot.agyIdleConns} idle)",
                                     fontSize = 10.sp,
-                                    color = com.example.gemini.theme.AppColors.editorText,
+                                    color = com.shriram.cinecode.theme.AppColors.editorText,
                                     fontFamily = FontFamily.Monospace
                                 )
                             }
@@ -180,13 +180,13 @@ fun FloatingDiagnosticsOverlay(
                                     text = "IDE Bridge:",
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = com.example.gemini.theme.AppColors.success,
+                                    color = com.shriram.cinecode.theme.AppColors.success,
                                     fontFamily = FontFamily.Monospace
                                 )
                                 Text(
                                     text = "Run=${snapshot.ideRunning} | Q=${snapshot.ideQueued} | Pool=${snapshot.ideConns} (${snapshot.ideIdleConns} idle)",
                                     fontSize = 10.sp,
-                                    color = com.example.gemini.theme.AppColors.editorText,
+                                    color = com.shriram.cinecode.theme.AppColors.editorText,
                                     fontFamily = FontFamily.Monospace
                                 )
                             }
@@ -197,14 +197,14 @@ fun FloatingDiagnosticsOverlay(
                                     text = "Blocked Socket Reads:",
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = com.example.gemini.theme.AppColors.warning,
+                                    color = com.shriram.cinecode.theme.AppColors.warning,
                                     fontFamily = FontFamily.Monospace
                                 )
                                 snapshot.topBlockedThreads.forEach { trace ->
                                     Text(
                                         text = "• $trace",
                                         fontSize = 9.sp,
-                                        color = com.example.gemini.theme.AppColors.warning,
+                                        color = com.shriram.cinecode.theme.AppColors.warning,
                                         fontFamily = FontFamily.Monospace,
                                         maxLines = 1
                                     )
@@ -222,7 +222,7 @@ fun FloatingDiagnosticsOverlay(
                                     },
                                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
                                 ) {
-                                    Text("Hide HUD", fontSize = 10.sp, color = com.example.gemini.theme.AppColors.danger)
+                                    Text("Hide HUD", fontSize = 10.sp, color = com.shriram.cinecode.theme.AppColors.danger)
                                 }
                             }
                         }

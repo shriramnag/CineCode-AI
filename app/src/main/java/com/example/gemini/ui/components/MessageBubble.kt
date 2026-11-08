@@ -1,4 +1,4 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -46,11 +46,11 @@ import coil.compose.AsyncImage
 import android.net.Uri
 import android.content.Intent
 import java.io.File
-import com.example.gemini.data.remote.HubMediaResolver
+import com.shriram.cinecode.data.remote.HubMediaResolver
 import kotlinx.coroutines.launch
-import com.example.gemini.domain.model.ChatMessage
-import com.example.gemini.domain.model.MessageRole
-import com.example.gemini.theme.ClaudeTerracotta
+import com.shriram.cinecode.domain.model.ChatMessage
+import com.shriram.cinecode.domain.model.MessageRole
+import com.shriram.cinecode.theme.ClaudeTerracotta
 import kotlinx.coroutines.delay
 import java.text.NumberFormat
 import java.util.Locale
@@ -62,11 +62,11 @@ fun MessageBubble(
     isDevModeEnabled: Boolean = false,
     onEdit: (ChatMessage) -> Unit = {},
     onRetry: (ChatMessage) -> Unit = {},
-    onApproveTool: ((com.example.gemini.domain.model.ToolCall, String) -> Unit)? = null,
-    onRejectTool: ((com.example.gemini.domain.model.ToolCall, String) -> Unit)? = null,
-    onTerminateTool: ((com.example.gemini.domain.model.ToolCall, String) -> Unit)? = null,
-    onSubmitChoices: ((com.example.gemini.domain.model.ToolCall, String, List<com.example.gemini.data.remote.dto.AskQuestionResponseItemDto>, String) -> Unit)? = null,
-    onSkipChoices: ((com.example.gemini.domain.model.ToolCall, String, List<com.example.gemini.data.remote.dto.AskQuestionResponseItemDto>) -> Unit)? = null,
+    onApproveTool: ((com.shriram.cinecode.domain.model.ToolCall, String) -> Unit)? = null,
+    onRejectTool: ((com.shriram.cinecode.domain.model.ToolCall, String) -> Unit)? = null,
+    onTerminateTool: ((com.shriram.cinecode.domain.model.ToolCall, String) -> Unit)? = null,
+    onSubmitChoices: ((com.shriram.cinecode.domain.model.ToolCall, String, List<com.shriram.cinecode.data.remote.dto.AskQuestionResponseItemDto>, String) -> Unit)? = null,
+    onSkipChoices: ((com.shriram.cinecode.domain.model.ToolCall, String, List<com.shriram.cinecode.data.remote.dto.AskQuestionResponseItemDto>) -> Unit)? = null,
     onUpdateSummary: ((String) -> Unit)? = null,
     onDeleteSummary: (() -> Unit)? = null,
     onViewRawPayload: ((String) -> Unit)? = null,
@@ -231,7 +231,7 @@ fun MessageBubble(
                                 Icon(
                                     imageVector = Icons.Outlined.DataObject,
                                     contentDescription = "View Raw Request Payload",
-                                    tint = com.example.gemini.theme.AppColors.accentTeal,
+                                    tint = com.shriram.cinecode.theme.AppColors.accentTeal,
                                     modifier = Modifier.size(16.dp)
                                 )
                             }
@@ -324,7 +324,7 @@ fun MessageBubble(
                                     Icon(
                                         imageVector = Icons.Outlined.DataObject,
                                         contentDescription = "View Raw Request Payload",
-                                        tint = com.example.gemini.theme.AppColors.accentTeal,
+                                        tint = com.shriram.cinecode.theme.AppColors.accentTeal,
                                         modifier = Modifier.size(16.dp)
                                     )
                                 }
@@ -446,7 +446,7 @@ fun UserMessageBubble(
 
                 // Slash commands that expanded (plugins, custom commands) stand out from the typed text
                 val styledContent = remember(displayContent) {
-                    val ranges = com.example.gemini.data.remote.PromptExpansion.commandRanges(displayContent)
+                    val ranges = com.shriram.cinecode.data.remote.PromptExpansion.commandRanges(displayContent)
                     androidx.compose.ui.text.buildAnnotatedString {
                         append(displayContent)
                         ranges.forEach {
@@ -558,7 +558,7 @@ fun UserMessageBubble(
                         Icon(
                             imageVector = Icons.Outlined.DataObject,
                             contentDescription = "View Raw Request Payload",
-                            tint = com.example.gemini.theme.AppColors.accentTeal,
+                            tint = com.shriram.cinecode.theme.AppColors.accentTeal,
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -682,7 +682,7 @@ fun AssistantMessageFooter(
                     Icon(
                         imageVector = Icons.Outlined.DataObject,
                         contentDescription = "View Raw Request Payload",
-                        tint = com.example.gemini.theme.AppColors.accentTeal,
+                        tint = com.shriram.cinecode.theme.AppColors.accentTeal,
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -794,7 +794,7 @@ private fun formatCompactTokens(count: Int): String {
 
 @Composable
 fun TokenUsageTelemetryPill(
-    usage: com.example.gemini.domain.model.TokenUsage,
+    usage: com.shriram.cinecode.domain.model.TokenUsage,
     onViewPayload: (() -> Unit)? = null
 ) {
     val cachePct = if (usage.promptTokens > 0 && usage.cachedTokens > 0) {
@@ -802,9 +802,9 @@ fun TokenUsageTelemetryPill(
     } else 0
 
     val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
-    val inputColor = if (isDark) com.example.gemini.theme.AppColors.info else com.example.gemini.theme.AppColors.info
-    val outputColor = if (isDark) com.example.gemini.theme.AppColors.success else com.example.gemini.theme.AppColors.success
-    val cacheColor = com.example.gemini.theme.AppColors.warning
+    val inputColor = if (isDark) com.shriram.cinecode.theme.AppColors.info else com.shriram.cinecode.theme.AppColors.info
+    val outputColor = if (isDark) com.shriram.cinecode.theme.AppColors.success else com.shriram.cinecode.theme.AppColors.success
+    val cacheColor = com.shriram.cinecode.theme.AppColors.warning
 
     Surface(
         shape = RoundedCornerShape(6.dp),
@@ -930,7 +930,7 @@ private fun formatUserDisplayContent(content: String): String {
 
 @Composable
 private fun UserMessageImageItem(
-    attachment: com.example.gemini.domain.model.ChatAttachment,
+    attachment: com.shriram.cinecode.domain.model.ChatAttachment,
     modifier: Modifier = Modifier,
     onImageClick: (String) -> Unit
 ) {
@@ -939,7 +939,7 @@ private fun UserMessageImageItem(
         val path = attachment.path
         when {
             !attachment.localUri.isNullOrBlank() -> attachment.localUri
-            !attachment.url.isNullOrBlank() -> com.example.gemini.data.preferences.AuthPreferences.rebaseBridgeUrl(attachment.url)
+            !attachment.url.isNullOrBlank() -> com.shriram.cinecode.data.preferences.AuthPreferences.rebaseBridgeUrl(attachment.url)
             path.startsWith("data:image/") || path.startsWith("http://") || path.startsWith("https://") || path.startsWith("content://") -> path
             path.startsWith("file://") -> path
             path.isNotBlank() -> "file://$path"
@@ -1019,7 +1019,7 @@ private fun UserMessageImageItem(
 
 @Composable
 private fun UserMessageImagesGrid(
-    attachments: List<com.example.gemini.domain.model.ChatAttachment>,
+    attachments: List<com.shriram.cinecode.domain.model.ChatAttachment>,
     onImageClick: (String) -> Unit
 ) {
     if (attachments.isEmpty()) return
@@ -1079,7 +1079,7 @@ private fun UserMessageImagesGrid(
 
 @Composable
 private fun UserMessageDocumentItem(
-    attachment: com.example.gemini.domain.model.ChatAttachment
+    attachment: com.shriram.cinecode.domain.model.ChatAttachment
 ) {
     val context = LocalContext.current
     val fileLinkHandler = LocalFileLinkHandler.current

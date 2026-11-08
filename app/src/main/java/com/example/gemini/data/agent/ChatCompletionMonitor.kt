@@ -1,14 +1,14 @@
-package com.example.gemini.data.agent
+package com.shriram.cinecode.data.agent
 
 import android.app.Application
 import android.content.Context
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
-import com.example.gemini.data.jarvis.JarvisPreferences
-import com.example.gemini.domain.model.AgentKind
-import com.example.gemini.domain.model.Conversation
-import com.example.gemini.ui.chat.ChatViewModel
+import com.shriram.cinecode.data.jarvis.JarvisPreferences
+import com.shriram.cinecode.domain.model.AgentKind
+import com.shriram.cinecode.domain.model.Conversation
+import com.shriram.cinecode.ui.chat.ChatViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

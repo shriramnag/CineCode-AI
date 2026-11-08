@@ -1,4 +1,4 @@
-package com.example.gemini.data.local
+package com.shriram.cinecode.data.local
 
 import android.content.Context
 import android.os.Environment
@@ -7,8 +7,8 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import com.example.gemini.data.preferences.AuthPreferences
-import com.example.gemini.data.remote.AgyBridgeService
+import com.shriram.cinecode.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.remote.AgyBridgeService
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -208,14 +208,14 @@ object LocalServerManager {
 
         val token = authPrefs.getSecurityTokenSync()
         val bridgePort = try {
-            java.net.URI(AuthPreferences.currentBridgeHttpUrl).port.takeIf { it > 0 } ?: com.example.gemini.BuildConfig.BRIDGE_PORT
+            java.net.URI(AuthPreferences.currentBridgeHttpUrl).port.takeIf { it > 0 } ?: com.shriram.cinecode.BuildConfig.BRIDGE_PORT
         } catch (_: Exception) {
-            com.example.gemini.BuildConfig.BRIDGE_PORT
+            com.shriram.cinecode.BuildConfig.BRIDGE_PORT
         }
         val hubPort = try {
-            java.net.URI(AuthPreferences.currentHubUrl).port.takeIf { it > 0 } ?: com.example.gemini.BuildConfig.HUB_PORT
+            java.net.URI(AuthPreferences.currentHubUrl).port.takeIf { it > 0 } ?: com.shriram.cinecode.BuildConfig.HUB_PORT
         } catch (_: Exception) {
-            com.example.gemini.BuildConfig.HUB_PORT
+            com.shriram.cinecode.BuildConfig.HUB_PORT
         }
         val tzOffset = java.util.TimeZone.getDefault().getOffset(System.currentTimeMillis()) / 1000
 
@@ -225,14 +225,14 @@ object LocalServerManager {
             ""
         }
         val claudeCmd = authPrefs.getClaudeBinaryPathSync().trim()
-        val claudeBinParam = if (claudeCmd.isNotBlank() && com.example.gemini.domain.model.AgentKind.CLAUDE in com.example.gemini.data.agent.AgentPreferences.enabledSync(context)) {
+        val claudeBinParam = if (claudeCmd.isNotBlank() && com.shriram.cinecode.domain.model.AgentKind.CLAUDE in com.shriram.cinecode.data.agent.AgentPreferences.enabledSync(context)) {
             " --claude-bin \"$claudeCmd\""
         } else {
             ""
         }
 
         // agents switched off in the app never run (no AGY hub / no Claude Code endpoints)
-        val agentFlags = com.example.gemini.data.agent.AgentPreferences.bridgeFlags(context)
+        val agentFlags = com.shriram.cinecode.data.agent.AgentPreferences.bridgeFlags(context)
 
         return "$bridgeCmd -f --token $token -p $bridgePort --hub-port $hubPort --tz-offset $tzOffset$binParam$claudeBinParam$agentFlags"
     }
@@ -256,7 +256,7 @@ object LocalServerManager {
     fun forceKillAll() {
         if (AuthPreferences.currentRemoteMode) {
             // Leaving the app must not stop the server: only drop the SSH connection and its forwards
-            com.example.gemini.data.remote.RemoteServerManager.disconnect()
+            com.shriram.cinecode.data.remote.RemoteServerManager.disconnect()
             return
         }
         exitObserverJob?.cancel()
@@ -288,9 +288,9 @@ object LocalServerManager {
         if (AuthPreferences.currentRemoteMode) {
             // The server is another machine managed over SSH: no local bootstrap needed
             if (hasInitialAutoStarted) return
-            if (!com.example.gemini.data.agent.AgentPreferences.hasChosenSync(context)) return
+            if (!com.shriram.cinecode.data.agent.AgentPreferences.hasChosenSync(context)) return
             hasInitialAutoStarted = true
-            com.example.gemini.data.remote.RemoteServerManager.autoStart(context)
+            com.shriram.cinecode.data.remote.RemoteServerManager.autoStart(context)
             return
         }
         if (hasInitialAutoStarted) {
@@ -308,7 +308,7 @@ object LocalServerManager {
             Log.d(TAG, "[ServerManager] No server executable found in home directory, skipping autoStartOnAppLaunch")
             return
         }
-        if (!com.example.gemini.data.agent.AgentPreferences.hasChosenSync(context)) {
+        if (!com.shriram.cinecode.data.agent.AgentPreferences.hasChosenSync(context)) {
             // the server starts with the agent flags: wait for the first-launch agent choice
             Log.d(TAG, "[ServerManager] Agents not chosen yet, deferring auto-start until the choice is made")
             return
@@ -320,7 +320,7 @@ object LocalServerManager {
     fun startServer(context: Context, forceRestart: Boolean = false) {
         if (AuthPreferences.currentRemoteMode) {
             hasInitialAutoStarted = true
-            com.example.gemini.data.remote.RemoteServerManager.start(context, forceRestart)
+            com.shriram.cinecode.data.remote.RemoteServerManager.start(context, forceRestart)
             return
         }
         if (hasServerScript(context)) {
@@ -402,7 +402,7 @@ object LocalServerManager {
 
     fun stopServer() {
         if (AuthPreferences.currentRemoteMode) {
-            com.example.gemini.data.remote.RemoteServerManager.stop()
+            com.shriram.cinecode.data.remote.RemoteServerManager.stop()
             return
         }
         activeJob?.cancel()
@@ -447,7 +447,7 @@ object LocalServerManager {
 
         // 4. Wait for SystemConnectionState to transition to Offline
         withTimeoutOrNull(2500L) {
-            while (AgyBridgeService.instance.systemConnectionState.value !is com.example.gemini.data.remote.SystemConnectionState.Offline) {
+            while (AgyBridgeService.instance.systemConnectionState.value !is com.shriram.cinecode.data.remote.SystemConnectionState.Offline) {
                 delay(150)
             }
         }
@@ -461,7 +461,7 @@ object LocalServerManager {
     suspend fun restartServerAndWait(context: Context) {
         if (AuthPreferences.currentRemoteMode) {
             hasInitialAutoStarted = true
-            com.example.gemini.data.remote.RemoteServerManager.restartAndWait(context)
+            com.shriram.cinecode.data.remote.RemoteServerManager.restartAndWait(context)
             return
         }
         hasInitialAutoStarted = true
@@ -479,7 +479,7 @@ object LocalServerManager {
     suspend fun stopServerCompletely() {
         if (AuthPreferences.currentRemoteMode) {
             hasInitialAutoStarted = true
-            com.example.gemini.data.remote.RemoteServerManager.stopCompletely()
+            com.shriram.cinecode.data.remote.RemoteServerManager.stopCompletely()
             return
         }
         hasInitialAutoStarted = true
@@ -487,7 +487,7 @@ object LocalServerManager {
         stopServerInternal()
         // let the bridge finish stopping its children (Claude processes, the AGY hub) before the session is closed
         withTimeoutOrNull(5_000L) {
-            while (AgyBridgeService.instance.systemConnectionState.value !is com.example.gemini.data.remote.SystemConnectionState.Offline) {
+            while (AgyBridgeService.instance.systemConnectionState.value !is com.shriram.cinecode.data.remote.SystemConnectionState.Offline) {
                 delay(150)
             }
         }
@@ -497,7 +497,7 @@ object LocalServerManager {
     fun restartServer(context: Context) {
         if (AuthPreferences.currentRemoteMode) {
             hasInitialAutoStarted = true
-            com.example.gemini.data.remote.RemoteServerManager.restart(context)
+            com.shriram.cinecode.data.remote.RemoteServerManager.restart(context)
             return
         }
         hasInitialAutoStarted = true

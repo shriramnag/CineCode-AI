@@ -1,4 +1,4 @@
-package com.example.gemini.data.remote.inspector
+package com.shriram.cinecode.data.remote.inspector
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

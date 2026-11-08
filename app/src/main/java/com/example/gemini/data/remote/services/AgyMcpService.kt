@@ -1,9 +1,9 @@
-package com.example.gemini.data.remote.services
+package com.shriram.cinecode.data.remote.services
 
-import com.example.gemini.data.preferences.AuthPreferences
-import com.example.gemini.domain.model.McpServerSpec
-import com.example.gemini.domain.model.McpServerState
-import com.example.gemini.domain.model.McpToolInfo
+import com.shriram.cinecode.data.preferences.AuthPreferences
+import com.shriram.cinecode.domain.model.McpServerSpec
+import com.shriram.cinecode.domain.model.McpServerState
+import com.shriram.cinecode.domain.model.McpToolInfo
 import exa.language_server_pb.GetMcpServerStatesRequest
 import exa.language_server_pb.RefreshMcpServersRequest
 import exa.language_server_pb.ToggleMcpServerRequest

@@ -1,4 +1,4 @@
-package com.example.gemini.ui.claude
+package com.shriram.cinecode.ui.claude
 
 import android.content.Intent
 import android.net.Uri
@@ -38,8 +38,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gemini.data.agent.claude.ClaudeAccountManager
-import com.example.gemini.ui.components.ClaudeAccent
+import com.shriram.cinecode.data.agent.claude.ClaudeAccountManager
+import com.shriram.cinecode.ui.components.ClaudeAccent
 
 /**
  * Claude sign-in: the bridge starts the CLI's OAuth flow. The browser link redirects to the CLI's local callback

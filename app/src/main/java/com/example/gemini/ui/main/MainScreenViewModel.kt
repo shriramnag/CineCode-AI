@@ -1,9 +1,9 @@
-package com.example.gemini.ui.main
+package com.shriram.cinecode.ui.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.gemini.data.DataRepository
-import com.example.gemini.ui.main.MainScreenUiState.Success
+import com.shriram.cinecode.data.DataRepository
+import com.shriram.cinecode.ui.main.MainScreenUiState.Success
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch

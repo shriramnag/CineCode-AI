@@ -1,4 +1,4 @@
-package com.example.gemini.data.ssh
+package com.shriram.cinecode.data.ssh
 
 import android.util.Log
 import com.jcraft.jsch.ChannelExec

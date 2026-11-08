@@ -1,10 +1,10 @@
-package com.example.gemini.data.remote
+package com.shriram.cinecode.data.remote
 
 import android.content.Context
 import android.util.Log
 import android.view.KeyEvent
-import com.example.gemini.data.local.LocalTerminalBridge
-import com.example.gemini.ui.browser.BrowserSessionManager
+import com.shriram.cinecode.data.local.LocalTerminalBridge
+import com.shriram.cinecode.ui.browser.BrowserSessionManager
 import kotlinx.coroutines.*
 import org.json.JSONArray
 import org.json.JSONObject
@@ -49,8 +49,8 @@ class AndroidLocalBridgeServer private constructor() {
         private const val MAX_HEADER_BYTES = 64 * 1024
         /** Uploads arrive as base64 in JSON: allow large bodies, but not unbounded ones. */
         private const val MAX_BODY_BYTES = 512L * 1024 * 1024
-        /** Per app (build flavor) so com.antigem and com.termux do not collide. */
-        val DEFAULT_PORT = com.example.gemini.BuildConfig.BROWSER_MCP_PORT
+        /** Per app (build flavor) so com.antigem and com.shriram.cinecode do not collide. */
+        val DEFAULT_PORT = com.shriram.cinecode.BuildConfig.BROWSER_MCP_PORT
         val instance: AndroidLocalBridgeServer by lazy { AndroidLocalBridgeServer() }
     }
 
@@ -73,9 +73,9 @@ class AndroidLocalBridgeServer private constructor() {
         } catch (_: Exception) { "" }
         BrowserSessionManager.instance.init(context)
         LocalTerminalBridge.instance.init(context)
-        com.example.gemini.ui.browser.BrowserExtensionManager.instance.init(context)
-        com.example.gemini.data.remote.CustomSlashCommands.init(context)
-        com.example.gemini.ui.browser.PluginRepositories.init(context)
+        com.shriram.cinecode.ui.browser.BrowserExtensionManager.instance.init(context)
+        com.shriram.cinecode.data.remote.CustomSlashCommands.init(context)
+        com.shriram.cinecode.ui.browser.PluginRepositories.init(context)
 
         serverScope.launch {
             try {
@@ -96,7 +96,7 @@ class AndroidLocalBridgeServer private constructor() {
                 isRunning = true
                 Log.i(TAG, "Bridge MCP / REST Server running on http://127.0.0.1:$boundPort")
                 // a server (Remote mode) reaches this MCP server through an SSH reverse tunnel: point it at the bound port
-                com.example.gemini.data.remote.RemoteServerManager.resyncTunnels()
+                com.shriram.cinecode.data.remote.RemoteServerManager.resyncTunnels()
 
                 while (isRunning && !serverSocket!!.isClosed) {
                     val client = serverSocket!!.accept()
@@ -413,17 +413,17 @@ class AndroidLocalBridgeServer private constructor() {
 
         // Android automation can control the whole phone, so it refuses to connect until the user grants it in Settings → Android Automation
         if (endpoint == McpEndpoint.ANDROID && method != "ping") {
-            com.example.gemini.data.automation.AndroidAutomation.notReadyMessage(appContext!!)?.let { return jsonRpcError(id, -32001, it) }
+            com.shriram.cinecode.data.automation.AndroidAutomation.notReadyMessage(appContext!!)?.let { return jsonRpcError(id, -32001, it) }
         }
 
         when (method) {
             "initialize" -> {
                 val result = JSONObject().apply {
                     put("protocolVersion", "2024-11-05")
-                    if (endpoint == McpEndpoint.ANDROID) put("instructions", com.example.gemini.data.automation.AndroidAutomation.INSTRUCTIONS)
-                    if (endpoint == McpEndpoint.NOTES) put("instructions", com.example.gemini.data.notes.NotesMcp.INSTRUCTIONS)
-                    if (endpoint == McpEndpoint.JARVIS) put("instructions", com.example.gemini.data.jarvis.JarvisMcp.INSTRUCTIONS)
-                    if (endpoint == McpEndpoint.THEME) put("instructions", com.example.gemini.theme.ThemeMcp.INSTRUCTIONS)
+                    if (endpoint == McpEndpoint.ANDROID) put("instructions", com.shriram.cinecode.data.automation.AndroidAutomation.INSTRUCTIONS)
+                    if (endpoint == McpEndpoint.NOTES) put("instructions", com.shriram.cinecode.data.notes.NotesMcp.INSTRUCTIONS)
+                    if (endpoint == McpEndpoint.JARVIS) put("instructions", com.shriram.cinecode.data.jarvis.JarvisMcp.INSTRUCTIONS)
+                    if (endpoint == McpEndpoint.THEME) put("instructions", com.shriram.cinecode.theme.ThemeMcp.INSTRUCTIONS)
                     if (endpoint == McpEndpoint.EXTENSION_DEVELOPER) put("instructions", "Start with webview_extension_docs. Read developer-mcp.md and the required API references, create a draft, write files, install or update, discover tools with webview_extension_test, and inspect logs to fix failures. No app source or manual ZIP handling is needed.")
                     put("capabilities", JSONObject().apply {
                         put("tools", JSONObject())
@@ -471,11 +471,11 @@ class AndroidLocalBridgeServer private constructor() {
     }
 
     private suspend fun getMcpToolsList(endpoint: McpEndpoint): JSONArray {
-        if (endpoint == McpEndpoint.EXTENSION_DEVELOPER) return com.example.gemini.ui.browser.WebViewExtensionDeveloper.tools(appContext!!)
-        if (endpoint == McpEndpoint.ANDROID) return com.example.gemini.data.automation.AndroidAutomation.tools()
-        if (endpoint == McpEndpoint.NOTES) return com.example.gemini.data.notes.NotesMcp.tools()
-        if (endpoint == McpEndpoint.JARVIS) return com.example.gemini.data.jarvis.JarvisMcp.tools()
-        if (endpoint == McpEndpoint.THEME) return com.example.gemini.theme.ThemeMcp.tools()
+        if (endpoint == McpEndpoint.EXTENSION_DEVELOPER) return com.shriram.cinecode.ui.browser.WebViewExtensionDeveloper.tools(appContext!!)
+        if (endpoint == McpEndpoint.ANDROID) return com.shriram.cinecode.data.automation.AndroidAutomation.tools()
+        if (endpoint == McpEndpoint.NOTES) return com.shriram.cinecode.data.notes.NotesMcp.tools()
+        if (endpoint == McpEndpoint.JARVIS) return com.shriram.cinecode.data.jarvis.JarvisMcp.tools()
+        if (endpoint == McpEndpoint.THEME) return com.shriram.cinecode.theme.ThemeMcp.tools()
         val tools = JSONArray()
         val browserEnabled = endpoint == McpEndpoint.BROWSER
         val terminalEnabled = endpoint == McpEndpoint.TERMINAL
@@ -790,7 +790,7 @@ class AndroidLocalBridgeServer private constructor() {
         }
 
         if (flowEnabled) {
-            val extensionTools = com.example.gemini.ui.browser.BrowserExtensionManager.instance.tools("google-flow")
+            val extensionTools = com.shriram.cinecode.ui.browser.BrowserExtensionManager.instance.tools("google-flow")
             for (i in 0 until extensionTools.length()) {
                 val tool = extensionTools.getJSONObject(i)
                 if (tool.optString("name").startsWith("flow_")) tools.put(tool)
@@ -801,14 +801,14 @@ class AndroidLocalBridgeServer private constructor() {
     }
 
     private suspend fun executeMcpToolCall(toolName: String, args: JSONObject): JSONObject {
-        if (toolName.startsWith("webview_extension_")) return com.example.gemini.ui.browser.WebViewExtensionDeveloper.call(appContext!!, toolName, args)
-        if (toolName.startsWith("android_")) return com.example.gemini.data.automation.AndroidAutomation.call(appContext!!, toolName, args)
-        if (toolName.startsWith("notes_")) return com.example.gemini.data.notes.NotesMcp.call(appContext!!, toolName, args)
-        if (toolName.startsWith("jarvis_")) return com.example.gemini.data.jarvis.JarvisMcp.call(appContext!!, toolName, args)
-        if (toolName.startsWith("theme_")) return com.example.gemini.theme.ThemeMcp.call(toolName, args)
+        if (toolName.startsWith("webview_extension_")) return com.shriram.cinecode.ui.browser.WebViewExtensionDeveloper.call(appContext!!, toolName, args)
+        if (toolName.startsWith("android_")) return com.shriram.cinecode.data.automation.AndroidAutomation.call(appContext!!, toolName, args)
+        if (toolName.startsWith("notes_")) return com.shriram.cinecode.data.notes.NotesMcp.call(appContext!!, toolName, args)
+        if (toolName.startsWith("jarvis_")) return com.shriram.cinecode.data.jarvis.JarvisMcp.call(appContext!!, toolName, args)
+        if (toolName.startsWith("theme_")) return com.shriram.cinecode.theme.ThemeMcp.call(toolName, args)
 
         if (toolName.startsWith("flow_")) {
-            return com.example.gemini.ui.browser.BrowserExtensionManager.instance.callTool("google-flow", toolName, args)
+            return com.shriram.cinecode.ui.browser.BrowserExtensionManager.instance.callTool("google-flow", toolName, args)
         }
 
         val bManager = BrowserSessionManager.instance
@@ -1162,7 +1162,7 @@ class AndroidLocalBridgeServer private constructor() {
             "automation" -> {
                 val tab = withContext(Dispatchers.Main) {
                     val found = bManager.tabs.firstOrNull { it.id == bodyJson.optString("tab_id") } ?: throw IllegalArgumentException("Tab not found")
-                    com.example.gemini.ui.browser.BrowserAutomationController.update(found, bodyJson.optString("owner"),
+                    com.shriram.cinecode.ui.browser.BrowserAutomationController.update(found, bodyJson.optString("owner"),
                         if (bodyJson.has("busy")) bodyJson.optBoolean("busy") else null,
                         if (bodyJson.has("locked")) bodyJson.optBoolean("locked") else null)
                     found
@@ -1350,7 +1350,7 @@ class AndroidLocalBridgeServer private constructor() {
                 }
             }
             "extensions" -> {
-                val extMgr = com.example.gemini.ui.browser.BrowserExtensionManager.instance
+                val extMgr = com.shriram.cinecode.ui.browser.BrowserExtensionManager.instance
                 val list = extMgr.loadExtensions()
                 val arr = JSONArray()
                 for (ext in list) {
@@ -1363,26 +1363,26 @@ class AndroidLocalBridgeServer private constructor() {
                 sendResponse(out, 200, "application/json", res.toString())
             }
             "extensions/refresh" -> {
-                val manager = com.example.gemini.ui.browser.BrowserExtensionManager.instance
+                val manager = com.shriram.cinecode.ui.browser.BrowserExtensionManager.instance
                 manager.refreshExtensions()
                 sendResponse(out, 200, "application/json", "{\"success\":true}")
             }
             "extensions/rename" -> {
-                val extension = com.example.gemini.ui.browser.BrowserExtensionManager.instance.renameFolder(
+                val extension = com.shriram.cinecode.ui.browser.BrowserExtensionManager.instance.renameFolder(
                     bodyJson.getString("id"), bodyJson.getString("folder_name")
                 )
                 sendResponse(out, 200, "application/json", extension.toJsonObject().toString())
             }
             "extensions/install" -> {
                 // The IDE bridge checks the ZIP is in the terminal home or shared storage, unpacks and installs it
-                val extension = com.example.gemini.ui.browser.BrowserExtensionManager.instance.installDraft(
+                val extension = com.shriram.cinecode.ui.browser.BrowserExtensionManager.instance.installDraft(
                     null, bodyJson.getString("zip_path"), bodyJson.getString("folder_name"),
                     bodyJson.optString("update_id").takeIf { it.isNotBlank() }
                 )
                 sendResponse(out, 200, "application/json", extension.toJsonObject().toString())
             }
             "extensions/toggle" -> {
-                val extMgr = com.example.gemini.ui.browser.BrowserExtensionManager.instance
+                val extMgr = com.shriram.cinecode.ui.browser.BrowserExtensionManager.instance
                 val id = bodyJson.optString("id", "")
                 val enabled = bodyJson.optBoolean("enabled", true)
                 if (id.isNotBlank()) {
@@ -1393,7 +1393,7 @@ class AndroidLocalBridgeServer private constructor() {
                 }
             }
             "extensions/reload" -> {
-                val extMgr = com.example.gemini.ui.browser.BrowserExtensionManager.instance
+                val extMgr = com.shriram.cinecode.ui.browser.BrowserExtensionManager.instance
                 val id = bodyJson.optString("id", "")
                 extMgr.reload(id)
                 sendResponse(out, 200, "application/json", "{\"success\": true}")

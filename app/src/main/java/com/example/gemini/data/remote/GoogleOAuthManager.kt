@@ -1,4 +1,4 @@
-package com.example.gemini.data.remote
+package com.shriram.cinecode.data.remote
 
 import android.util.Base64
 import kotlinx.coroutines.Dispatchers

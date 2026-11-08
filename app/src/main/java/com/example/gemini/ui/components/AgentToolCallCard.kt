@@ -1,4 +1,4 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -42,11 +42,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.example.gemini.data.remote.HubMediaResolver
-import com.example.gemini.data.remote.dto.AskQuestionResponseItemDto
-import com.example.gemini.domain.model.ToolCall
-import com.example.gemini.domain.model.ToolType
-import com.example.gemini.theme.*
+import com.shriram.cinecode.data.remote.HubMediaResolver
+import com.shriram.cinecode.data.remote.dto.AskQuestionResponseItemDto
+import com.shriram.cinecode.domain.model.ToolCall
+import com.shriram.cinecode.domain.model.ToolType
+import com.shriram.cinecode.theme.*
 
 private val IMAGE_FILE_REGEX = Regex(".*\\.(png|jpe?g|webp|gif)(\\?.*)?$", RegexOption.IGNORE_CASE)
 
@@ -161,10 +161,10 @@ fun AgentToolCallCard(
     }
 
     val actionColor = when {
-        isPendingApproval -> com.example.gemini.theme.AppColors.warning
+        isPendingApproval -> com.shriram.cinecode.theme.AppColors.warning
         isRunning -> ClaudeTerracotta
         isSuccess -> MaterialTheme.colorScheme.onSurface
-        isTerminated || isFailed -> com.example.gemini.theme.AppColors.danger
+        isTerminated || isFailed -> com.shriram.cinecode.theme.AppColors.danger
         isRejected -> Color.Gray
         else -> MaterialTheme.colorScheme.onSurface
     }
@@ -221,7 +221,7 @@ fun AgentToolCallCard(
                 Icon(
                     imageVector = Icons.Default.HourglassEmpty,
                     contentDescription = "Pending Approval",
-                    tint = com.example.gemini.theme.AppColors.warning,
+                    tint = com.shriram.cinecode.theme.AppColors.warning,
                     modifier = Modifier.size(14.dp)
                 )
             } else if (isRunning) {
@@ -242,7 +242,7 @@ fun AgentToolCallCard(
                 Icon(
                     imageVector = Icons.Default.Cancel,
                     contentDescription = "Terminated",
-                    tint = com.example.gemini.theme.AppColors.danger,
+                    tint = com.shriram.cinecode.theme.AppColors.danger,
                     modifier = Modifier.size(14.dp)
                 )
             } else if (isRejected) {
@@ -291,7 +291,7 @@ fun AgentToolCallCard(
                     modifier = Modifier
                         .size(22.dp)
                         .clip(CircleShape)
-                        .background(com.example.gemini.theme.AppColors.danger.copy(alpha = 0.18f))
+                        .background(com.shriram.cinecode.theme.AppColors.danger.copy(alpha = 0.18f))
                         .clickable(
                             role = androidx.compose.ui.semantics.Role.Button,
                             onClick = { onTerminate(toolCall) }
@@ -301,7 +301,7 @@ fun AgentToolCallCard(
                     Icon(
                         imageVector = Icons.Default.Stop,
                         contentDescription = "Stop command",
-                        tint = com.example.gemini.theme.AppColors.danger,
+                        tint = com.shriram.cinecode.theme.AppColors.danger,
                         modifier = Modifier.size(12.dp)
                     )
                 }
@@ -380,7 +380,7 @@ fun AgentToolCallCard(
                 }
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = com.example.gemini.theme.AppColors.terminalBg,
+                    color = com.shriram.cinecode.theme.AppColors.terminalBg,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(start = 12.dp, top = 4.dp, bottom = 4.dp)
@@ -395,7 +395,7 @@ fun AgentToolCallCard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(com.example.gemini.theme.AppColors.editorBg)
+                                .background(com.shriram.cinecode.theme.AppColors.editorBg)
                                 .clickable {
                                     if (displayUri.isNotBlank()) showFullScreenViewer = true
                                 },
@@ -489,7 +489,7 @@ fun AgentToolCallCard(
         ) {
             Surface(
                 shape = RoundedCornerShape(8.dp),
-                color = com.example.gemini.theme.AppColors.terminalBg,
+                color = com.shriram.cinecode.theme.AppColors.terminalBg,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -589,7 +589,7 @@ fun AgentToolCallCard(
                             fontFamily = FontFamily.Monospace,
                             fontSize = 11.sp,
                             lineHeight = 16.sp,
-                            color = com.example.gemini.theme.AppColors.editorText,
+                            color = com.shriram.cinecode.theme.AppColors.editorText,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .horizontalScroll(rememberScrollState())

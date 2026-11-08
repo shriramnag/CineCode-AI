@@ -1,4 +1,4 @@
-package com.example.gemini.data.web
+package com.shriram.cinecode.data.web
 
 import android.net.Uri
 import android.util.Log

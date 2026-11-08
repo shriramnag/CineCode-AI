@@ -1,4 +1,4 @@
-package com.example.gemini.ui.settings
+package com.shriram.cinecode.ui.settings
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
@@ -29,11 +29,11 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
-import com.example.gemini.data.remote.dto.BuildWithGooglePluginItemDto
-import com.example.gemini.data.remote.dto.InstalledPluginDto
-import com.example.gemini.data.remote.dto.SkillDefinitionDto
-import com.example.gemini.theme.*
-import com.example.gemini.ui.components.MarkdownContent
+import com.shriram.cinecode.data.remote.dto.BuildWithGooglePluginItemDto
+import com.shriram.cinecode.data.remote.dto.InstalledPluginDto
+import com.shriram.cinecode.data.remote.dto.SkillDefinitionDto
+import com.shriram.cinecode.theme.*
+import com.shriram.cinecode.ui.components.MarkdownContent
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -277,7 +277,7 @@ private fun SkillsTabView(
             }
         } else {
             val listState = androidx.compose.foundation.lazy.rememberLazyListState()
-            val bounce = com.example.gemini.ui.components.rememberBouncyLazyScroll(listState)
+            val bounce = com.shriram.cinecode.ui.components.rememberBouncyLazyScroll(listState)
             LazyColumn(
                 state = listState,
                 modifier = Modifier.weight(1f).fillMaxWidth().then(bounce.modifier),
@@ -302,7 +302,7 @@ private fun SkillItemCard(
         "DISCOVERY_CATEGORY_BUILTIN" -> ClaudeTerracotta
         "DISCOVERY_CATEGORY_INSTALLED" -> GeminiBlue
         "DISCOVERY_CATEGORY_WORKSPACE" -> QuotaGreen
-        else -> com.example.gemini.theme.AppColors.accentAlt
+        else -> com.shriram.cinecode.theme.AppColors.accentAlt
     }
 
     val categoryBadgeText = when (skill.discoveryCategory) {
@@ -475,7 +475,7 @@ private fun InstalledPluginsTabView(
             }
         } else {
             val listState = androidx.compose.foundation.lazy.rememberLazyListState()
-            val bounce = com.example.gemini.ui.components.rememberBouncyLazyScroll(listState)
+            val bounce = com.shriram.cinecode.ui.components.rememberBouncyLazyScroll(listState)
             LazyColumn(
                 state = listState,
                 modifier = Modifier.weight(1f).fillMaxWidth().then(bounce.modifier),
@@ -719,7 +719,7 @@ private fun GooglePluginsStoreTabView(
             }
         } else {
             val listState = androidx.compose.foundation.lazy.rememberLazyListState()
-            val bounce = com.example.gemini.ui.components.rememberBouncyLazyScroll(listState)
+            val bounce = com.shriram.cinecode.ui.components.rememberBouncyLazyScroll(listState)
             LazyColumn(
                 state = listState,
                 modifier = Modifier.weight(1f).fillMaxWidth().then(bounce.modifier),

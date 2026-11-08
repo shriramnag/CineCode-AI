@@ -1,4 +1,4 @@
-package com.example.gemini.ui.agents
+package com.shriram.cinecode.ui.agents
 
 import android.content.Intent
 import android.net.Uri
@@ -56,12 +56,12 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
-import com.example.gemini.data.agent.claude.ClaudeCliStatus
-import com.example.gemini.data.remote.AgyHubClient
-import com.example.gemini.domain.model.AgentKind
-import com.example.gemini.ui.components.accent
-import com.example.gemini.ui.components.label
-import com.example.gemini.ui.drawer.parseProfileAvatarModel
+import com.shriram.cinecode.data.agent.claude.ClaudeCliStatus
+import com.shriram.cinecode.data.remote.AgyHubClient
+import com.shriram.cinecode.domain.model.AgentKind
+import com.shriram.cinecode.ui.components.accent
+import com.shriram.cinecode.ui.components.label
+import com.shriram.cinecode.ui.drawer.parseProfileAvatarModel
 
 /** Account avatar: the profile picture or initial when signed in, a sign-in glyph otherwise; status badge corner. */
 @Composable
@@ -179,8 +179,8 @@ fun AccountsDialog(
 ) {
     val context = LocalContext.current
     // `agy --version`, asked from the bridge (this phone's or the server's) each time the dialog opens
-    val agyCli by com.example.gemini.data.remote.BridgeInfo.agyCli.collectAsState()
-    LaunchedEffect(Unit) { com.example.gemini.data.remote.BridgeInfo.refreshAgyCli() }
+    val agyCli by com.shriram.cinecode.data.remote.BridgeInfo.agyCli.collectAsState()
+    LaunchedEffect(Unit) { com.shriram.cinecode.data.remote.BridgeInfo.refreshAgyCli() }
     val agyVersion = agyCli?.takeIf { it.installed }?.version?.let { v ->
         Regex("\\d+(\\.\\d+)+\\S*").find(v)?.value ?: v.takeIf { it.isNotBlank() }
     }
@@ -365,7 +365,7 @@ private fun SectionButton(
     onClick: () -> Unit
 ) {
     val color = when {
-        danger -> com.example.gemini.theme.AppColors.danger
+        danger -> com.shriram.cinecode.theme.AppColors.danger
         primary != null -> primary
         else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
     }

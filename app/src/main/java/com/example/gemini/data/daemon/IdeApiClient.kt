@@ -1,7 +1,7 @@
-package com.example.gemini.data.daemon
+package com.shriram.cinecode.data.daemon
 
 import android.util.Log
-import com.example.gemini.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.preferences.AuthPreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -19,7 +19,7 @@ data class ProjectItem(
 )
 
 fun mergeProjects(
-    conversations: List<com.example.gemini.domain.model.Conversation> = emptyList(),
+    conversations: List<com.shriram.cinecode.domain.model.Conversation> = emptyList(),
     daemonProjects: List<ProjectItem> = emptyList(),
     activeProject: ProjectItem? = null
 ): List<ProjectItem> {
@@ -109,7 +109,7 @@ object IdeApiClient {
         get() = AuthPreferences.currentBridgeHttpUrl
         set(value) { AuthPreferences.currentBridgeHttpUrl = value }
 
-    val okHttpClient: OkHttpClient get() = com.example.gemini.data.remote.AgyBridgeService.instance.client
+    val okHttpClient: OkHttpClient get() = com.shriram.cinecode.data.remote.AgyBridgeService.instance.client
     private val client: OkHttpClient get() = okHttpClient
 
     private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
@@ -411,7 +411,7 @@ object IdeApiClient {
     }
 
     suspend fun patchFile(path: String, startLine: Int, endLine: Int, replacement: String): Boolean = withContext(Dispatchers.IO) {
-        com.example.gemini.data.remote.HubMediaResolver.invalidateDocument(path)
+        com.shriram.cinecode.data.remote.HubMediaResolver.invalidateDocument(path)
         try {
             val payload = JSONObject().apply {
                 put("path", path)
@@ -431,7 +431,7 @@ object IdeApiClient {
     }
 
     suspend fun createFileOrDir(path: String, isDir: Boolean): Boolean = withContext(Dispatchers.IO) {
-        com.example.gemini.data.remote.HubMediaResolver.invalidateDocument(path)
+        com.shriram.cinecode.data.remote.HubMediaResolver.invalidateDocument(path)
         try {
             val payload = JSONObject().apply {
                 put("path", path)
@@ -448,7 +448,7 @@ object IdeApiClient {
     }
 
     suspend fun deleteFileOrDir(path: String): Boolean = withContext(Dispatchers.IO) {
-        com.example.gemini.data.remote.HubMediaResolver.invalidateDocument(path)
+        com.shriram.cinecode.data.remote.HubMediaResolver.invalidateDocument(path)
         try {
             val payload = JSONObject().apply {
                 put("path", path)
@@ -464,8 +464,8 @@ object IdeApiClient {
     }
 
     suspend fun renameFileOrDir(path: String, newPath: String): Boolean = withContext(Dispatchers.IO) {
-        com.example.gemini.data.remote.HubMediaResolver.invalidateDocument(path)
-        com.example.gemini.data.remote.HubMediaResolver.invalidateDocument(newPath)
+        com.shriram.cinecode.data.remote.HubMediaResolver.invalidateDocument(path)
+        com.shriram.cinecode.data.remote.HubMediaResolver.invalidateDocument(newPath)
         try {
             val payload = JSONObject().apply {
                 put("path", path)

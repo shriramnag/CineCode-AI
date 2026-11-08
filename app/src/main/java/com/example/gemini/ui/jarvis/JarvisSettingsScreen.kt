@@ -1,6 +1,6 @@
-package com.example.gemini.ui.jarvis
+package com.shriram.cinecode.ui.jarvis
 
-import com.example.gemini.ui.components.bouncyVerticalScroll
+import com.shriram.cinecode.ui.components.bouncyVerticalScroll
 import android.Manifest
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -24,14 +24,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gemini.data.agent.claude.ClaudeMcpAddRequest
-import com.example.gemini.data.jarvis.JarvisController
-import com.example.gemini.data.jarvis.JarvisPreferences
-import com.example.gemini.data.jarvis.JarvisSkill
-import com.example.gemini.data.jarvis.JarvisVoice
-import com.example.gemini.data.remote.AndroidLocalBridgeServer
-import com.example.gemini.domain.model.AgentKind
-import com.example.gemini.domain.model.McpServerSpec
+import com.shriram.cinecode.data.agent.claude.ClaudeMcpAddRequest
+import com.shriram.cinecode.data.jarvis.JarvisController
+import com.shriram.cinecode.data.jarvis.JarvisPreferences
+import com.shriram.cinecode.data.jarvis.JarvisSkill
+import com.shriram.cinecode.data.jarvis.JarvisVoice
+import com.shriram.cinecode.data.remote.AndroidLocalBridgeServer
+import com.shriram.cinecode.domain.model.AgentKind
+import com.shriram.cinecode.domain.model.McpServerSpec
 import kotlinx.coroutines.launch
 
 private val JarvisCyan = Color(0xFF22D3EE)
@@ -71,10 +71,10 @@ fun JarvisSettingsScreen(cardBg: Color, cardBorder: BorderStroke, onOpen: (Jarvi
             Text("Jarvis is starting…", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
             return@Column
         }
-        val c = com.example.gemini.theme.AppColors
+        val c = com.shriram.cinecode.theme.AppColors
         val I = androidx.compose.material.icons.Icons.Outlined
         fun row(page: JarvisSettingsPage, icon: androidx.compose.ui.graphics.vector.ImageVector, tint: Color, title: String, value: String? = null) =
-            com.example.gemini.ui.settings.SettingsRowItem(icon, tint, title, value) { onOpen(page) }
+            com.shriram.cinecode.ui.settings.SettingsRowItem(icon, tint, title, value) { onOpen(page) }
         listOf(
             listOfNotNull(
                 row(JarvisSettingsPage.AGENT, I.SmartToy, c.info, "Agent", if (agentName == AgentKind.AGY.name) "Antigravity" else "Claude Code"),
@@ -103,7 +103,7 @@ fun JarvisSettingsScreen(cardBg: Color, cardBorder: BorderStroke, onOpen: (Jarvi
                 row(JarvisSettingsPage.SCREEN, I.Visibility, c.info, "Screen & look"),
                 row(JarvisSettingsPage.CHAT, I.ChatBubbleOutline, JarvisCyan, "Jarvis chat")
             )
-        ).filter { it.isNotEmpty() }.forEach { com.example.gemini.ui.settings.SettingsRowGroup(it, cardBg) }
+        ).filter { it.isNotEmpty() }.forEach { com.shriram.cinecode.ui.settings.SettingsRowGroup(it, cardBg) }
     }
 }
 
@@ -301,21 +301,21 @@ fun JarvisSettingsSectionPage(page: JarvisSettingsPage, cardBg: Color, cardBorde
                     val sendRaw by P.sendPhrases.state.collectAsState()
                     val cancelOn by P.cancelPhrasesOn.state.collectAsState()
                     val cancelRaw by P.cancelPhrases.state.collectAsState()
-                    val sendList = remember(sendRaw) { com.example.gemini.data.jarvis.JarvisPhrases.parse(sendRaw) }
-                    val cancelList = remember(cancelRaw) { com.example.gemini.data.jarvis.JarvisPhrases.parse(cancelRaw) }
+                    val sendList = remember(sendRaw) { com.shriram.cinecode.data.jarvis.JarvisPhrases.parse(sendRaw) }
+                    val cancelList = remember(cancelRaw) { com.shriram.cinecode.data.jarvis.JarvisPhrases.parse(cancelRaw) }
                     JSwitch("Send with a phrase", "End with one of these and it is sent at once (the phrase itself is not sent).", sendOn) { P.sendPhrasesOn.set(it) }
                     if (sendOn) {
                         FoldedPhrases("Send phrases", sendList.size) {
-                            PhraseEditor(sendList, cancelList, "cancel", com.example.gemini.data.jarvis.JarvisPhrases.DEFAULT_SEND) {
-                                P.sendPhrases.set(com.example.gemini.data.jarvis.JarvisPhrases.format(it))
+                            PhraseEditor(sendList, cancelList, "cancel", com.shriram.cinecode.data.jarvis.JarvisPhrases.DEFAULT_SEND) {
+                                P.sendPhrases.set(com.shriram.cinecode.data.jarvis.JarvisPhrases.format(it))
                             }
                         }
                     }
                     JSwitch("Cancel with a phrase", "End with one of these and nothing is sent.", cancelOn) { P.cancelPhrasesOn.set(it) }
                     if (cancelOn) {
                         FoldedPhrases("Cancel phrases", cancelList.size) {
-                            PhraseEditor(cancelList, sendList, "send", com.example.gemini.data.jarvis.JarvisPhrases.DEFAULT_CANCEL) {
-                                P.cancelPhrases.set(com.example.gemini.data.jarvis.JarvisPhrases.format(it))
+                            PhraseEditor(cancelList, sendList, "send", com.shriram.cinecode.data.jarvis.JarvisPhrases.DEFAULT_CANCEL) {
+                                P.cancelPhrases.set(com.shriram.cinecode.data.jarvis.JarvisPhrases.format(it))
                             }
                         }
                     }
@@ -551,7 +551,7 @@ private fun FoldedPhrases(title: String, count: Int, editor: @Composable () -> U
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun PhraseEditor(phrases: List<String>, other: List<String>, otherName: String, defaults: List<String>, onChange: (List<String>) -> Unit) {
-    val J = com.example.gemini.data.jarvis.JarvisPhrases
+    val J = com.shriram.cinecode.data.jarvis.JarvisPhrases
     var input by remember { mutableStateOf("") }
     var note by remember { mutableStateOf<String?>(null) }
     fun add() {

@@ -1,4 +1,4 @@
-package com.example.gemini.data.receiver
+package com.shriram.cinecode.data.receiver
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -22,7 +22,7 @@ import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
-import com.example.gemini.R
+import com.shriram.cinecode.R
 import java.io.File
 import java.io.FileOutputStream
 import java.net.Socket
@@ -105,7 +105,7 @@ class TermuxApiReceiver : BroadcastReceiver() {
         val text = intent.getStringExtra("text") ?: intent.getStringExtra("clip") ?: return
         Handler(Looper.getMainLooper()).post {
             try {
-                val targetContext = com.example.gemini.MainActivity.currentInstance ?: context
+                val targetContext = com.shriram.cinecode.MainActivity.currentInstance ?: context
                 val clipboard = targetContext.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
                 val clip = ClipData.newPlainText("Termux Clipboard", text)
                 clipboard?.setPrimaryClip(clip)
@@ -118,7 +118,7 @@ class TermuxApiReceiver : BroadcastReceiver() {
     private fun handleClipboardGet(context: Context, intent: Intent) {
         Handler(Looper.getMainLooper()).post {
             try {
-                val targetContext = com.example.gemini.MainActivity.currentInstance ?: context
+                val targetContext = com.shriram.cinecode.MainActivity.currentInstance ?: context
                 val clipboard = targetContext.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
                 val clip = clipboard?.primaryClip
                 val text = if (clip != null && clip.itemCount > 0) {

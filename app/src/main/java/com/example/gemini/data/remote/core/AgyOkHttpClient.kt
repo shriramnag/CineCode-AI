@@ -1,6 +1,6 @@
-package com.example.gemini.data.remote.core
+package com.shriram.cinecode.data.remote.core
 
-import com.example.gemini.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.preferences.AuthPreferences
 import okhttp3.ConnectionPool
 import okhttp3.Dispatcher
 import okhttp3.OkHttpClient
@@ -42,8 +42,8 @@ object AgyOkHttpClient {
             .writeTimeout(30, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
 
-        if (com.example.gemini.data.remote.inspector.NetworkInspectorManager.isEnabled) {
-            builder.addInterceptor(com.example.gemini.data.remote.inspector.NetworkInspectorInterceptor("AGY Daemon (gRPC)"))
+        if (com.shriram.cinecode.data.remote.inspector.NetworkInspectorManager.isEnabled) {
+            builder.addInterceptor(com.shriram.cinecode.data.remote.inspector.NetworkInspectorInterceptor("AGY Daemon (gRPC)"))
         }
 
         builder.addInterceptor { chain ->
@@ -52,7 +52,7 @@ object AgyOkHttpClient {
                 if (token.isBlank()) {
                     try {
                         val status = kotlinx.coroutines.runBlocking(kotlinx.coroutines.Dispatchers.IO) {
-                            com.example.gemini.data.remote.AgyBridgeService.instance.fetchServerStatus(AuthPreferences.currentBridgeHttpUrl)
+                            com.shriram.cinecode.data.remote.AgyBridgeService.instance.fetchServerStatus(AuthPreferences.currentBridgeHttpUrl)
                         }
                         if (!status?.csrfToken.isNullOrBlank()) {
                             token = status.csrfToken
@@ -63,7 +63,7 @@ object AgyOkHttpClient {
                     // App launch: the hub is (nearly) up but its token has not arrived yet. Sending without it is
                     // always rejected (the CSRF errors shown at launch), so wait a moment for it instead. Not when
                     // the hub is down or failed: then the request fails right away as before.
-                    val hubState = com.example.gemini.data.remote.AgyBridgeService.instance.hubStatus.value.status
+                    val hubState = com.shriram.cinecode.data.remote.AgyBridgeService.instance.hubStatus.value.status
                     if (hubState == "starting" || hubState == "online" || hubState == "idle") {
                         token = try {
                             kotlinx.coroutines.runBlocking { AgyCsrfManager.instance.awaitToken(CSRF_WAIT_MS) }

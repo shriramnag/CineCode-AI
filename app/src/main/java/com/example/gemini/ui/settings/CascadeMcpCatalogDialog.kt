@@ -1,4 +1,4 @@
-package com.example.gemini.ui.settings
+package com.shriram.cinecode.ui.settings
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
@@ -26,10 +26,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.example.gemini.data.remote.dto.AvailableCascadePluginDto
-import com.example.gemini.domain.model.McpServerState
-import com.example.gemini.theme.*
-import com.example.gemini.ui.components.MarkdownContent
+import com.shriram.cinecode.data.remote.dto.AvailableCascadePluginDto
+import com.shriram.cinecode.domain.model.McpServerState
+import com.shriram.cinecode.theme.*
+import com.shriram.cinecode.ui.components.MarkdownContent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

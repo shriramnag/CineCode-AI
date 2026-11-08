@@ -29,12 +29,13 @@ jobs:
           fi
           chmod +x gradlew
 
-      - name: Build APK with Gradle
+      - name: Build APK with Gradle (Try Standard then Assembly)
         run: |
           ./gradlew assembleStandardRelease || ./gradlew assembleRelease || ./gradlew assembleDebug
 
       - name: Generate Release Keystore
         run: |
+          # स्थाई रिलीज कीस्टोर जनरेट करना (नॉट रैंडम)
           keytool -genkeypair -v \
             -keystore cinecode-release.jks \
             -alias cinecodeKey \

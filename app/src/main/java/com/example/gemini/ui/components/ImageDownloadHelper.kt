@@ -1,4 +1,4 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import android.content.ContentValues
 import android.content.Context
@@ -14,7 +14,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.core.content.FileProvider
-import com.example.gemini.data.remote.HubMediaResolver
+import com.shriram.cinecode.data.remote.HubMediaResolver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -99,17 +99,17 @@ object ImageDownloadHelper {
 
         // in Server mode a plain path is a file on the server: read it through the bridge
         val serverUrl = if (source.startsWith("http://") || source.startsWith("https://")) null
-        else com.example.gemini.data.remote.HubMediaResolver.bridgeUrlFor(source)
+        else com.shriram.cinecode.data.remote.HubMediaResolver.bridgeUrlFor(source)
         val input: java.io.InputStream? = when {
             serverUrl != null -> {
-                val resp = com.example.gemini.data.remote.AgyBridgeService.instance.client.newCall(Request.Builder().url(serverUrl).get().build()).execute()
+                val resp = com.shriram.cinecode.data.remote.AgyBridgeService.instance.client.newCall(Request.Builder().url(serverUrl).get().build()).execute()
                 if (resp.isSuccessful) resp.body?.byteStream() else { resp.close(); null }
             }
             source.startsWith("content://") -> context.contentResolver.openInputStream(Uri.parse(source))
             source.startsWith("http://") || source.startsWith("https://") -> {
-                val fixedSource = com.example.gemini.data.preferences.AuthPreferences.rebaseBridgeUrl(source)
-                val http = if (com.example.gemini.data.preferences.AuthPreferences.isBridgeUrl(fixedSource))
-                    com.example.gemini.data.remote.AgyBridgeService.instance.client else OkHttpClient()
+                val fixedSource = com.shriram.cinecode.data.preferences.AuthPreferences.rebaseBridgeUrl(source)
+                val http = if (com.shriram.cinecode.data.preferences.AuthPreferences.isBridgeUrl(fixedSource))
+                    com.shriram.cinecode.data.remote.AgyBridgeService.instance.client else OkHttpClient()
                 val resp = http.newCall(Request.Builder().url(fixedSource).get().build()).execute()
                 if (resp.isSuccessful) resp.body?.byteStream() else { resp.close(); null }
             }
@@ -237,9 +237,9 @@ object ImageDownloadHelper {
 
         if (source.startsWith("http://") || source.startsWith("https://")) {
             return try {
-                val fixedSource = com.example.gemini.data.preferences.AuthPreferences.rebaseBridgeUrl(source)
-                val client = if (com.example.gemini.data.preferences.AuthPreferences.isBridgeUrl(fixedSource))
-                    com.example.gemini.data.remote.AgyBridgeService.instance.client else OkHttpClient()
+                val fixedSource = com.shriram.cinecode.data.preferences.AuthPreferences.rebaseBridgeUrl(source)
+                val client = if (com.shriram.cinecode.data.preferences.AuthPreferences.isBridgeUrl(fixedSource))
+                    com.shriram.cinecode.data.remote.AgyBridgeService.instance.client else OkHttpClient()
                 val req = Request.Builder()
                     .url(fixedSource)
                     .header("User-Agent", "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36 AntiGem/1.0")

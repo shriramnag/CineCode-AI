@@ -1,4 +1,4 @@
-package com.example.gemini.domain.model
+package com.shriram.cinecode.domain.model
 
 import exa.language_server_pb.AskQuestionEntry
 import kotlinx.serialization.Serializable

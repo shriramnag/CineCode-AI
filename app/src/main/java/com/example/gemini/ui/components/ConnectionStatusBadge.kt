@@ -1,4 +1,4 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
@@ -20,9 +20,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gemini.data.remote.AgyActiveInstance
-import com.example.gemini.data.remote.BridgeConnectionState
-import com.example.gemini.theme.ClaudeTerracotta
+import com.shriram.cinecode.data.remote.AgyActiveInstance
+import com.shriram.cinecode.data.remote.BridgeConnectionState
+import com.shriram.cinecode.theme.ClaudeTerracotta
 
 @Composable
 fun ConnectionStatusBadge(
@@ -35,12 +35,12 @@ fun ConnectionStatusBadge(
     var showDialog by remember { mutableStateOf(false) }
 
     val (dotColor, labelText) = when (state) {
-        BridgeConnectionState.CONNECTED_READY -> Pair(com.example.gemini.theme.AppColors.success, "Bridge Ready")
-        BridgeConnectionState.STREAMING -> Pair(com.example.gemini.theme.AppColors.success, "Generating...")
-        BridgeConnectionState.SPAWNING_INSTANCE -> Pair(com.example.gemini.theme.AppColors.warning, "Warming Instance...")
-        BridgeConnectionState.CONNECTING -> Pair(com.example.gemini.theme.AppColors.info, "Connecting...")
-        BridgeConnectionState.RECONNECTING -> Pair(com.example.gemini.theme.AppColors.info, "Reconnecting...")
-        BridgeConnectionState.OFFLINE_ERROR -> Pair(com.example.gemini.theme.AppColors.danger, "Bridge Offline")
+        BridgeConnectionState.CONNECTED_READY -> Pair(com.shriram.cinecode.theme.AppColors.success, "Bridge Ready")
+        BridgeConnectionState.STREAMING -> Pair(com.shriram.cinecode.theme.AppColors.success, "Generating...")
+        BridgeConnectionState.SPAWNING_INSTANCE -> Pair(com.shriram.cinecode.theme.AppColors.warning, "Warming Instance...")
+        BridgeConnectionState.CONNECTING -> Pair(com.shriram.cinecode.theme.AppColors.info, "Connecting...")
+        BridgeConnectionState.RECONNECTING -> Pair(com.shriram.cinecode.theme.AppColors.info, "Reconnecting...")
+        BridgeConnectionState.OFFLINE_ERROR -> Pair(com.shriram.cinecode.theme.AppColors.danger, "Bridge Offline")
     }
 
     Box(

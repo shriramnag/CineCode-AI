@@ -1,9 +1,9 @@
-package com.example.gemini.data.remote.services
+package com.shriram.cinecode.data.remote.services
 
 import android.util.Base64
 import android.util.Log
-import com.example.gemini.data.preferences.AuthPreferences
-import com.example.gemini.data.remote.dto.*
+import com.shriram.cinecode.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.remote.dto.*
 import exa.language_server_pb.DeletePluginRequest
 import exa.language_server_pb.DownloadBuildWithGooglePluginRequest
 import exa.language_server_pb.GetAllPluginsRequest
@@ -110,8 +110,8 @@ class AgyPluginService(
         }
 
         // 3. Android / Termux standard sandboxes
-        list.add("file:///data/data/com.termux/files/home/.gemini/config/mcp_config.json")
-        list.add("file:///data/user/0/com.termux/files/home/.gemini/config/mcp_config.json")
+        list.add("file:///data/data/com.shriram.cinecode/files/home/.gemini/config/mcp_config.json")
+        list.add("file:///data/user/0/com.shriram.cinecode/files/home/.gemini/config/mcp_config.json")
 
         // 4. Java user.home
         val userHome = System.getProperty("user.home")
@@ -138,7 +138,7 @@ class AgyPluginService(
 
             // 1. Try reading via IdeApiClient (works on local Termux / daemon)
             try {
-                val ideConfig = com.example.gemini.data.daemon.IdeApiClient.getMcpConfig()
+                val ideConfig = com.shriram.cinecode.data.daemon.IdeApiClient.getMcpConfig()
                 if (!ideConfig.isNullOrBlank() && ideConfig.trim().startsWith("{")) {
                     currentJsonStr = ideConfig
                 }
@@ -186,15 +186,15 @@ class AgyPluginService(
 
                     val envMap = cmdEntry.env.toMutableMap()
                     // Android / Termux environment loader injection
-                    val isAndroidTermux = java.io.File("/data/data/com.termux/files/usr/lib/libtermux-exec.so").exists() ||
+                    val isAndroidTermux = java.io.File("/data/data/com.shriram.cinecode/files/usr/lib/libtermux-exec.so").exists() ||
                                           System.getenv("PREFIX") != null ||
                                           (System.getProperty("java.vendor")?.contains("Android", ignoreCase = true) == true)
                     if (isAndroidTermux && !AuthPreferences.currentRemoteMode) {
-                        if (!envMap.containsKey("LD_PRELOAD") && java.io.File("/data/data/com.termux/files/usr/lib/libtermux-exec.so").exists()) {
-                            envMap["LD_PRELOAD"] = "/data/data/com.termux/files/usr/lib/libtermux-exec.so"
+                        if (!envMap.containsKey("LD_PRELOAD") && java.io.File("/data/data/com.shriram.cinecode/files/usr/lib/libtermux-exec.so").exists()) {
+                            envMap["LD_PRELOAD"] = "/data/data/com.shriram.cinecode/files/usr/lib/libtermux-exec.so"
                         }
                         if (!envMap.containsKey("PATH")) {
-                            envMap["PATH"] = "/data/data/com.termux/files/home/.local/bin:/data/data/com.termux/files/usr/bin:/system/bin"
+                            envMap["PATH"] = "/data/data/com.shriram.cinecode/files/home/.local/bin:/data/data/com.shriram.cinecode/files/usr/bin:/system/bin"
                         }
                     }
 
@@ -219,7 +219,7 @@ class AgyPluginService(
 
             // Try IdeApiClient save
             try {
-                saveSucceeded = com.example.gemini.data.daemon.IdeApiClient.saveMcpConfig(updatedJsonStr)
+                saveSucceeded = com.shriram.cinecode.data.daemon.IdeApiClient.saveMcpConfig(updatedJsonStr)
             } catch (e: Exception) {
                 Log.w(TAG, "IdeApiClient.saveMcpConfig error: ${e.message}")
             }

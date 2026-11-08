@@ -1,4 +1,4 @@
-package com.example.gemini.data.files
+package com.shriram.cinecode.data.files
 
 import android.webkit.MimeTypeMap
 import androidx.compose.material.icons.Icons

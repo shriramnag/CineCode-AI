@@ -1,8 +1,8 @@
-package com.example.gemini.data.jarvis
+package com.shriram.cinecode.data.jarvis
 
-import com.example.gemini.data.daemon.IdeApiClient
-import com.example.gemini.data.daemon.TermuxDaemonManager
-import com.example.gemini.domain.model.AgentKind
+import com.shriram.cinecode.data.daemon.IdeApiClient
+import com.shriram.cinecode.data.daemon.TermuxDaemonManager
+import com.shriram.cinecode.domain.model.AgentKind
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date

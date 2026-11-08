@@ -1,7 +1,7 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import androidx.compose.runtime.mutableStateMapOf
-import com.example.gemini.domain.model.ToolCall
+import com.shriram.cinecode.domain.model.ToolCall
 
 /**
  * In-RAM expansion state cache for tool calls in chat.

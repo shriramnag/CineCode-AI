@@ -1,9 +1,9 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import android.util.Log
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.platform.SoftwareKeyboardController
-import com.example.gemini.AppViewMode
+import com.shriram.cinecode.AppViewMode
 
 /**
  * Coordinates unified focus and keyboard (IME) handoff across persistent main screens:

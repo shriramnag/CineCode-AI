@@ -1,8 +1,8 @@
-package com.example.gemini.data.remote
+package com.shriram.cinecode.data.remote
 
 import android.util.Log
-import com.example.gemini.data.preferences.AuthPreferences
-import com.example.gemini.data.remote.services.AgyProjectService
+import com.shriram.cinecode.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.remote.services.AgyProjectService
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 

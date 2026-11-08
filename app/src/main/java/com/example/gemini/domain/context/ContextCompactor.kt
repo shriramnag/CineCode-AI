@@ -1,9 +1,9 @@
-package com.example.gemini.domain.context
+package com.shriram.cinecode.domain.context
 
-import com.example.gemini.data.remote.AntigravityApiService
-import com.example.gemini.data.remote.StreamEvent
-import com.example.gemini.domain.model.ChatMessage
-import com.example.gemini.domain.model.MessageRole
+import com.shriram.cinecode.data.remote.AntigravityApiService
+import com.shriram.cinecode.data.remote.StreamEvent
+import com.shriram.cinecode.domain.model.ChatMessage
+import com.shriram.cinecode.domain.model.MessageRole
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.withContext

@@ -1,4 +1,4 @@
-package com.example.gemini.ui.chat
+package com.shriram.cinecode.ui.chat
 
 import android.app.Application
 import android.content.Context
@@ -8,19 +8,19 @@ import android.net.NetworkCapabilities
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.gemini.data.preferences.AuthPreferences
-import com.example.gemini.data.remote.AgyHubClient
-import com.example.gemini.data.remote.AntigravityApiService
-import com.example.gemini.data.remote.GoogleOAuthManager
-import com.example.gemini.data.remote.PromptExpansion
-import com.example.gemini.data.remote.StreamEvent
-import com.example.gemini.domain.model.AgentKind
-import com.example.gemini.domain.model.AiModel
-import com.example.gemini.domain.model.ChatMessage
-import com.example.gemini.domain.model.ChatAttachment
-import com.example.gemini.domain.model.Conversation
-import com.example.gemini.domain.model.MessageRole
-import com.example.gemini.domain.model.ModelQuota
+import com.shriram.cinecode.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.remote.AgyHubClient
+import com.shriram.cinecode.data.remote.AntigravityApiService
+import com.shriram.cinecode.data.remote.GoogleOAuthManager
+import com.shriram.cinecode.data.remote.PromptExpansion
+import com.shriram.cinecode.data.remote.StreamEvent
+import com.shriram.cinecode.domain.model.AgentKind
+import com.shriram.cinecode.domain.model.AiModel
+import com.shriram.cinecode.domain.model.ChatMessage
+import com.shriram.cinecode.domain.model.ChatAttachment
+import com.shriram.cinecode.domain.model.Conversation
+import com.shriram.cinecode.domain.model.MessageRole
+import com.shriram.cinecode.domain.model.ModelQuota
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -38,7 +38,7 @@ import org.json.JSONObject
 import java.util.UUID
 
 data class PendingToolApproval(
-    val toolCall: com.example.gemini.domain.model.ToolCall,
+    val toolCall: com.shriram.cinecode.domain.model.ToolCall,
     val messageId: String
 )
 
@@ -47,8 +47,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     val authPreferences = AuthPreferences(application)
     private val authPrefs get() = authPreferences
     private val apiService = AntigravityApiService()
-    private val store = com.example.gemini.data.agent.ChatSessionStore()
-    val agyBackend: com.example.gemini.data.agent.agy.AgyChatBackend = com.example.gemini.data.agent.agy.AgyChatBackend(
+    private val store = com.shriram.cinecode.data.agent.ChatSessionStore()
+    val agyBackend: com.shriram.cinecode.data.agent.agy.AgyChatBackend = com.shriram.cinecode.data.agent.agy.AgyChatBackend(
         application = application,
         backendScope = viewModelScope,
         authPrefs = authPrefs,
@@ -56,23 +56,23 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         isNetworkConnectedProvider = { isNetworkConnected() },
         onHubOnline = { loadMcpServers() }
     )
-    private val mcpManager = com.example.gemini.data.agent.agy.AgyMcpManager(viewModelScope, agyBackend.agyHubClient)
-    private val pluginsManager = com.example.gemini.data.agent.agy.AgyPluginsManager(viewModelScope, agyBackend.agyHubClient, store, mcpManager)
-    private val securityManager = com.example.gemini.data.agent.agy.AgySecuritySettingsManager(viewModelScope, agyBackend.agyHubClient, authPrefs, store)
+    private val mcpManager = com.shriram.cinecode.data.agent.agy.AgyMcpManager(viewModelScope, agyBackend.agyHubClient)
+    private val pluginsManager = com.shriram.cinecode.data.agent.agy.AgyPluginsManager(viewModelScope, agyBackend.agyHubClient, store, mcpManager)
+    private val securityManager = com.shriram.cinecode.data.agent.agy.AgySecuritySettingsManager(viewModelScope, agyBackend.agyHubClient, authPrefs, store)
     private val agyHubClient get() = agyBackend.agyHubClient
     private val agyBridgeService get() = agyBackend.agyBridgeService
 
     // ==================== AGENT ROUTING (Antigravity / Claude Code) ====================
 
-    val claudePrefs = com.example.gemini.data.agent.claude.ClaudePreferences(application)
-    private val claudeClient = com.example.gemini.data.agent.claude.ClaudeBridgeClient()
-    val claudeBackend = com.example.gemini.data.agent.claude.ClaudeChatBackend(application, viewModelScope, store, claudePrefs, claudeClient)
+    val claudePrefs = com.shriram.cinecode.data.agent.claude.ClaudePreferences(application)
+    private val claudeClient = com.shriram.cinecode.data.agent.claude.ClaudeBridgeClient()
+    val claudeBackend = com.shriram.cinecode.data.agent.claude.ClaudeChatBackend(application, viewModelScope, store, claudePrefs, claudeClient)
     /** Claude account: sign-in state, plan usage, login / logout. */
-    val claudeAccount = com.example.gemini.data.agent.claude.ClaudeAccountManager(viewModelScope, claudeClient)
+    val claudeAccount = com.shriram.cinecode.data.agent.claude.ClaudeAccountManager(viewModelScope, claudeClient)
     /** Claude configuration: settings.json, permission rules, MCP, plugins, memory, CLI install. */
-    val claudeConfig = com.example.gemini.data.agent.claude.ClaudeConfigManager(viewModelScope, claudeClient)
+    val claudeConfig = com.shriram.cinecode.data.agent.claude.ClaudeConfigManager(viewModelScope, claudeClient)
     /** Dictation for Claude chats (Claude's speech-to-text through the bridge). */
-    val claudeVoice = com.example.gemini.data.agent.claude.ClaudeVoiceTranscriber(claudeClient) { claudePrefs.voiceLanguage.value }
+    val claudeVoice = com.shriram.cinecode.data.agent.claude.ClaudeVoiceTranscriber(claudeClient) { claudePrefs.voiceLanguage.value }
 
     /** Agent of the conversation on screen; chat actions go to that agent's backend. */
     val activeAgent: StateFlow<AgentKind> = store.currentConversation
@@ -84,7 +84,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     /** Agent used for new chats, picked on the empty chat screen (remembered). */
     val newChatAgent: StateFlow<AgentKind> = claudePrefs.newChatAgent
 
-    private val agentPrefs = com.example.gemini.data.agent.AgentPreferences(application)
+    private val agentPrefs = com.shriram.cinecode.data.agent.AgentPreferences(application)
     /** Agents the app runs (Antigravity only until the user chooses). */
     val enabledAgents: StateFlow<Set<AgentKind>> = agentPrefs.enabled
     /** The first-launch agent choice was made. */
@@ -117,11 +117,11 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         if (firstChoice) {
             // first launch: the server waited for this choice and now starts with it. If something started it already
             // (with the default agents, i.e. Antigravity only), restart it so the chosen agents run.
-            val server = com.example.gemini.data.local.LocalServerManager
+            val server = com.shriram.cinecode.data.local.LocalServerManager
             val alreadyUp = server.status.value.let {
-                it is com.example.gemini.data.local.LocalServerStatus.Running || it is com.example.gemini.data.local.LocalServerStatus.Starting
+                it is com.shriram.cinecode.data.local.LocalServerStatus.Running || it is com.shriram.cinecode.data.local.LocalServerStatus.Starting
             }
-            if (alreadyUp && !com.example.gemini.data.preferences.AuthPreferences.currentRemoteMode) {
+            if (alreadyUp && !com.shriram.cinecode.data.preferences.AuthPreferences.currentRemoteMode) {
                 server.startServer(getApplication(), forceRestart = true)
             } else {
                 server.autoStartOnAppLaunch(getApplication())
@@ -130,7 +130,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             // stop the server completely, then restart the app: it starts the server again with the new agents
             viewModelScope.launch {
                 _isApplyingAgents.value = true
-                runCatching { com.example.gemini.data.local.LocalServerManager.stopServerCompletely() }
+                runCatching { com.shriram.cinecode.data.local.LocalServerManager.stopServerCompletely() }
                 val app = getApplication<Application>()
                 app.packageManager.getLaunchIntentForPackage(app.packageName)?.component?.let { component ->
                     app.startActivity(android.content.Intent.makeRestartActivityTask(component))
@@ -158,7 +158,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             ?: AgentKind.AGY
 
     private fun claudeNotSupported(action: String) {
-        com.example.gemini.ui.components.AppToastHelper.showToast("$action is not available in Claude chats yet", com.example.gemini.ui.components.ChatToastType.INFO)
+        com.shriram.cinecode.ui.components.AppToastHelper.showToast("$action is not available in Claude chats yet", com.shriram.cinecode.ui.components.ChatToastType.INFO)
     }
 
     fun setNewChatAgent(agent: AgentKind) {
@@ -189,7 +189,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     private val claudeQuotas: StateFlow<List<ModelQuota>> =
         combine(claudeBackend.selectedModelId, claudeBackend.rateLimits, claudeAccount.usage) { modelId, live, usage ->
             // plan limits belong to Claude's own models; a custom provider's model has none
-            if (com.example.gemini.data.agent.claude.ClaudeChatBackend.providerOf(modelId).isNotEmpty()) return@combine emptyList()
+            if (com.shriram.cinecode.data.agent.claude.ClaudeChatBackend.providerOf(modelId).isNotEmpty()) return@combine emptyList()
             // live windows from the chat stream are fresher than the cached usage call (percent there)
             val five = live["five_hour"]?.let { it.utilization to it.resetsAt?.let(::isoUtc) }
                 ?: usage?.rate_limits?.five_hour?.let { (it.utilization ?: 0.0) / 100.0 to it.resets_at }
@@ -236,8 +236,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         agyBackend.isAnyGenerationOrTaskActive,
         claudeBackend.isCurrentChatActivelyRunning,
         claudeBackend.conversations,
-        com.example.gemini.data.jarvis.JarvisController.keepScreenAwake,
-        com.example.gemini.data.jarvis.JarvisTasks.anyActive
+        com.shriram.cinecode.data.jarvis.JarvisController.keepScreenAwake,
+        com.shriram.cinecode.data.jarvis.JarvisTasks.anyActive
     ) { agy, claudeTurn, claudeChats, jarvis, tasks ->
         agy || claudeTurn || claudeChats.any { it.isRunning } || jarvis || tasks
     }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
@@ -250,8 +250,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         combine(agyBackend.conversations, agyBackend.activeInstances, ::Pair),
         combine(claudeBackend.isCurrentChatActivelyRunning, claudeBackend.currentConversation, ::Pair),
         claudeBackend.conversations,
-        com.example.gemini.data.jarvis.JarvisController.keepScreenAwake,
-        com.example.gemini.data.jarvis.JarvisTasks.anyActive
+        com.shriram.cinecode.data.jarvis.JarvisController.keepScreenAwake,
+        com.shriram.cinecode.data.jarvis.JarvisTasks.anyActive
     ) { (agyChats, instances), (claudeTurn, current), claudeChats, jarvis, tasks ->
         fun names(titles: List<String>): String {
             val shown = titles.map { "“${it.ifBlank { "Untitled chat" }.take(40)}”" }.take(2).joinToString(", ")
@@ -272,7 +272,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             if (claudeTurn && claudeOpen == null && claudeOthers.isEmpty()) add("Claude is replying")
             if (tasks) add("A Jarvis task is running")
             if (jarvis) add(
-                when (com.example.gemini.data.jarvis.JarvisPreferences.keepScreenOn.value) {
+                when (com.shriram.cinecode.data.jarvis.JarvisPreferences.keepScreenOn.value) {
                     "active" -> "Jarvis is active (Jarvis setting: keep the screen on while it's active)"
                     else -> "Jarvis is on (Jarvis setting: keep the screen on while Jarvis is on)"
                 }
@@ -294,7 +294,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         if (isClaudeEnabled) {
             claudeBackend.onAppForegrounded()
             // the CLI may have been installed or signed in from a terminal meanwhile
-            if (claudeAccount.state.value != com.example.gemini.data.agent.claude.ClaudeStatus.READY) claudeAccount.refreshStatus()
+            if (claudeAccount.state.value != com.shriram.cinecode.data.agent.claude.ClaudeStatus.READY) claudeAccount.refreshStatus()
         }
     }
     fun onProjectChanged(projectPath: String) = agyBackend.onProjectChanged(projectPath)
@@ -327,7 +327,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     fun deleteConversation(id: String) {
         if (agentOf(id) == AgentKind.CLAUDE) claudeBackend.deleteConversation(id) else agyBackend.deleteConversation(id)
         // Jarvis forgets it too: a deleted Jarvis chat is replaced by a new one on the next message
-        com.example.gemini.data.jarvis.JarvisController.onChatDeleted(id)
+        com.shriram.cinecode.data.jarvis.JarvisController.onChatDeleted(id)
     }
     fun forkConversation(id: String) {
         if (agentOf(id) == AgentKind.CLAUDE) {
@@ -368,7 +368,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     val queuedMessages = byAgent(agyBackend.queuedMessages, claudeBackend.queuedMessages)
     fun sendQueuedNow(id: String) = if (isClaudeActive) claudeBackend.sendQueuedNow(id) else agyBackend.sendQueuedNow(id)
     fun deleteQueued(id: String) { if (!isClaudeActive) agyBackend.deleteQueued(id) }
-    fun applyQuotaSummary(summary: com.example.gemini.domain.model.QuotaSummaryResponse) = agyBackend.applyQuotaSummary(summary)
+    fun applyQuotaSummary(summary: com.shriram.cinecode.domain.model.QuotaSummaryResponse) = agyBackend.applyQuotaSummary(summary)
     fun refreshQuotas(force: Boolean = true, showToastFeedback: Boolean = false) {
         if (isClaudeActive) {
             claudeBackend.refreshInfo(force)
@@ -377,21 +377,21 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             agyBackend.refreshQuotas(force, showToastFeedback)
         }
     }
-    fun approveAndExecuteTerminalTool(toolCall: com.example.gemini.domain.model.ToolCall, messageId: String, scope: String? = null) = if (isClaudeActive) claudeBackend.approveTool(toolCall) else agyBackend.approveAndExecuteTerminalTool(toolCall, messageId, scope)
-    fun rejectTerminalTool(toolCall: com.example.gemini.domain.model.ToolCall, messageId: String, reason: String? = null) = if (isClaudeActive) claudeBackend.rejectTool(toolCall, reason) else agyBackend.rejectTerminalTool(toolCall, messageId, reason)
+    fun approveAndExecuteTerminalTool(toolCall: com.shriram.cinecode.domain.model.ToolCall, messageId: String, scope: String? = null) = if (isClaudeActive) claudeBackend.approveTool(toolCall) else agyBackend.approveAndExecuteTerminalTool(toolCall, messageId, scope)
+    fun rejectTerminalTool(toolCall: com.shriram.cinecode.domain.model.ToolCall, messageId: String, reason: String? = null) = if (isClaudeActive) claudeBackend.rejectTool(toolCall, reason) else agyBackend.rejectTerminalTool(toolCall, messageId, reason)
     fun approveAllPendingTools(list: List<PendingToolApproval>) = if (isClaudeActive) list.forEach { claudeBackend.approveTool(it.toolCall) } else agyBackend.approveAllPendingTools(list)
     fun rejectAllPendingTools(list: List<PendingToolApproval>, reason: String? = null) = if (isClaudeActive) list.forEach { claudeBackend.rejectTool(it.toolCall, reason) } else agyBackend.rejectAllPendingTools(list, reason)
-    fun terminateRunningTerminalTool(toolCall: com.example.gemini.domain.model.ToolCall, messageId: String) = if (isClaudeActive) claudeBackend.stopStreaming() else agyBackend.terminateRunningTerminalTool(toolCall, messageId)
-    fun proceedAfterTermination(toolCall: com.example.gemini.domain.model.ToolCall, messageId: String, userInstructions: String?) {
+    fun terminateRunningTerminalTool(toolCall: com.shriram.cinecode.domain.model.ToolCall, messageId: String) = if (isClaudeActive) claudeBackend.stopStreaming() else agyBackend.terminateRunningTerminalTool(toolCall, messageId)
+    fun proceedAfterTermination(toolCall: com.shriram.cinecode.domain.model.ToolCall, messageId: String, userInstructions: String?) {
         if (isClaudeActive) {
             store.terminatedToolDialog.value = null
             return
         }
         agyBackend.proceedAfterTermination(toolCall, messageId, userInstructions)
     }
-    fun submitUserChoices(toolCall: com.example.gemini.domain.model.ToolCall, messageId: String, responses: List<com.example.gemini.data.remote.dto.AskQuestionResponseItemDto>, summaryDisplay: String) = if (isClaudeActive) claudeBackend.submitChoices(toolCall, responses, summaryDisplay) else agyBackend.submitUserChoices(toolCall, messageId, responses, summaryDisplay)
-    fun skipUserChoices(toolCall: com.example.gemini.domain.model.ToolCall, messageId: String, responses: List<com.example.gemini.data.remote.dto.AskQuestionResponseItemDto> = emptyList()) = if (isClaudeActive) claudeBackend.skipChoices(toolCall) else agyBackend.skipUserChoices(toolCall, messageId, responses)
-    fun cancelUserChoices(toolCall: com.example.gemini.domain.model.ToolCall, messageId: String) = if (isClaudeActive) claudeBackend.cancelChoices(toolCall) else agyBackend.cancelUserChoices(toolCall, messageId)
+    fun submitUserChoices(toolCall: com.shriram.cinecode.domain.model.ToolCall, messageId: String, responses: List<com.shriram.cinecode.data.remote.dto.AskQuestionResponseItemDto>, summaryDisplay: String) = if (isClaudeActive) claudeBackend.submitChoices(toolCall, responses, summaryDisplay) else agyBackend.submitUserChoices(toolCall, messageId, responses, summaryDisplay)
+    fun skipUserChoices(toolCall: com.shriram.cinecode.domain.model.ToolCall, messageId: String, responses: List<com.shriram.cinecode.data.remote.dto.AskQuestionResponseItemDto> = emptyList()) = if (isClaudeActive) claudeBackend.skipChoices(toolCall) else agyBackend.skipUserChoices(toolCall, messageId, responses)
+    fun cancelUserChoices(toolCall: com.shriram.cinecode.domain.model.ToolCall, messageId: String) = if (isClaudeActive) claudeBackend.cancelChoices(toolCall) else agyBackend.cancelUserChoices(toolCall, messageId)
 
     val mcpServers = mcpManager.mcpServers
     val isMcpLoading = mcpManager.isMcpLoading
@@ -406,10 +406,10 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     fun loadMcpServers() = mcpManager.loadMcpServers()
     fun refreshMcpServers(targetServer: String? = null) = mcpManager.refreshMcpServers(targetServer)
     fun toggleMcpServer(serverName: String, enabled: Boolean) = mcpManager.toggleMcpServer(serverName, enabled)
-    fun saveMcpServer(spec: com.example.gemini.domain.model.McpServerSpec, rawJsonString: String? = null) = mcpManager.saveMcpServer(spec, rawJsonString)
+    fun saveMcpServer(spec: com.shriram.cinecode.domain.model.McpServerSpec, rawJsonString: String? = null) = mcpManager.saveMcpServer(spec, rawJsonString)
     fun deleteMcpServer(serverName: String) = mcpManager.deleteMcpServer(serverName)
     fun loadAvailableCascadePlugins(query: String = "") = mcpManager.loadAvailableCascadePlugins(query)
-    fun installCascadeMcpPlugin(plugin: com.example.gemini.data.remote.dto.AvailableCascadePluginDto) = mcpManager.installCascadeMcpPlugin(plugin)
+    fun installCascadeMcpPlugin(plugin: com.shriram.cinecode.data.remote.dto.AvailableCascadePluginDto) = mcpManager.installCascadeMcpPlugin(plugin)
 
     val allSkills = pluginsManager.allSkills
     val isSkillsLoading = pluginsManager.isSkillsLoading
@@ -444,8 +444,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     fun updateGlobalCustomTerminalPolicy(policy: String) = securityManager.updateGlobalCustomTerminalPolicy(policy)
     fun updateGlobalCustomFileAccessPolicy(policy: String) = securityManager.updateGlobalCustomFileAccessPolicy(policy)
     fun updateGlobalTerminalSandbox(enabled: Boolean) = securityManager.updateGlobalTerminalSandbox(enabled)
-    fun setProjectInheritGlobal(project: com.example.gemini.data.remote.AgyHubClient.ProjectItem) = securityManager.setProjectInheritGlobal(project)
-    fun updateProjectPreset(project: com.example.gemini.data.remote.AgyHubClient.ProjectItem, autoExec: String, fileAccess: String, artifactReview: String? = null) = securityManager.updateProjectPreset(project, autoExec, fileAccess, artifactReview)
+    fun setProjectInheritGlobal(project: com.shriram.cinecode.data.remote.AgyHubClient.ProjectItem) = securityManager.setProjectInheritGlobal(project)
+    fun updateProjectPreset(project: com.shriram.cinecode.data.remote.AgyHubClient.ProjectItem, autoExec: String, fileAccess: String, artifactReview: String? = null) = securityManager.updateProjectPreset(project, autoExec, fileAccess, artifactReview)
     fun setCommandAutoExecutionPolicy(policy: String) = securityManager.setCommandAutoExecutionPolicy(policy)
     fun setCommandSandboxEnabled(enabled: Boolean) = securityManager.setCommandSandboxEnabled(enabled)
 
@@ -462,14 +462,14 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
     /** Sidebar list: Antigravity and Claude Code conversations together, newest first. Jarvis' hidden chats are not in it. */
     val conversations: StateFlow<List<Conversation>> = combine(
-        allConversations, com.example.gemini.data.jarvis.JarvisPreferences.chatIds, com.example.gemini.data.jarvis.JarvisPreferences.enabled.state
+        allConversations, com.shriram.cinecode.data.jarvis.JarvisPreferences.chatIds, com.shriram.cinecode.data.jarvis.JarvisPreferences.enabled.state
     ) { all, jarvisIds, jarvisOn ->
         if (!jarvisOn || jarvisIds.isEmpty()) all else all.filter { it.id !in jarvisIds }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     /** The Jarvis filter in the sidebar: the chats Jarvis opened. */
     val jarvisConversations: StateFlow<List<Conversation>> = combine(
-        allConversations, com.example.gemini.data.jarvis.JarvisPreferences.chatIds, com.example.gemini.data.jarvis.JarvisPreferences.enabled.state
+        allConversations, com.shriram.cinecode.data.jarvis.JarvisPreferences.chatIds, com.shriram.cinecode.data.jarvis.JarvisPreferences.enabled.state
     ) { all, jarvisIds, jarvisOn ->
         if (!jarvisOn) emptyList() else all.filter { it.id in jarvisIds }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
@@ -477,8 +477,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     private val _currentConversation = store.currentConversation
     val currentConversation: StateFlow<Conversation?> = _currentConversation.asStateFlow()
 
-    private val _sharedConversationPreview = MutableStateFlow<com.example.gemini.ui.components.SharedConversationData?>(null)
-    val sharedConversationPreview: StateFlow<com.example.gemini.ui.components.SharedConversationData?> = _sharedConversationPreview.asStateFlow()
+    private val _sharedConversationPreview = MutableStateFlow<com.shriram.cinecode.ui.components.SharedConversationData?>(null)
+    val sharedConversationPreview: StateFlow<com.shriram.cinecode.ui.components.SharedConversationData?> = _sharedConversationPreview.asStateFlow()
 
     private val _isSharedConversationLoading = MutableStateFlow(false)
     val isSharedConversationLoading: StateFlow<Boolean> = _isSharedConversationLoading.asStateFlow()
@@ -501,8 +501,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     /** Messages of the chat on screen, from the agent that owns it. */
     val messages: StateFlow<List<ChatMessage>> = byAgent(_messages, claudeBackend.messages)
 
-    private val _thinkingPreference = MutableStateFlow(com.example.gemini.domain.model.ThinkingPreference())
-    val thinkingPreference: StateFlow<com.example.gemini.domain.model.ThinkingPreference> = _thinkingPreference.asStateFlow()
+    private val _thinkingPreference = MutableStateFlow(com.shriram.cinecode.domain.model.ThinkingPreference())
+    val thinkingPreference: StateFlow<com.shriram.cinecode.domain.model.ThinkingPreference> = _thinkingPreference.asStateFlow()
 
     private val _userEmail = store.userEmail
     val userEmail: StateFlow<String?> = _userEmail.asStateFlow()
@@ -539,7 +539,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     val postponedThreshold: StateFlow<Int?> = _postponedThreshold.asStateFlow()
 
     private val _attachments = store.attachments
-    val attachments: StateFlow<List<com.example.gemini.domain.model.ChatAttachment>> = _attachments.asStateFlow()
+    val attachments: StateFlow<List<com.shriram.cinecode.domain.model.ChatAttachment>> = _attachments.asStateFlow()
 
     private val _isUploadingAttachment = MutableStateFlow(false)
     val isUploadingAttachment: StateFlow<Boolean> = _isUploadingAttachment.asStateFlow()
@@ -603,7 +603,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                     ).getOrNull() ?: uri.toString()
                 }
 
-                val att = com.example.gemini.domain.model.ChatAttachment(
+                val att = com.shriram.cinecode.domain.model.ChatAttachment(
                     id = "att_${System.currentTimeMillis()}_${(0..999).random()}",
                     name = fileName,
                     path = savedHostUri,
@@ -632,7 +632,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 android.util.Base64.encodeToString(file.readBytes(), android.util.Base64.NO_WRAP)
             } else ""
 
-            val att = com.example.gemini.domain.model.ChatAttachment(
+            val att = com.shriram.cinecode.domain.model.ChatAttachment(
                 id = "att_${System.currentTimeMillis()}_${(0..999).random()}",
                 name = fileName,
                 path = filePath,
@@ -672,7 +672,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     val isDevModeEnabled: StateFlow<Boolean> = _isDevModeEnabled.asStateFlow()
 
     private val _terminatedToolDialog = store.terminatedToolDialog
-    val terminatedToolDialog: StateFlow<Pair<com.example.gemini.domain.model.ToolCall, String>?> = _terminatedToolDialog.asStateFlow()
+    val terminatedToolDialog: StateFlow<Pair<com.shriram.cinecode.domain.model.ToolCall, String>?> = _terminatedToolDialog.asStateFlow()
 
     fun dismissTerminatedToolDialog() {
         _terminatedToolDialog.value = null
@@ -848,7 +848,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     /** Remote hub sign-in: hands the pasted localhost redirect address to the server (see AgyBridgeService.forwardLoginCallback). */
     fun forwardLoginCallback(url: String, onResult: (Result<String>) -> Unit) {
         viewModelScope.launch {
-            val result = com.example.gemini.data.remote.AgyBridgeService.instance.forwardLoginCallback(url)
+            val result = com.shriram.cinecode.data.remote.AgyBridgeService.instance.forwardLoginCallback(url)
             if (result.isSuccess) agyBackend.onLoginCallbackForwarded()
             onResult(result)
         }
@@ -967,7 +967,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun setThinkingPreference(pref: com.example.gemini.domain.model.ThinkingPreference) {
+    fun setThinkingPreference(pref: com.shriram.cinecode.domain.model.ThinkingPreference) {
         _thinkingPreference.value = pref
     }
 
@@ -1064,7 +1064,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         }
         // models and slash commands could not load before Claude was reachable and signed in
         viewModelScope.launch {
-            claudeAccount.state.map { it == com.example.gemini.data.agent.claude.ClaudeStatus.READY }.distinctUntilChanged().filter { it }
+            claudeAccount.state.map { it == com.shriram.cinecode.data.agent.claude.ClaudeStatus.READY }.distinctUntilChanged().filter { it }
                 .collect { claudeBackend.refreshInfo(force = false) }
         }
 
@@ -1335,7 +1335,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                         if (!told) {
                             told = true
                             withContext(Dispatchers.Main) {
-                                com.example.gemini.ui.components.AppToastHelper.showToast("Waiting for the local server to restore the chat…", com.example.gemini.ui.components.ChatToastType.INFO)
+                                com.shriram.cinecode.ui.components.AppToastHelper.showToast("Waiting for the local server to restore the chat…", com.shriram.cinecode.ui.components.ChatToastType.INFO)
                             }
                         }
                         delay(1_500)
@@ -1344,7 +1344,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                     if (restoreRes.isSuccess) {
                         val restored = restoreRes.getOrThrow()
                         if (!isActive) return@launch
-                        val newConv = com.example.gemini.domain.model.Conversation(
+                        val newConv = com.shriram.cinecode.domain.model.Conversation(
                             id = restored.id,
                             title = restored.title,
                             updatedAt = System.currentTimeMillis(),
@@ -1354,10 +1354,10 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                         _conversations.value = listOf(newConv) + _conversations.value.filter { it.id != restored.id }
                         val hubReady = systemConnectionState.value.isReady
                         withContext(Dispatchers.Main) {
-                            com.example.gemini.ui.components.AppToastHelper.showToast(
+                            com.shriram.cinecode.ui.components.AppToastHelper.showToast(
                                 if (hubReady) "Chat restored: ${restored.title}"
                                 else "Chat restored: ${restored.title}. It opens once Antigravity has started.",
-                                com.example.gemini.ui.components.ChatToastType.SUCCESS
+                                com.shriram.cinecode.ui.components.ChatToastType.SUCCESS
                             )
                         }
                         _isSharedConversationLoading.value = false
@@ -1365,18 +1365,18 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                         return@launch
                     }
 
-                    val parsed = com.example.gemini.ui.components.ConversationShareHelper.parseSharedConversation(bytes.inputStream())
+                    val parsed = com.shriram.cinecode.ui.components.ConversationShareHelper.parseSharedConversation(bytes.inputStream())
                     if (!isActive) return@launch
                     _sharedConversationPreview.value = parsed
                     withContext(Dispatchers.Main) {
-                        com.example.gemini.ui.components.AppToastHelper.showToast("Loaded shared chat: ${parsed.title}", com.example.gemini.ui.components.ChatToastType.SUCCESS)
+                        com.shriram.cinecode.ui.components.AppToastHelper.showToast("Loaded shared chat: ${parsed.title}", com.shriram.cinecode.ui.components.ChatToastType.SUCCESS)
                     }
                 }
             } catch (e: Exception) {
                 if (e is kotlinx.coroutines.CancellationException) return@launch
                 Log.e("ChatViewModel", "Failed to load shared conversation from uri $uri: ${e.message}", e)
                 withContext(Dispatchers.Main) {
-                    com.example.gemini.ui.components.AppToastHelper.showToast("Failed to load shared chat file", com.example.gemini.ui.components.ChatToastType.ERROR)
+                    com.shriram.cinecode.ui.components.AppToastHelper.showToast("Failed to load shared chat file", com.shriram.cinecode.ui.components.ChatToastType.ERROR)
                 }
             } finally {
                 _isSharedConversationLoading.value = false
@@ -1393,7 +1393,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         val ready = withTimeoutOrNull(180_000) { systemConnectionState.first { it.isReady } } != null
         if (!ready) {
             withContext(Dispatchers.Main) {
-                com.example.gemini.ui.components.AppToastHelper.showToast("Antigravity has not started yet: the restored chat is in the chat list.", com.example.gemini.ui.components.ChatToastType.INFO)
+                com.shriram.cinecode.ui.components.AppToastHelper.showToast("Antigravity has not started yet: the restored chat is in the chat list.", com.shriram.cinecode.ui.components.ChatToastType.INFO)
             }
             return
         }
@@ -1438,12 +1438,12 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 val content = context.contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { it.readText() } ?: ""
                 _incomingMarkdownPreview.value = resolvedName to content
                 withContext(Dispatchers.Main) {
-                    com.example.gemini.ui.components.AppToastHelper.showToast("Opened $resolvedName", com.example.gemini.ui.components.ChatToastType.SUCCESS)
+                    com.shriram.cinecode.ui.components.AppToastHelper.showToast("Opened $resolvedName", com.shriram.cinecode.ui.components.ChatToastType.SUCCESS)
                 }
             } catch (e: Exception) {
                 Log.e("ChatViewModel", "Failed to load markdown from URI $uri: ${e.message}", e)
                 withContext(Dispatchers.Main) {
-                    com.example.gemini.ui.components.AppToastHelper.showToast("Failed to load markdown file", com.example.gemini.ui.components.ChatToastType.ERROR)
+                    com.shriram.cinecode.ui.components.AppToastHelper.showToast("Failed to load markdown file", com.shriram.cinecode.ui.components.ChatToastType.ERROR)
                 }
             }
         }
@@ -1469,7 +1469,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 val resolvedPath = if (uri.scheme == "file") uri.path ?: resolvedName else uri.toString()
                 val content = context.contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { it.readText() } ?: ""
 
-                com.example.gemini.data.daemon.TermuxDaemonManager.openOrSelectTab(
+                com.shriram.cinecode.data.daemon.TermuxDaemonManager.openOrSelectTab(
                     path = resolvedPath,
                     name = resolvedName,
                     content = content,
@@ -1477,12 +1477,12 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 )
                 requestViewMode("IDE")
                 withContext(Dispatchers.Main) {
-                    com.example.gemini.ui.components.AppToastHelper.showToast("Opened $resolvedName in IDE", com.example.gemini.ui.components.ChatToastType.SUCCESS)
+                    com.shriram.cinecode.ui.components.AppToastHelper.showToast("Opened $resolvedName in IDE", com.shriram.cinecode.ui.components.ChatToastType.SUCCESS)
                 }
             } catch (e: Exception) {
                 Log.e("ChatViewModel", "Failed to open file in IDE from URI $uri: ${e.message}", e)
                 withContext(Dispatchers.Main) {
-                    com.example.gemini.ui.components.AppToastHelper.showToast("Failed to open file in IDE", com.example.gemini.ui.components.ChatToastType.ERROR)
+                    com.shriram.cinecode.ui.components.AppToastHelper.showToast("Failed to open file in IDE", com.shriram.cinecode.ui.components.ChatToastType.ERROR)
                 }
             }
         }

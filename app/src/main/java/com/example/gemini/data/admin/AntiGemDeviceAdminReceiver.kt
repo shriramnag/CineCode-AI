@@ -1,4 +1,4 @@
-package com.example.gemini.data.admin
+package com.shriram.cinecode.data.admin
 
 import android.app.admin.DeviceAdminReceiver
 import android.app.admin.DevicePolicyManager

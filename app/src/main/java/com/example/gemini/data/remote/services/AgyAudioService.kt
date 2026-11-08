@@ -1,6 +1,6 @@
-package com.example.gemini.data.remote.services
+package com.shriram.cinecode.data.remote.services
 
-import com.example.gemini.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.preferences.AuthPreferences
 import exa.language_server_pb.EndAudioSessionRequest
 import exa.language_server_pb.GetTranscriptionRequest
 import exa.language_server_pb.Metadata

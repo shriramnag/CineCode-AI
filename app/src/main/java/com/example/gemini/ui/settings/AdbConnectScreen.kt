@@ -1,6 +1,6 @@
-package com.example.gemini.ui.settings
+package com.shriram.cinecode.ui.settings
 
-import com.example.gemini.ui.components.bouncyVerticalScroll
+import com.shriram.cinecode.ui.components.bouncyVerticalScroll
 import android.content.Intent
 import android.os.Build
 import android.provider.Settings
@@ -30,12 +30,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.NotificationManagerCompat
-import com.example.gemini.data.adb.AdbConnectManager
-import com.example.gemini.data.adb.AdbConnectManager.Pairing
-import com.example.gemini.theme.QuotaGreen
+import com.shriram.cinecode.data.adb.AdbConnectManager
+import com.shriram.cinecode.data.adb.AdbConnectManager.Pairing
+import com.shriram.cinecode.theme.QuotaGreen
 import kotlinx.coroutines.delay
 
-internal val Amber: androidx.compose.ui.graphics.Color get() = com.example.gemini.theme.AppColors.warning
+internal val Amber: androidx.compose.ui.graphics.Color get() = com.shriram.cinecode.theme.AppColors.warning
 
 @Composable
 fun AdbConnectScreen(cardBg: Color, cardBorder: BorderStroke) {
@@ -392,8 +392,8 @@ private fun LogBox(lines: List<String>) {
     LaunchedEffect(lines.size) { scroll.animateScrollTo(scroll.maxValue) }
     Box(
         Modifier.fillMaxWidth().heightIn(max = 180.dp).clip(RoundedCornerShape(8.dp))
-            .background(com.example.gemini.theme.AppColors.terminalBg).verticalScroll(scroll).padding(10.dp)
+            .background(com.shriram.cinecode.theme.AppColors.terminalBg).verticalScroll(scroll).padding(10.dp)
     ) {
-        Text(lines.joinToString("\n"), fontFamily = FontFamily.Monospace, fontSize = 10.5.sp, color = com.example.gemini.theme.AppColors.editorText, lineHeight = 14.sp)
+        Text(lines.joinToString("\n"), fontFamily = FontFamily.Monospace, fontSize = 10.5.sp, color = com.shriram.cinecode.theme.AppColors.editorText, lineHeight = 14.sp)
     }
 }

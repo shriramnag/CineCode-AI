@@ -1,4 +1,4 @@
-package com.example.gemini.data.remote
+package com.shriram.cinecode.data.remote
 
 import android.content.Context
 import androidx.compose.runtime.mutableStateListOf

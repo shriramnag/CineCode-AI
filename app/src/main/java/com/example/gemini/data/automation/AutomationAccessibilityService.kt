@@ -1,4 +1,4 @@
-package com.example.gemini.data.automation
+package com.shriram.cinecode.data.automation
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription

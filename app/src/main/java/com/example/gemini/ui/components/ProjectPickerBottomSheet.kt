@@ -1,4 +1,4 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -36,8 +36,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.example.gemini.data.daemon.ProjectItem
-import com.example.gemini.theme.ClaudeTerracotta
+import com.shriram.cinecode.data.daemon.ProjectItem
+import com.shriram.cinecode.theme.ClaudeTerracotta
 import java.io.File
 
 @Composable

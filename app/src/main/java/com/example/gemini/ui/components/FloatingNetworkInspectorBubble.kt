@@ -1,4 +1,4 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import com.example.gemini.data.remote.inspector.NetworkInspectorManager
+import com.shriram.cinecode.data.remote.inspector.NetworkInspectorManager
 import kotlin.math.roundToInt
 
 @Composable
@@ -73,7 +73,7 @@ fun FloatingNetworkInspectorBubble(
                 shape = RoundedCornerShape(20.dp),
                 color = MaterialTheme.colorScheme.surfaceColorAtElevation(6.dp),
                 tonalElevation = 8.dp,
-                border = BorderStroke(1.2.dp, com.example.gemini.theme.AppColors.info.copy(alpha = 0.6f)),
+                border = BorderStroke(1.2.dp, com.shriram.cinecode.theme.AppColors.info.copy(alpha = 0.6f)),
                 shadowElevation = 8.dp,
                 modifier = Modifier
                     .clip(RoundedCornerShape(20.dp))
@@ -89,13 +89,13 @@ fun FloatingNetworkInspectorBubble(
                         modifier = Modifier
                             .size(24.dp)
                             .clip(CircleShape)
-                            .background(com.example.gemini.theme.AppColors.info.copy(alpha = 0.15f)),
+                            .background(com.shriram.cinecode.theme.AppColors.info.copy(alpha = 0.15f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.Language,
                             contentDescription = "Network Inspector",
-                            tint = com.example.gemini.theme.AppColors.info,
+                            tint = com.shriram.cinecode.theme.AppColors.info,
                             modifier = Modifier.size(14.dp)
                         )
                     }
@@ -113,7 +113,7 @@ fun FloatingNetworkInspectorBubble(
                     if (activeStreams > 0) {
                         Surface(
                             shape = RoundedCornerShape(10.dp),
-                            color = com.example.gemini.theme.AppColors.success.copy(alpha = 0.18f)
+                            color = com.shriram.cinecode.theme.AppColors.success.copy(alpha = 0.18f)
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
@@ -124,13 +124,13 @@ fun FloatingNetworkInspectorBubble(
                                     modifier = Modifier
                                         .size(5.dp)
                                         .clip(CircleShape)
-                                        .background(com.example.gemini.theme.AppColors.success)
+                                        .background(com.shriram.cinecode.theme.AppColors.success)
                                 )
                                 Text(
                                     text = "$activeStreams stream",
                                     fontSize = 9.5.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = com.example.gemini.theme.AppColors.success
+                                    color = com.shriram.cinecode.theme.AppColors.success
                                 )
                             }
                         }
@@ -140,13 +140,13 @@ fun FloatingNetworkInspectorBubble(
                     if (errorCount > 0) {
                         Surface(
                             shape = RoundedCornerShape(10.dp),
-                            color = com.example.gemini.theme.AppColors.danger.copy(alpha = 0.18f)
+                            color = com.shriram.cinecode.theme.AppColors.danger.copy(alpha = 0.18f)
                         ) {
                             Text(
                                 text = "$errorCount err",
                                 fontSize = 9.5.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = com.example.gemini.theme.AppColors.danger,
+                                color = com.shriram.cinecode.theme.AppColors.danger,
                                 modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
                             )
                         }

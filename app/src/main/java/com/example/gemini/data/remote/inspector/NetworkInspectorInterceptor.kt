@@ -1,4 +1,4 @@
-package com.example.gemini.data.remote.inspector
+package com.shriram.cinecode.data.remote.inspector
 
 import okhttp3.Headers
 import okhttp3.Interceptor

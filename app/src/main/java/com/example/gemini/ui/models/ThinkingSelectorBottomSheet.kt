@@ -1,4 +1,4 @@
-package com.example.gemini.ui.models
+package com.shriram.cinecode.ui.models
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -20,12 +20,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gemini.theme.isAppInDarkTheme
+import com.shriram.cinecode.theme.isAppInDarkTheme
 import androidx.compose.ui.graphics.Color
-import com.example.gemini.domain.model.ThinkingLevel
-import com.example.gemini.domain.model.ThinkingPreference
-import com.example.gemini.theme.ClaudeDarkSurface
-import com.example.gemini.theme.ClaudeTerracotta
+import com.shriram.cinecode.domain.model.ThinkingLevel
+import com.shriram.cinecode.domain.model.ThinkingPreference
+import com.shriram.cinecode.theme.ClaudeDarkSurface
+import com.shriram.cinecode.theme.ClaudeTerracotta
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -84,7 +84,7 @@ fun ThinkingSelectorBottomSheet(
                 val isDark = isAppInDarkTheme()
                 val isSelected = selectedLevel == level
                 val borderColor = if (isSelected) ClaudeTerracotta else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
-                val unselectedBg = com.example.gemini.theme.AppColors.card
+                val unselectedBg = com.shriram.cinecode.theme.AppColors.card
                 val bgColor = if (isSelected) ClaudeTerracotta.copy(alpha = 0.08f) else unselectedBg
 
                 Card(

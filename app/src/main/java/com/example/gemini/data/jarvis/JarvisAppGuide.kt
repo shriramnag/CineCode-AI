@@ -1,4 +1,4 @@
-package com.example.gemini.data.jarvis
+package com.shriram.cinecode.data.jarvis
 
 /**
  * What Jarvis knows about using AntiGem ("how do I add an MCP server", "where is the theme"), so it can guide the user by
@@ -9,8 +9,8 @@ object JarvisAppGuide {
     class Entry(val topic: String, val keywords: List<String>, val text: String)
 
     private fun settingsPages(): String = runCatching {
-        com.example.gemini.ui.settings.SettingsSection.values()
-            .filter { it != com.example.gemini.ui.settings.SettingsSection.MAIN && it != com.example.gemini.ui.settings.SettingsSection.CLAUDE_PAGE }
+        com.shriram.cinecode.ui.settings.SettingsSection.values()
+            .filter { it != com.shriram.cinecode.ui.settings.SettingsSection.MAIN && it != com.shriram.cinecode.ui.settings.SettingsSection.CLAUDE_PAGE }
             .joinToString("\n") { "- ${it.title} (jarvis_open_settings section=${it.name.lowercase()}): ${it.subtitle}" }
     }.getOrDefault("")
 

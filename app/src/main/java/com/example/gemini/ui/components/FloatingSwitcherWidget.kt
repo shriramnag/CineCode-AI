@@ -1,4 +1,4 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -35,8 +35,8 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import com.example.gemini.AppViewMode
-import com.example.gemini.theme.ClaudeTerracotta
+import com.shriram.cinecode.AppViewMode
+import com.shriram.cinecode.theme.ClaudeTerracotta
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 

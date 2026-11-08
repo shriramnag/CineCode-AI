@@ -1,4 +1,4 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -34,9 +34,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.example.gemini.theme.ClaudeTerracotta
-import com.example.gemini.ui.ide.IdeExecutionRequest
-import com.example.gemini.ui.ide.IdeExecutionRunnerSheet
+import com.shriram.cinecode.theme.ClaudeTerracotta
+import com.shriram.cinecode.ui.ide.IdeExecutionRequest
+import com.shriram.cinecode.ui.ide.IdeExecutionRunnerSheet
 
 /**
  * Runs a chat bash command in a fresh interactive terminal over the chat. The user first sees (and can edit) the command;
@@ -58,8 +58,8 @@ fun ChatCommandRunDialog(command: String, onDismiss: () -> Unit) {
         if (running != null) {
             Surface(
                 shape = RoundedCornerShape(16.dp),
-                color = com.example.gemini.theme.AppColors.editorBg,
-                border = BorderStroke(1.dp, com.example.gemini.theme.AppColors.editorBorder),
+                color = com.shriram.cinecode.theme.AppColors.editorBg,
+                border = BorderStroke(1.dp, com.shriram.cinecode.theme.AppColors.editorBorder),
                 modifier = Modifier
                     .fillMaxWidth(0.97f)
                     .fillMaxHeight(0.92f)
@@ -91,8 +91,8 @@ private fun CommandConfirmCard(initial: String, onCancel: () -> Unit, onRun: (St
 
     Surface(
         shape = RoundedCornerShape(18.dp),
-        color = com.example.gemini.theme.AppColors.editorBg,
-        border = BorderStroke(1.dp, com.example.gemini.theme.AppColors.editorBorder),
+        color = com.shriram.cinecode.theme.AppColors.editorBg,
+        border = BorderStroke(1.dp, com.shriram.cinecode.theme.AppColors.editorBorder),
         shadowElevation = 16.dp,
         modifier = Modifier.fillMaxWidth(0.94f).imePadding()
     ) {
@@ -107,13 +107,13 @@ private fun CommandConfirmCard(initial: String, onCancel: () -> Unit, onRun: (St
                 Spacer(Modifier.width(12.dp))
                 Column {
                     Text("Run in terminal", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                    Text("Opens a new terminal session. Edit the command if needed.", fontSize = 12.sp, color = com.example.gemini.theme.AppColors.editorMuted)
+                    Text("Opens a new terminal session. Edit the command if needed.", fontSize = 12.sp, color = com.shriram.cinecode.theme.AppColors.editorMuted)
                 }
             }
 
             Surface(
                 shape = RoundedCornerShape(10.dp),
-                color = com.example.gemini.theme.AppColors.terminalBg,
+                color = com.shriram.cinecode.theme.AppColors.terminalBg,
                 border = BorderStroke(1.dp, ClaudeTerracotta.copy(alpha = 0.35f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -124,7 +124,7 @@ private fun CommandConfirmCard(initial: String, onCancel: () -> Unit, onRun: (St
                         onValueChange = { value = it },
                         singleLine = singleLine,
                         maxLines = if (singleLine) 1 else 12,
-                        textStyle = TextStyle(fontFamily = FontFamily.Monospace, fontSize = 13.sp, lineHeight = 19.sp, color = com.example.gemini.theme.AppColors.editorText),
+                        textStyle = TextStyle(fontFamily = FontFamily.Monospace, fontSize = 13.sp, lineHeight = 19.sp, color = com.shriram.cinecode.theme.AppColors.editorText),
                         cursorBrush = androidx.compose.ui.graphics.SolidColor(ClaudeTerracotta),
                         keyboardOptions = KeyboardOptions(
                             capitalization = KeyboardCapitalization.None,
@@ -147,11 +147,11 @@ private fun CommandConfirmCard(initial: String, onCancel: () -> Unit, onRun: (St
                 if (singleLine) "Press Enter to run · closing the terminal stops everything in it"
                 else "Shift+Enter or Run to start · closing the terminal stops everything in it",
                 fontSize = 11.sp,
-                color = com.example.gemini.theme.AppColors.editorMuted
+                color = com.shriram.cinecode.theme.AppColors.editorMuted
             )
 
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = onCancel) { Text("Cancel", color = com.example.gemini.theme.AppColors.editorMuted) }
+                TextButton(onClick = onCancel) { Text("Cancel", color = com.shriram.cinecode.theme.AppColors.editorMuted) }
                 Spacer(Modifier.width(6.dp))
                 Button(
                     onClick = run,

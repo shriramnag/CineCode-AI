@@ -1,4 +1,4 @@
-package com.example.gemini.data.updater
+package com.shriram.cinecode.data.updater
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -15,12 +15,12 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.example.gemini.R
-import com.example.gemini.ui.browser.BrowserExtension
-import com.example.gemini.ui.browser.BrowserExtensionManager
-import com.example.gemini.ui.browser.PluginRepositories
-import com.example.gemini.ui.browser.PluginVersions
-import com.example.gemini.ui.browser.RepoPlugin
+import com.shriram.cinecode.R
+import com.shriram.cinecode.ui.browser.BrowserExtension
+import com.shriram.cinecode.ui.browser.BrowserExtensionManager
+import com.shriram.cinecode.ui.browser.PluginRepositories
+import com.shriram.cinecode.ui.browser.PluginVersions
+import com.shriram.cinecode.ui.browser.RepoPlugin
 import java.util.concurrent.TimeUnit
 
 private const val WORK_NAME = "plugin_update_check"

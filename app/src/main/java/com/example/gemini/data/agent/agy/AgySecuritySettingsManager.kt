@@ -1,4 +1,4 @@
-package com.example.gemini.data.agent.agy
+package com.shriram.cinecode.data.agent.agy
 
 import android.app.Application
 import android.content.Context
@@ -8,17 +8,17 @@ import android.net.NetworkCapabilities
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.gemini.data.preferences.AuthPreferences
-import com.example.gemini.data.remote.AgyHubClient
-import com.example.gemini.data.remote.AntigravityApiService
-import com.example.gemini.data.remote.GoogleOAuthManager
-import com.example.gemini.data.remote.StreamEvent
-import com.example.gemini.domain.model.AiModel
-import com.example.gemini.domain.model.ChatMessage
-import com.example.gemini.domain.model.ChatAttachment
-import com.example.gemini.domain.model.Conversation
-import com.example.gemini.domain.model.MessageRole
-import com.example.gemini.domain.model.ModelQuota
+import com.shriram.cinecode.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.remote.AgyHubClient
+import com.shriram.cinecode.data.remote.AntigravityApiService
+import com.shriram.cinecode.data.remote.GoogleOAuthManager
+import com.shriram.cinecode.data.remote.StreamEvent
+import com.shriram.cinecode.domain.model.AiModel
+import com.shriram.cinecode.domain.model.ChatMessage
+import com.shriram.cinecode.domain.model.ChatAttachment
+import com.shriram.cinecode.domain.model.Conversation
+import com.shriram.cinecode.domain.model.MessageRole
+import com.shriram.cinecode.domain.model.ModelQuota
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -34,7 +34,7 @@ import kotlinx.serialization.encodeToString
 import android.util.Log
 import org.json.JSONObject
 import java.util.UUID
-import com.example.gemini.data.agent.ChatSessionStore
+import com.shriram.cinecode.data.agent.ChatSessionStore
 import kotlinx.coroutines.CoroutineScope
 
 /** Antigravity global security settings, permission grants and project presets. Moved out of ChatViewModel unchanged. */
@@ -91,7 +91,7 @@ class AgySecuritySettingsManager(
     fun addGlobalPermissionGrant(action: String, pattern: String, decision: String) {
         backendScope.launch {
             val hubUrl = AuthPreferences.currentHubUrl
-            val cur = _globalSecuritySettings.value ?: com.example.gemini.data.remote.AgyHubClient.GlobalUserSettings()
+            val cur = _globalSecuritySettings.value ?: com.shriram.cinecode.data.remote.AgyHubClient.GlobalUserSettings()
             val curGrants = cur.globalPermissionGrants
 
             val cleanAction = action.trim().lowercase()
@@ -110,7 +110,7 @@ class AgySecuritySettingsManager(
                 else -> newAllow.add(ruleStr)
             }
 
-            val updatedGrants = com.example.gemini.data.remote.AgyHubClient.GlobalPermissionGrants(
+            val updatedGrants = com.shriram.cinecode.data.remote.AgyHubClient.GlobalPermissionGrants(
                 allow = newAllow,
                 deny = newDeny,
                 ask = newAsk
@@ -138,7 +138,7 @@ class AgySecuritySettingsManager(
             val newDeny = curGrants.deny.filterNot { it.equals(rawRule, ignoreCase = true) }
             val newAsk = curGrants.ask.filterNot { it.equals(rawRule, ignoreCase = true) }
 
-            val updatedGrants = com.example.gemini.data.remote.AgyHubClient.GlobalPermissionGrants(
+            val updatedGrants = com.shriram.cinecode.data.remote.AgyHubClient.GlobalPermissionGrants(
                 allow = newAllow,
                 deny = newDeny,
                 ask = newAsk
@@ -172,7 +172,7 @@ class AgySecuritySettingsManager(
                 "ASK" -> newAsk.add(rawRule)
             }
 
-            val updatedGrants = com.example.gemini.data.remote.AgyHubClient.GlobalPermissionGrants(
+            val updatedGrants = com.shriram.cinecode.data.remote.AgyHubClient.GlobalPermissionGrants(
                 allow = newAllow,
                 deny = newDeny,
                 ask = newAsk
@@ -193,7 +193,7 @@ class AgySecuritySettingsManager(
     fun updateGlobalArtifactReviewMode(mode: String) {
         backendScope.launch {
             val hubUrl = AuthPreferences.currentHubUrl
-            val cur = _globalSecuritySettings.value ?: com.example.gemini.data.remote.AgyHubClient.GlobalUserSettings()
+            val cur = _globalSecuritySettings.value ?: com.shriram.cinecode.data.remote.AgyHubClient.GlobalUserSettings()
             _globalSecuritySettings.value = cur.copy(artifactReviewMode = mode)
             agyHubClient.writeGlobalUserSettings(
                 artifactReviewMode = mode,
@@ -208,7 +208,7 @@ class AgySecuritySettingsManager(
     ) {
         backendScope.launch {
             val hubUrl = AuthPreferences.currentHubUrl
-            val cur = _globalSecuritySettings.value ?: com.example.gemini.data.remote.AgyHubClient.GlobalUserSettings()
+            val cur = _globalSecuritySettings.value ?: com.shriram.cinecode.data.remote.AgyHubClient.GlobalUserSettings()
             _globalSecuritySettings.value = cur.copy(
                 autoExecutionPolicy = autoExec,
                 nonWorkspaceFileAccessPolicy = fileAccess
@@ -225,7 +225,7 @@ class AgySecuritySettingsManager(
     fun updateGlobalCustomTerminalPolicy(policy: String) {
         backendScope.launch {
             val hubUrl = AuthPreferences.currentHubUrl
-            val cur = _globalSecuritySettings.value ?: com.example.gemini.data.remote.AgyHubClient.GlobalUserSettings()
+            val cur = _globalSecuritySettings.value ?: com.shriram.cinecode.data.remote.AgyHubClient.GlobalUserSettings()
             _globalSecuritySettings.value = cur.copy(autoExecutionPolicy = policy)
             authPrefs.setCommandAutoExecutionPolicy(policy)
             agyHubClient.writeGlobalUserSettings(
@@ -238,7 +238,7 @@ class AgySecuritySettingsManager(
     fun updateGlobalCustomFileAccessPolicy(policy: String) {
         backendScope.launch {
             val hubUrl = AuthPreferences.currentHubUrl
-            val cur = _globalSecuritySettings.value ?: com.example.gemini.data.remote.AgyHubClient.GlobalUserSettings()
+            val cur = _globalSecuritySettings.value ?: com.shriram.cinecode.data.remote.AgyHubClient.GlobalUserSettings()
             _globalSecuritySettings.value = cur.copy(nonWorkspaceFileAccessPolicy = policy)
             agyHubClient.writeGlobalUserSettings(
                 nonWorkspaceFileAccessPolicy = policy,
@@ -250,7 +250,7 @@ class AgySecuritySettingsManager(
     fun updateGlobalTerminalSandbox(enabled: Boolean) {
         backendScope.launch {
             val hubUrl = AuthPreferences.currentHubUrl
-            val cur = _globalSecuritySettings.value ?: com.example.gemini.data.remote.AgyHubClient.GlobalUserSettings()
+            val cur = _globalSecuritySettings.value ?: com.shriram.cinecode.data.remote.AgyHubClient.GlobalUserSettings()
             _globalSecuritySettings.value = cur.copy(enableTerminalSandbox = enabled)
             authPrefs.setCommandSandboxEnabled(enabled)
             agyHubClient.writeGlobalUserSettings(
@@ -260,7 +260,7 @@ class AgySecuritySettingsManager(
         }
     }
 
-    fun setProjectInheritGlobal(project: com.example.gemini.data.remote.AgyHubClient.ProjectItem) {
+    fun setProjectInheritGlobal(project: com.shriram.cinecode.data.remote.AgyHubClient.ProjectItem) {
         backendScope.launch {
             val hubUrl = AuthPreferences.currentHubUrl
             val res = agyHubClient.updateProjectSettings(
@@ -279,7 +279,7 @@ class AgySecuritySettingsManager(
     }
 
     fun updateProjectPreset(
-        project: com.example.gemini.data.remote.AgyHubClient.ProjectItem,
+        project: com.shriram.cinecode.data.remote.AgyHubClient.ProjectItem,
         autoExec: String,
         fileAccess: String,
         artifactReview: String? = null

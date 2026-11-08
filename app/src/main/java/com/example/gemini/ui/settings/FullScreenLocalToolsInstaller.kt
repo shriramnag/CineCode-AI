@@ -1,4 +1,4 @@
-package com.example.gemini.ui.settings
+package com.shriram.cinecode.ui.settings
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -35,11 +35,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gemini.data.local.BootstrapSource
-import com.example.gemini.data.local.LocalEnvironmentManager
-import com.example.gemini.data.local.LocalInstallerState
-import com.example.gemini.data.preferences.AuthPreferences
-import com.example.gemini.theme.*
+import com.shriram.cinecode.data.local.BootstrapSource
+import com.shriram.cinecode.data.local.LocalEnvironmentManager
+import com.shriram.cinecode.data.local.LocalInstallerState
+import com.shriram.cinecode.data.preferences.AuthPreferences
+import com.shriram.cinecode.theme.*
 
 /** First-launch setup of the local Linux environment (bootstrap / rootfs): pick a source, then watch it install. */
 @Composable

@@ -1,14 +1,14 @@
-package com.example.gemini.data.local
+package com.shriram.cinecode.data.local
 
 import android.content.Context
 import android.system.Os
 import android.util.Log
-import com.example.gemini.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.preferences.AuthPreferences
 import com.jcraft.jsch.ChannelExec
 import com.jcraft.jsch.JSch
 import com.jcraft.jsch.Session
-import com.termux.terminal.TerminalSession
-import com.termux.terminal.TerminalSessionClient
+import com.shriram.cinecode.terminal.TerminalSession
+import com.shriram.cinecode.terminal.TerminalSessionClient
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,7 +20,7 @@ import java.io.OutputStream
 import java.util.Properties
 
 const val UNIVERSAL_SSH_PATH =
-    "export PATH=\"\$HOME/.local/bin:\$HOME/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/data/data/com.termux/files/usr/bin:\$PATH\"; "
+    "export PATH=\"\$HOME/.local/bin:\$HOME/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/data/data/com.shriram.cinecode/files/usr/bin:\$PATH\"; "
 
 data class TmuxWindowInfo(
     val index: Int,
@@ -822,7 +822,7 @@ class LocalPtySession(
 
             val sessionField = emulator.javaClass.getDeclaredField("mSession")
             sessionField.isAccessible = true
-            val sshOutput = object : com.termux.terminal.TerminalOutput() {
+            val sshOutput = object : com.shriram.cinecode.terminal.TerminalOutput() {
                 override fun write(data: ByteArray, offset: Int, count: Int) {
                     val preview =
                         String(data.copyOfRange(offset, offset + count), Charsets.ISO_8859_1).replace("\n", "\\n")
@@ -879,7 +879,7 @@ class LocalPtySession(
                 )
                 return@withContext
             }
-            val session = com.example.gemini.data.ssh.SshSessionFactory.open(sshHost, sshPort, sshUser, sshPass, connectTimeoutMs = 10000, keepAliveMs = 20000)
+            val session = com.shriram.cinecode.data.ssh.SshSessionFactory.open(sshHost, sshPort, sshUser, sshPass, connectTimeoutMs = 10000, keepAliveMs = 20000)
             jschSession = session
             Log.d(TAG, "[$id] SSH transport connected successfully")
 
@@ -954,7 +954,7 @@ class LocalPtySession(
             Log.e(TAG, "[$id] SSH session error", e)
             notifySessionClosed(
                 "SSH not connected to $sshUser@$sshHost:$sshPort. " +
-                    com.example.gemini.data.remote.RemoteServerManager.friendly(e)
+                    com.shriram.cinecode.data.remote.RemoteServerManager.friendly(e)
             )
         } finally {
             Log.d(TAG, "[$id] SSH loop terminated")
@@ -1240,7 +1240,7 @@ object LocalTerminalManager {
 
     fun autoLaunchServerIfReady(context: Context) {
         val pkg = context.packageName
-        val isTermux = pkg == "com.termux" || pkg.contains("termux")
+        val isTermux = pkg == "com.shriram.cinecode" || pkg.contains("termux")
         if (!isTermux) return
 
         if (!LocalEnvironmentManager.isInstalled(context)) {
@@ -1250,7 +1250,7 @@ object LocalTerminalManager {
 
         // the server starts with the agent flags: right after the first install the user has not chosen the agents
         // yet (it would start Antigravity only); the agent choice starts it then
-        if (!com.example.gemini.data.agent.AgentPreferences.hasChosenSync(context)) {
+        if (!com.shriram.cinecode.data.agent.AgentPreferences.hasChosenSync(context)) {
             Log.d(TAG, "[AutoLaunch] Agents not chosen yet, deferring the server start until the choice is made")
             return
         }
@@ -1392,7 +1392,7 @@ object LocalTerminalManager {
     ): List<TmuxWindowInfo> = withContext(Dispatchers.IO) {
         try {
             Log.d(TAG, "[Probe] Connecting SSH to $user@$host:$port for window probe...")
-            val session = com.example.gemini.data.ssh.SshSessionFactory.open(host, port, user, pass, connectTimeoutMs = 4000)
+            val session = com.shriram.cinecode.data.ssh.SshSessionFactory.open(host, port, user, pass, connectTimeoutMs = 4000)
 
             try {
                 val probeCmd = UNIVERSAL_SSH_PATH +

@@ -1,4 +1,4 @@
-package com.example.gemini.ui.browser
+package com.shriram.cinecode.ui.browser
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -1880,7 +1880,7 @@ class BrowserSessionManager private constructor() {
     private fun resolveUploadFiles(paths: List<String>): List<File> {
         require(paths.size in 1..20) { "Pass 1–20 file paths" }
         val context = appContext ?: error("Browser is not initialized")
-        val home = com.example.gemini.data.local.LocalEnvironmentManager.getHomeDir(context).canonicalFile
+        val home = com.shriram.cinecode.data.local.LocalEnvironmentManager.getHomeDir(context).canonicalFile
         val roots = listOf(home, File("/sdcard").canonicalFile, File("/storage/emulated/0").canonicalFile)
         return paths.map { path ->
             val raw = when {

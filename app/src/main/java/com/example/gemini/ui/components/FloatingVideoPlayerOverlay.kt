@@ -1,4 +1,4 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -30,9 +30,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
-import com.example.gemini.data.media.YouTubeMediaSessionManager
-import com.example.gemini.theme.ClaudeTerracotta
-import com.example.gemini.theme.isAppInDarkTheme
+import com.shriram.cinecode.data.media.YouTubeMediaSessionManager
+import com.shriram.cinecode.theme.ClaudeTerracotta
+import com.shriram.cinecode.theme.isAppInDarkTheme
 import kotlin.math.roundToInt
 
 /**
@@ -64,9 +64,9 @@ fun FloatingVideoPlayerOverlay(
     var offsetY by remember { mutableStateOf(screenHeightPx * 0.25f) }
 
     val isDark = isAppInDarkTheme()
-    val bgColor = com.example.gemini.theme.AppColors.card
-    val borderColor = com.example.gemini.theme.AppColors.border
-    val contentColor = com.example.gemini.theme.AppColors.onBackground
+    val bgColor = com.shriram.cinecode.theme.AppColors.card
+    val borderColor = com.shriram.cinecode.theme.AppColors.border
+    val contentColor = com.shriram.cinecode.theme.AppColors.onBackground
 
     Box(
         modifier = modifier

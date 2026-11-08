@@ -1,4 +1,4 @@
-package com.example.gemini.data.receiver
+package com.shriram.cinecode.data.receiver
 
 import android.app.Activity
 import android.os.Bundle

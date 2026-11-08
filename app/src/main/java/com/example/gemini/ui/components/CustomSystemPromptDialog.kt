@@ -1,4 +1,4 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -27,8 +27,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.example.gemini.data.preferences.AuthPreferences
-import com.example.gemini.theme.ClaudeTerracotta
+import com.shriram.cinecode.data.preferences.AuthPreferences
+import com.shriram.cinecode.theme.ClaudeTerracotta
 
 @Composable
 fun CustomSystemPromptDialog(
@@ -52,7 +52,7 @@ fun CustomSystemPromptDialog(
                 val urlStr = "$bridgeBase/api/system-prompt?conversationId=${conversationId ?: "active"}&workspaceDir=$wsParam"
                 // the bridge client sends the security header and has timeouts that fit a remote server
                 val request = okhttp3.Request.Builder().url(urlStr).get().build()
-                com.example.gemini.data.remote.AgyBridgeService.instance.client.newCall(request).execute().use { resp ->
+                com.shriram.cinecode.data.remote.AgyBridgeService.instance.client.newCall(request).execute().use { resp ->
                     if (resp.isSuccessful) {
                         val body = resp.body?.string().orEmpty()
                         val json = org.json.JSONObject(body)
@@ -77,8 +77,8 @@ The USER will send you requests, which you must always prioritize addressing. Us
 <user_information>
 The USER's OS version is linux.
 The user has active workspace:
-${workspaceDir ?: "/data/data/com.termux/files/home/projects/gemini"}
-App Data Directory: /data/data/com.termux/files/home/.gemini/antigravity-cli
+${workspaceDir ?: "/data/data/com.shriram.cinecode/files/home/projects/gemini"}
+App Data Directory: /data/data/com.shriram.cinecode/files/home/.gemini/antigravity-cli
 Conversation ID: ${conversationId ?: "active"}
 </user_information>
 

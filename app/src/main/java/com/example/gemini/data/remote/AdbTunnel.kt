@@ -1,9 +1,9 @@
-package com.example.gemini.data.remote
+package com.shriram.cinecode.data.remote
 
 import android.content.Context
 import android.util.Log
-import com.example.gemini.data.adb.AdbConnectManager
-import com.example.gemini.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.adb.AdbConnectManager
+import com.shriram.cinecode.data.preferences.AuthPreferences
 import com.jcraft.jsch.Session
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

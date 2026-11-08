@@ -1,4 +1,4 @@
-package com.example.gemini.ui.ide
+package com.shriram.cinecode.ui.ide
 
 import android.util.Log
 import io.github.rosemoe.sora.lang.EmptyLanguage

@@ -1,4 +1,4 @@
-package com.example.gemini.ui.chat
+package com.shriram.cinecode.ui.chat
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -40,10 +40,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gemini.data.remote.SlashCommandItem
-import com.example.gemini.theme.QuotaGreen
-import com.example.gemini.ui.components.AgyAccent
-import com.example.gemini.theme.ClaudeTerracotta
+import com.shriram.cinecode.data.remote.SlashCommandItem
+import com.shriram.cinecode.theme.QuotaGreen
+import com.shriram.cinecode.ui.components.AgyAccent
+import com.shriram.cinecode.theme.ClaudeTerracotta
 
 private data class SlashGroup(val title: String, val icon: ImageVector, val color: Color)
 
@@ -126,7 +126,7 @@ private fun SlashRow(item: SlashCommandItem, group: SlashGroup, query: String, r
             contentAlignment = Alignment.Center
         ) {
             // Custom AntiGem plugins carry their icon file in path
-            if (item.type == "plugin" && item.path.isNotBlank()) com.example.gemini.ui.settings.PluginIcon(item.path, 30.dp)
+            if (item.type == "plugin" && item.path.isNotBlank()) com.shriram.cinecode.ui.settings.PluginIcon(item.path, 30.dp)
             else Icon(if (item.type == "skill" && item.pluginName == null) Icons.Outlined.AutoAwesome else group.icon, null, tint = group.color, modifier = Modifier.size(16.dp))
         }
         Spacer(Modifier.width(10.dp))

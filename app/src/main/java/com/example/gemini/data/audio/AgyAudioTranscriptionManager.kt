@@ -1,4 +1,4 @@
-package com.example.gemini.data.audio
+package com.shriram.cinecode.data.audio
 
 import android.annotation.SuppressLint
 import android.media.AudioFormat
@@ -6,7 +6,7 @@ import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.util.Base64
 import android.util.Log
-import com.example.gemini.data.remote.AgyHubClient
+import com.shriram.cinecode.data.remote.AgyHubClient
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow

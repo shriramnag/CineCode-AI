@@ -1,4 +1,4 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -25,7 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.example.gemini.theme.ClaudeTerracotta
+import com.shriram.cinecode.theme.ClaudeTerracotta
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -58,7 +58,7 @@ fun RawPayloadDialog(
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(16.dp),
-            color = com.example.gemini.theme.AppColors.editorBg,
+            color = com.shriram.cinecode.theme.AppColors.editorBg,
             border = BorderStroke(1.dp, Color.White.copy(alpha = 0.15f)),
             modifier = Modifier
                 .fillMaxWidth(0.98f)
@@ -111,7 +111,7 @@ fun RawPayloadDialog(
                             selectedContainerColor = ClaudeTerracotta.copy(alpha = 0.25f),
                             selectedLabelColor = Color.White,
                             selectedLeadingIconColor = ClaudeTerracotta,
-                            containerColor = com.example.gemini.theme.AppColors.editorPanel,
+                            containerColor = com.shriram.cinecode.theme.AppColors.editorPanel,
                             labelColor = Color.White.copy(alpha = 0.7f)
                         ),
                         border = BorderStroke(1.dp, if (wrapLines) ClaudeTerracotta.copy(alpha = 0.6f) else Color.White.copy(alpha = 0.1f))
@@ -130,7 +130,7 @@ fun RawPayloadDialog(
                 // JSON Content Box
                 Surface(
                     shape = RoundedCornerShape(10.dp),
-                    color = com.example.gemini.theme.AppColors.terminalBg,
+                    color = com.shriram.cinecode.theme.AppColors.terminalBg,
                     border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -155,7 +155,7 @@ fun RawPayloadDialog(
                             fontSize = 11.5.sp,
                             lineHeight = 16.5.sp,
                             fontFamily = FontFamily.Monospace,
-                            color = com.example.gemini.theme.AppColors.accentTeal,
+                            color = com.shriram.cinecode.theme.AppColors.accentTeal,
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
@@ -175,7 +175,7 @@ fun RawPayloadDialog(
                             clipboard.setPrimaryClip(ClipData.newPlainText("Raw Payload JSON", prettyJson))
                             Toast.makeText(context, "Formatted JSON copied to clipboard!", Toast.LENGTH_SHORT).show()
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = com.example.gemini.theme.AppColors.editorPanel),
+                        colors = ButtonDefaults.buttonColors(containerColor = com.shriram.cinecode.theme.AppColors.editorPanel),
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Icon(

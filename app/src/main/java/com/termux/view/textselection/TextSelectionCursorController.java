@@ -1,4 +1,4 @@
-package com.termux.view.textselection;
+package com.shriram.cinecode.view.textselection;
 
 import android.app.AlertDialog;
 import android.content.ClipboardManager;
@@ -19,10 +19,10 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 
-import com.termux.terminal.TerminalBuffer;
-import com.termux.terminal.WcWidth;
-import com.example.gemini.R;
-import com.termux.view.TerminalView;
+import com.shriram.cinecode.terminal.TerminalBuffer;
+import com.shriram.cinecode.terminal.WcWidth;
+import com.shriram.cinecode.R;
+import com.shriram.cinecode.view.TerminalView;
 
 import java.util.LinkedHashSet;
 import java.util.regex.Matcher;

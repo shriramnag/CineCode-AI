@@ -1,4 +1,4 @@
-package com.example.gemini.ui.files
+package com.shriram.cinecode.ui.files
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -33,8 +33,8 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gemini.data.daemon.ProjectItem
-import com.example.gemini.data.files.*
+import com.shriram.cinecode.data.daemon.ProjectItem
+import com.shriram.cinecode.data.files.*
 import kotlinx.coroutines.launch
 
 // ---------------- places ----------------

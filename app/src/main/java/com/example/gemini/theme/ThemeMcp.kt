@@ -1,4 +1,4 @@
-package com.example.gemini.theme
+package com.shriram.cinecode.theme
 
 import org.json.JSONArray
 import org.json.JSONObject

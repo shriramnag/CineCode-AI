@@ -1,4 +1,4 @@
-package com.example.gemini.ui.files
+package com.shriram.cinecode.ui.files
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.SubcomposeAsyncImage
-import com.example.gemini.data.files.*
+import com.shriram.cinecode.data.files.*
 import kotlinx.coroutines.launch
 
 private const val MAX_EDITOR_TEXT = 20L * 1024 * 1024

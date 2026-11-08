@@ -1,16 +1,16 @@
-package com.example.gemini.data.remote
+package com.shriram.cinecode.data.remote
 
-import com.example.gemini.data.preferences.AuthPreferences
-import com.example.gemini.data.remote.core.AgyCsrfManager
-import com.example.gemini.data.remote.dto.AgyStreamFrameDto
-import com.example.gemini.data.remote.services.*
-import com.example.gemini.domain.chat.TrajectoryParser
-import com.example.gemini.domain.model.AiModel
-import com.example.gemini.domain.model.ChatMessage
-import com.example.gemini.domain.model.Conversation
-import com.example.gemini.domain.model.McpServerState
-import com.example.gemini.domain.model.QuotaSummaryResponse
-import com.example.gemini.domain.model.ToolCall
+import com.shriram.cinecode.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.remote.core.AgyCsrfManager
+import com.shriram.cinecode.data.remote.dto.AgyStreamFrameDto
+import com.shriram.cinecode.data.remote.services.*
+import com.shriram.cinecode.domain.chat.TrajectoryParser
+import com.shriram.cinecode.domain.model.AiModel
+import com.shriram.cinecode.domain.model.ChatMessage
+import com.shriram.cinecode.domain.model.Conversation
+import com.shriram.cinecode.domain.model.McpServerState
+import com.shriram.cinecode.domain.model.QuotaSummaryResponse
+import com.shriram.cinecode.domain.model.ToolCall
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.serialization.json.Json
@@ -240,7 +240,7 @@ class AgyHubClient {
         cascadeId: String,
         stepIndex: Int,
         trajectoryId: String = "",
-        responses: List<com.example.gemini.data.remote.dto.AskQuestionResponseItemDto>,
+        responses: List<com.shriram.cinecode.data.remote.dto.AskQuestionResponseItemDto>,
         hubUrl: String = AuthPreferences.currentHubUrl
     ): Result<Unit> =
         chatService.handleAskQuestionInteraction(cascadeId, stepIndex, trajectoryId, responses, hubUrl)
@@ -439,18 +439,18 @@ class AgyHubClient {
         os: String = "linux",
         searchQuery: String = "",
         hubUrl: String = AuthPreferences.currentHubUrl
-    ): Result<List<com.example.gemini.data.remote.dto.AvailableCascadePluginDto>> =
+    ): Result<List<com.shriram.cinecode.data.remote.dto.AvailableCascadePluginDto>> =
         pluginService.getAvailableCascadePlugins(os, searchQuery, hubUrl)
 
     suspend fun installCascadePlugin(
-        plugin: com.example.gemini.data.remote.dto.AvailableCascadePluginDto,
+        plugin: com.shriram.cinecode.data.remote.dto.AvailableCascadePluginDto,
         hubUrl: String = AuthPreferences.currentHubUrl
     ): Result<Unit> =
         pluginService.installCascadePlugin(plugin, hubUrl)
 
     suspend fun getBuildWithGooglePlugins(
         hubUrl: String = AuthPreferences.currentHubUrl
-    ): Result<List<com.example.gemini.data.remote.dto.BuildWithGooglePluginItemDto>> =
+    ): Result<List<com.shriram.cinecode.data.remote.dto.BuildWithGooglePluginItemDto>> =
         pluginService.getBuildWithGooglePlugins(hubUrl)
 
     suspend fun downloadBuildWithGooglePlugin(
@@ -467,12 +467,12 @@ class AgyHubClient {
 
     suspend fun getAllPlugins(
         hubUrl: String = AuthPreferences.currentHubUrl
-    ): Result<List<com.example.gemini.data.remote.dto.InstalledPluginDto>> =
+    ): Result<List<com.shriram.cinecode.data.remote.dto.InstalledPluginDto>> =
         pluginService.getAllPlugins(hubUrl)
 
     suspend fun getAllSkills(
         workspaceUris: List<String> = emptyList(),
         hubUrl: String = AuthPreferences.currentHubUrl
-    ): Result<List<com.example.gemini.data.remote.dto.SkillDefinitionDto>> =
+    ): Result<List<com.shriram.cinecode.data.remote.dto.SkillDefinitionDto>> =
         pluginService.getAllSkills(workspaceUris, hubUrl)
 }

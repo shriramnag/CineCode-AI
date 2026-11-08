@@ -1,4 +1,4 @@
-package com.example.gemini.theme
+package com.shriram.cinecode.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

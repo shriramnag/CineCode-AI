@@ -1,4 +1,4 @@
-package com.example.gemini.ui.claude
+package com.shriram.cinecode.ui.claude
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -54,19 +54,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gemini.data.agent.claude.ClaudeAccountManager
-import com.example.gemini.data.agent.claude.ClaudeChatBackend
-import com.example.gemini.data.agent.claude.contextLabel
-import com.example.gemini.data.agent.claude.thinkingLabel
-import com.example.gemini.data.agent.claude.ClaudePreferences
-import com.example.gemini.theme.QuotaAmber
-import com.example.gemini.theme.QuotaGreen
-import com.example.gemini.theme.QuotaRed
-import com.example.gemini.domain.model.AgentKind
-import com.example.gemini.ui.agents.AgentSheetHeader
-import com.example.gemini.ui.agents.SegmentedSelector
-import com.example.gemini.ui.agents.SheetSectionLabel
-import com.example.gemini.ui.components.ClaudeAccent
+import com.shriram.cinecode.data.agent.claude.ClaudeAccountManager
+import com.shriram.cinecode.data.agent.claude.ClaudeChatBackend
+import com.shriram.cinecode.data.agent.claude.contextLabel
+import com.shriram.cinecode.data.agent.claude.thinkingLabel
+import com.shriram.cinecode.data.agent.claude.ClaudePreferences
+import com.shriram.cinecode.theme.QuotaAmber
+import com.shriram.cinecode.theme.QuotaGreen
+import com.shriram.cinecode.theme.QuotaRed
+import com.shriram.cinecode.domain.model.AgentKind
+import com.shriram.cinecode.ui.agents.AgentSheetHeader
+import com.shriram.cinecode.ui.agents.SegmentedSelector
+import com.shriram.cinecode.ui.agents.SheetSectionLabel
+import com.shriram.cinecode.ui.components.ClaudeAccent
 import kotlinx.coroutines.delay
 
 private fun isoUtcSeconds(epochSeconds: Long): String =
@@ -277,7 +277,7 @@ fun ClaudeModelSheet(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(bottom = 22.dp).navigationBarsPadding()
         ) {
             // Claude's own models need the Claude login; the providers' models only their key
-            val signedOut = accountState == com.example.gemini.data.agent.claude.ClaudeStatus.SIGNED_OUT
+            val signedOut = accountState == com.shriram.cinecode.data.agent.claude.ClaudeStatus.SIGNED_OUT
             val rows = when {
                 signedOut -> emptyList()
                 models.isNotEmpty() -> models.map { Triple(it.value, it.displayName.ifBlank { it.value }, it.description) }
@@ -324,14 +324,14 @@ fun ClaudeModelSheet(
                 ) {
                     five?.let { (used, reset) ->
                         val left = (1.0 - used).toFloat().coerceIn(0f, 1f)
-                        com.example.gemini.ui.models.buildQuotaSummaryLine("5h", left, reset, null)?.let {
-                            com.example.gemini.ui.models.QuotaBadgeChip(text = it, fraction = left)
+                        com.shriram.cinecode.ui.models.buildQuotaSummaryLine("5h", left, reset, null)?.let {
+                            com.shriram.cinecode.ui.models.QuotaBadgeChip(text = it, fraction = left)
                         }
                     }
                     week?.let { (used, reset) ->
                         val left = (1.0 - used).toFloat().coerceIn(0f, 1f)
-                        com.example.gemini.ui.models.buildQuotaSummaryLine("7d", left, reset, null)?.let {
-                            com.example.gemini.ui.models.QuotaBadgeChip(text = it, fraction = left)
+                        com.shriram.cinecode.ui.models.buildQuotaSummaryLine("7d", left, reset, null)?.let {
+                            com.shriram.cinecode.ui.models.QuotaBadgeChip(text = it, fraction = left)
                         }
                     }
                 }
@@ -356,7 +356,7 @@ fun ClaudeModelSheet(
                             if (desc.isNotBlank()) {
                                 Text(
                                     desc, fontSize = 12.sp, lineHeight = 16.sp,
-                                    color = if (warnDesc) com.example.gemini.theme.QuotaAmber else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    color = if (warnDesc) com.shriram.cinecode.theme.QuotaAmber else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                                 )
                             }
                         }
@@ -537,7 +537,7 @@ fun ClaudeUsageDialog(account: ClaudeAccountManager, backend: ClaudeChatBackend,
         title = {
             Column {
                 Text("Usage", fontWeight = FontWeight.Bold)
-                val plan = (usage?.subscription_type ?: status?.auth?.subscriptionType)?.let { com.example.gemini.ui.agents.claudePlanLabel(it) }
+                val plan = (usage?.subscription_type ?: status?.auth?.subscriptionType)?.let { com.shriram.cinecode.ui.agents.claudePlanLabel(it) }
                 Text(
                     listOfNotNull("Claude Code", plan?.let { "$it plan" }).joinToString(" · "),
                     fontSize = 12.sp,

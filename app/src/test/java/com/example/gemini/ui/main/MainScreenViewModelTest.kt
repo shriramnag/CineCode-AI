@@ -1,6 +1,6 @@
-package com.example.gemini.ui.main
+package com.shriram.cinecode.ui.main
 
-import com.example.gemini.data.DataRepository
+import com.shriram.cinecode.data.DataRepository
 import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first

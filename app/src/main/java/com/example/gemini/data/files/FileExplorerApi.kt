@@ -1,7 +1,7 @@
-package com.example.gemini.data.files
+package com.shriram.cinecode.data.files
 
 import android.util.Log
-import com.example.gemini.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.preferences.AuthPreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -79,7 +79,7 @@ object FileExplorerApi {
     private val OCTET = "application/octet-stream".toMediaType()
 
     private val base: String get() = AuthPreferences.currentBridgeHttpUrl.trimEnd('/')
-    private val client: OkHttpClient get() = com.example.gemini.data.daemon.IdeApiClient.okHttpClient
+    private val client: OkHttpClient get() = com.shriram.cinecode.data.daemon.IdeApiClient.okHttpClient
 
     /** For big uploads / downloads: auth header only, nothing that reads bodies into memory. */
     val transferClient: OkHttpClient by lazy {

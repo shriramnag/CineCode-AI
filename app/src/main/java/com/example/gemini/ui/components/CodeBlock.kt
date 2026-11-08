@@ -1,4 +1,4 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import android.annotation.SuppressLint
 import android.content.ClipData
@@ -54,7 +54,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.example.gemini.theme.*
+import com.shriram.cinecode.theme.*
 import kotlinx.coroutines.delay
 import java.util.regex.Pattern
 
@@ -658,7 +658,7 @@ fun CodeBlock(
                                 fontFamily = FontFamily.Monospace,
                                 fontSize = 12.5.sp,
                                 lineHeight = 20.sp,
-                                color = com.example.gemini.theme.AppColors.editorMuted,
+                                color = com.shriram.cinecode.theme.AppColors.editorMuted,
                                 textAlign = TextAlign.End,
                                 modifier = Modifier
                                     .padding(start = 12.dp, end = 10.dp, top = 14.dp, bottom = 14.dp)

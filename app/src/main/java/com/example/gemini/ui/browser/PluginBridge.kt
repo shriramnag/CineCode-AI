@@ -1,9 +1,9 @@
-package com.example.gemini.ui.browser
+package com.shriram.cinecode.ui.browser
 
 import android.content.Context
 import android.net.Uri
-import com.example.gemini.data.daemon.IdeApiClient
-import com.example.gemini.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.daemon.IdeApiClient
+import com.shriram.cinecode.data.preferences.AuthPreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType

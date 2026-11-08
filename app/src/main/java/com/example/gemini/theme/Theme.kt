@@ -1,4 +1,4 @@
-package com.example.gemini.theme
+package com.shriram.cinecode.theme
 
 import android.app.Activity
 import android.os.Build
@@ -99,7 +99,7 @@ fun GeminiTheme(
     val view = LocalView.current
     if (!view.isInEditMode) {
         val activity = view.context as? Activity
-        if (activity != null && activity !is com.example.gemini.ui.bubble.FloatingChatActivity) {
+        if (activity != null && activity !is com.shriram.cinecode.ui.bubble.FloatingChatActivity) {
             SideEffect {
                 val window = activity.window
                 window.statusBarColor = colorScheme.background.toArgb()

@@ -1,4 +1,4 @@
-package com.example.gemini.data.media
+package com.shriram.cinecode.data.media
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -27,8 +27,8 @@ import android.widget.FrameLayout
 import androidx.core.content.ContextCompat
 import coil.imageLoader
 import coil.request.ImageRequest
-import com.example.gemini.MainActivity
-import com.example.gemini.ui.components.MarkdownBlock
+import com.shriram.cinecode.MainActivity
+import com.shriram.cinecode.ui.components.MarkdownBlock
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

@@ -1,4 +1,4 @@
-package com.example.gemini.data.notes
+package com.shriram.cinecode.data.notes
 
 import android.content.Context
 import android.util.Log

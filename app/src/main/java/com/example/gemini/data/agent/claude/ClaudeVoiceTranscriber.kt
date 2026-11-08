@@ -1,11 +1,11 @@
-package com.example.gemini.data.agent.claude
+package com.shriram.cinecode.data.agent.claude
 
 import android.annotation.SuppressLint
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.util.Log
-import com.example.gemini.data.audio.SpeechTranscriber
+import com.shriram.cinecode.data.audio.SpeechTranscriber
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

@@ -1,13 +1,13 @@
-package com.example.gemini.data.remote.services
+package com.shriram.cinecode.data.remote.services
 
 import android.util.Log
-import com.example.gemini.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.preferences.AuthPreferences
 
-import com.example.gemini.domain.model.AiModel
-import com.example.gemini.domain.model.ModelFamily
-import com.example.gemini.domain.model.ModelQuotaGroup
-import com.example.gemini.domain.model.QuotaSummaryResponse
-import com.example.gemini.domain.model.QuotaWindowInfo
+import com.shriram.cinecode.domain.model.AiModel
+import com.shriram.cinecode.domain.model.ModelFamily
+import com.shriram.cinecode.domain.model.ModelQuotaGroup
+import com.shriram.cinecode.domain.model.QuotaSummaryResponse
+import com.shriram.cinecode.domain.model.QuotaWindowInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray

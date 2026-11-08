@@ -1,4 +1,4 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import android.content.ContentValues
 import android.content.Context
@@ -13,10 +13,10 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.core.content.FileProvider
-import com.example.gemini.data.remote.AgyHubClient
-import com.example.gemini.domain.chat.TrajectoryEngine
-import com.example.gemini.domain.model.ChatMessage
-import com.example.gemini.domain.model.MessageRole
+import com.shriram.cinecode.data.remote.AgyHubClient
+import com.shriram.cinecode.domain.chat.TrajectoryEngine
+import com.shriram.cinecode.domain.model.ChatMessage
+import com.shriram.cinecode.domain.model.MessageRole
 import exa.language_server_pb.Step
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -53,7 +53,7 @@ object ConversationShareHelper {
     ) = withContext(Dispatchers.IO) {
         try {
             // First attempt to download complete archive from Go bridge server
-            val bridgeArchiveRes = com.example.gemini.data.remote.AgyBridgeService.instance.downloadConversationArchive(conversationId)
+            val bridgeArchiveRes = com.shriram.cinecode.data.remote.AgyBridgeService.instance.downloadConversationArchive(conversationId)
             val (bytes, fileName) = if (bridgeArchiveRes.isSuccess && bridgeArchiveRes.getOrNull()?.bytes?.isNotEmpty() == true) {
                 val res = bridgeArchiveRes.getOrThrow()
                 Pair(res.bytes, res.filename)

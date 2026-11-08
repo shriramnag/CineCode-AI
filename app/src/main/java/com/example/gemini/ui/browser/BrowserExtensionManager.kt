@@ -1,12 +1,12 @@
-package com.example.gemini.ui.browser
+package com.shriram.cinecode.ui.browser
 
 import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import com.example.gemini.data.local.LocalEnvironmentManager
-import com.example.gemini.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.local.LocalEnvironmentManager
+import com.shriram.cinecode.data.preferences.AuthPreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -128,7 +128,7 @@ class BrowserExtensionManager private constructor() {
     private val http = OkHttpClient.Builder().readTimeout(210, TimeUnit.SECONDS).connectTimeout(3, TimeUnit.SECONDS).build()
 
     fun runtimeFile(context: Context) = File(context.filesDir, "browser-runtime/extension-host.mjs")
-    fun hostPort() = com.example.gemini.data.remote.AndroidLocalBridgeServer.DEFAULT_PORT + 100
+    fun hostPort() = com.shriram.cinecode.data.remote.AndroidLocalBridgeServer.DEFAULT_PORT + 100
 
     private fun deviceId() = appContext?.let { android.provider.Settings.Secure.getString(it.contentResolver, android.provider.Settings.Secure.ANDROID_ID) }.orEmpty()
 
@@ -187,7 +187,7 @@ class BrowserExtensionManager private constructor() {
         if (AuthPreferences.currentRemoteMode) {
             // Remote mode: the plugin host runs on the server (Node.js there), reached through an SSH port forward
             try {
-                com.example.gemini.data.remote.RemoteServerManager.ensureExtensionHost(context)
+                com.shriram.cinecode.data.remote.RemoteServerManager.ensureExtensionHost(context)
             } catch (e: Exception) {
                 if (e is kotlinx.coroutines.CancellationException) throw e
                 throw IllegalStateException(e.message ?: "The browser-plugin host could not start on the server", e)
@@ -197,7 +197,7 @@ class BrowserExtensionManager private constructor() {
             if (!node.canExecute()) throw IllegalStateException("Node.js is required in the local terminal to run browser extensions")
             val command = mutableListOf(node.absolutePath, "--experimental-vm-modules", runtimeFile(context).absolutePath,
                 "--serve", "--port", hostPort().toString(), "--root", File(context.filesDir, "browser-extensions").absolutePath,
-                "--device-id", deviceId(), "--bridge-url", "http://127.0.0.1:${com.example.gemini.data.remote.AndroidLocalBridgeServer.instance.boundPort}")
+                "--device-id", deviceId(), "--bridge-url", "http://127.0.0.1:${com.shriram.cinecode.data.remote.AndroidLocalBridgeServer.instance.boundPort}")
             getExtensionsDirectories(context).filter { it != File(context.filesDir, "browser-extensions") }.forEach {
                 if (it.isDirectory) command.addAll(listOf("--extra-root", it.absolutePath))
             }
@@ -266,7 +266,7 @@ class BrowserExtensionManager private constructor() {
         request("/tab/prepare", JSONObject().put("nativeId", tab.id))
     }
 
-    fun isHostRunning() = if (AuthPreferences.currentRemoteMode) com.example.gemini.data.remote.RemoteServerManager.extensionHostReady else hostProcess?.isAlive == true
+    fun isHostRunning() = if (AuthPreferences.currentRemoteMode) com.shriram.cinecode.data.remote.RemoteServerManager.extensionHostReady else hostProcess?.isAlive == true
 
     /**
      * Closes the host's DevTools session for [tab] (Google sign-in must load without one), then runs

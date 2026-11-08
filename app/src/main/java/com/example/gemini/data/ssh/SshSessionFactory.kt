@@ -1,8 +1,8 @@
-package com.example.gemini.data.ssh
+package com.shriram.cinecode.data.ssh
 
 import android.content.Context
 import android.util.Log
-import com.example.gemini.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.preferences.AuthPreferences
 import com.jcraft.jsch.HostKey
 import com.jcraft.jsch.HostKeyRepository
 import com.jcraft.jsch.JSch

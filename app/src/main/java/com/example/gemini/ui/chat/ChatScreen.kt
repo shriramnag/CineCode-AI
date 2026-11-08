@@ -1,8 +1,8 @@
-package com.example.gemini.ui.chat
+package com.shriram.cinecode.ui.chat
 
-import com.example.gemini.ui.components.ChatToast
-import com.example.gemini.ui.components.ChatToastType
-import com.example.gemini.ui.components.AppToastHelper
+import com.shriram.cinecode.ui.components.ChatToast
+import com.shriram.cinecode.ui.components.ChatToastType
+import com.shriram.cinecode.ui.components.AppToastHelper
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
@@ -40,7 +40,7 @@ import androidx.compose.material.icons.outlined.*
 import androidx.compose.material.icons.rounded.LightMode
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import com.example.gemini.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.preferences.AuthPreferences
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -65,52 +65,52 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.collectAsState
-import com.example.gemini.data.daemon.FileNode
-import com.example.gemini.data.daemon.IdeApiClient
-import com.example.gemini.data.daemon.ProjectItem
-import com.example.gemini.data.daemon.TermuxDaemonManager
-import com.example.gemini.domain.model.AiModel
-import com.example.gemini.domain.model.ChatMessage
-import com.example.gemini.domain.model.MessageRole
-import com.example.gemini.domain.model.ToolType
-import com.example.gemini.theme.*
+import com.shriram.cinecode.data.daemon.FileNode
+import com.shriram.cinecode.data.daemon.IdeApiClient
+import com.shriram.cinecode.data.daemon.ProjectItem
+import com.shriram.cinecode.data.daemon.TermuxDaemonManager
+import com.shriram.cinecode.domain.model.AiModel
+import com.shriram.cinecode.domain.model.ChatMessage
+import com.shriram.cinecode.domain.model.MessageRole
+import com.shriram.cinecode.domain.model.ToolType
+import com.shriram.cinecode.theme.*
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import com.example.gemini.ui.components.ActiveContextSummaryCard
-import com.example.gemini.ui.components.AttachmentSelectorBottomSheet
-import com.example.gemini.ui.components.ChatInputBar
-import com.example.gemini.ui.components.ChatTelemetryDialog
-import com.example.gemini.ui.components.LiveSummarizingCard
-import com.example.gemini.ui.components.MessageBubble
-import com.example.gemini.ui.components.RawPayloadDialog
-import com.example.gemini.ui.components.TerminalInspectorDialog
-import com.example.gemini.ui.components.LocalTerminalDialog
-import com.example.gemini.ui.components.LocalTerminalContent
-import com.example.gemini.ui.settings.LocalToolsInstallDialog
-import com.example.gemini.data.local.LocalEnvironmentManager
-import com.example.gemini.ui.drawer.ChatHistoryDrawer
-import com.example.gemini.ui.models.ModelSelectorBottomSheet
-import com.example.gemini.ui.models.ThinkingSelectorBottomSheet
-import com.example.gemini.ui.settings.SettingsDialog
-import com.example.gemini.ui.components.MarkdownBlock
-import com.example.gemini.ui.components.MarkdownBlockView
-import com.example.gemini.ui.components.parseMarkdownBlocks
-import com.example.gemini.ui.components.UserMessageBubble
-import com.example.gemini.ui.components.AssistantMessageFooter
-import com.example.gemini.ui.components.ThinkingAccordion
-import com.example.gemini.ui.components.ConnectionStatusBadge
-import com.example.gemini.ui.components.FileLinkHandler
-import com.example.gemini.ui.components.LocalFileLinkHandler
-import com.example.gemini.ui.components.FileDetailsDialog
-import com.example.gemini.ui.components.MarkdownDocViewerModal
-import com.example.gemini.ui.components.SharedChatViewerModal
-import com.example.gemini.ui.components.SharedChatLoadingDialog
-import com.example.gemini.ui.components.ProjectPickerDialog
-import com.example.gemini.ui.components.ToolCallExpansionCache
-import com.example.gemini.ui.components.CodeBlockExpansionCache
-import com.example.gemini.ui.bubble.FloatingChatActivity
+import com.shriram.cinecode.ui.components.ActiveContextSummaryCard
+import com.shriram.cinecode.ui.components.AttachmentSelectorBottomSheet
+import com.shriram.cinecode.ui.components.ChatInputBar
+import com.shriram.cinecode.ui.components.ChatTelemetryDialog
+import com.shriram.cinecode.ui.components.LiveSummarizingCard
+import com.shriram.cinecode.ui.components.MessageBubble
+import com.shriram.cinecode.ui.components.RawPayloadDialog
+import com.shriram.cinecode.ui.components.TerminalInspectorDialog
+import com.shriram.cinecode.ui.components.LocalTerminalDialog
+import com.shriram.cinecode.ui.components.LocalTerminalContent
+import com.shriram.cinecode.ui.settings.LocalToolsInstallDialog
+import com.shriram.cinecode.data.local.LocalEnvironmentManager
+import com.shriram.cinecode.ui.drawer.ChatHistoryDrawer
+import com.shriram.cinecode.ui.models.ModelSelectorBottomSheet
+import com.shriram.cinecode.ui.models.ThinkingSelectorBottomSheet
+import com.shriram.cinecode.ui.settings.SettingsDialog
+import com.shriram.cinecode.ui.components.MarkdownBlock
+import com.shriram.cinecode.ui.components.MarkdownBlockView
+import com.shriram.cinecode.ui.components.parseMarkdownBlocks
+import com.shriram.cinecode.ui.components.UserMessageBubble
+import com.shriram.cinecode.ui.components.AssistantMessageFooter
+import com.shriram.cinecode.ui.components.ThinkingAccordion
+import com.shriram.cinecode.ui.components.ConnectionStatusBadge
+import com.shriram.cinecode.ui.components.FileLinkHandler
+import com.shriram.cinecode.ui.components.LocalFileLinkHandler
+import com.shriram.cinecode.ui.components.FileDetailsDialog
+import com.shriram.cinecode.ui.components.MarkdownDocViewerModal
+import com.shriram.cinecode.ui.components.SharedChatViewerModal
+import com.shriram.cinecode.ui.components.SharedChatLoadingDialog
+import com.shriram.cinecode.ui.components.ProjectPickerDialog
+import com.shriram.cinecode.ui.components.ToolCallExpansionCache
+import com.shriram.cinecode.ui.components.CodeBlockExpansionCache
+import com.shriram.cinecode.ui.bubble.FloatingChatActivity
 import android.app.Activity
-import com.example.gemini.ui.drawer.ArtifactsDrawerContent
+import com.shriram.cinecode.ui.drawer.ArtifactsDrawerContent
 import androidx.compose.material.icons.outlined.Layers
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -157,24 +157,24 @@ fun ChatScreen(
 
     val conversations by viewModel.conversations.collectAsState()
     val jarvisConversations by viewModel.jarvisConversations.collectAsState()
-    val jarvisEnabled by com.example.gemini.data.jarvis.JarvisPreferences.enabled.state.collectAsState()
+    val jarvisEnabled by com.shriram.cinecode.data.jarvis.JarvisPreferences.enabled.state.collectAsState()
     val currentConv by viewModel.currentConversation.collectAsState()
     val newChatAgent by viewModel.newChatAgent.collectAsState()
-    val isClaudeChat = currentConv?.agent == com.example.gemini.domain.model.AgentKind.CLAUDE
+    val isClaudeChat = currentConv?.agent == com.shriram.cinecode.domain.model.AgentKind.CLAUDE
     val isFreshNewChat = currentConv == null || currentConv?.title == "New Chat"
     val claudeBackend = viewModel.claudeBackend
     val claudePending by claudeBackend.pendingPermissions.collectAsState()
     val claudeStatus by viewModel.claudeAccount.status.collectAsState()
     val claudeSlashCommands by claudeBackend.slashCommands.collectAsState()
     var showClaudeLogin by remember { mutableStateOf(false) }
-    var claudeSettingsPage by remember { mutableStateOf<com.example.gemini.ui.claude.ClaudeSettingsPage?>(null) }
+    var claudeSettingsPage by remember { mutableStateOf<com.shriram.cinecode.ui.claude.ClaudeSettingsPage?>(null) }
     var restoreCodeOnEdit by remember { mutableStateOf(false) }
     val claudeSettingsDeps = remember(viewModel) {
-        com.example.gemini.ui.claude.ClaudeSettingsDeps(viewModel.claudeAccount, viewModel.claudeConfig, viewModel.claudeBackend, viewModel.claudePrefs)
+        com.shriram.cinecode.ui.claude.ClaudeSettingsDeps(viewModel.claudeAccount, viewModel.claudeConfig, viewModel.claudeBackend, viewModel.claudePrefs)
     }
     LaunchedEffect(Unit) {
         viewModel.claudeAccount.messages.collect {
-            com.example.gemini.ui.components.AppToastHelper.showToast(it, com.example.gemini.ui.components.ChatToastType.INFO)
+            com.shriram.cinecode.ui.components.AppToastHelper.showToast(it, com.shriram.cinecode.ui.components.ChatToastType.INFO)
         }
     }
     val messages by viewModel.messages.collectAsState()
@@ -279,11 +279,11 @@ fun ChatScreen(
     var showLocalTerminalDialog by rememberSaveable { mutableStateOf(false) }
     var showLocalToolsInstallDialog by remember { mutableStateOf(false) }
     var showLocalServerOutputDialog by remember { mutableStateOf(false) }
-    val serverStatus by com.example.gemini.data.local.LocalServerManager.status.collectAsState()
-    val isLocalRunning = serverStatus is com.example.gemini.data.local.LocalServerStatus.Running
-    val isLocalStarting = serverStatus is com.example.gemini.data.local.LocalServerStatus.Starting
-    val isLocalStopped = serverStatus is com.example.gemini.data.local.LocalServerStatus.Stopped
-    val isLocalError = serverStatus is com.example.gemini.data.local.LocalServerStatus.Error
+    val serverStatus by com.shriram.cinecode.data.local.LocalServerManager.status.collectAsState()
+    val isLocalRunning = serverStatus is com.shriram.cinecode.data.local.LocalServerStatus.Running
+    val isLocalStarting = serverStatus is com.shriram.cinecode.data.local.LocalServerStatus.Starting
+    val isLocalStopped = serverStatus is com.shriram.cinecode.data.local.LocalServerStatus.Stopped
+    val isLocalError = serverStatus is com.shriram.cinecode.data.local.LocalServerStatus.Error
     var showRawPayloadDialog by remember { mutableStateOf<String?>(null) }
     var showChatTelemetryDialog by remember { mutableStateOf(false) }
     var showSettingsDialog by remember { mutableStateOf(false) }
@@ -306,13 +306,13 @@ fun ChatScreen(
     }
 
     // Jarvis (voice or its panel) asked to show a settings page
-    var requestedSettingsSection by remember { mutableStateOf<com.example.gemini.ui.settings.SettingsSection?>(null) }
-    val jarvisSettingsRequest by com.example.gemini.data.jarvis.JarvisController.settingsRequest.collectAsState()
+    var requestedSettingsSection by remember { mutableStateOf<com.shriram.cinecode.ui.settings.SettingsSection?>(null) }
+    val jarvisSettingsRequest by com.shriram.cinecode.data.jarvis.JarvisController.settingsRequest.collectAsState()
     LaunchedEffect(jarvisSettingsRequest) {
         val name = jarvisSettingsRequest ?: return@LaunchedEffect
-        requestedSettingsSection = runCatching { com.example.gemini.ui.settings.SettingsSection.valueOf(name) }.getOrNull()
+        requestedSettingsSection = runCatching { com.shriram.cinecode.ui.settings.SettingsSection.valueOf(name) }.getOrNull()
         showSettingsDialog = true
-        com.example.gemini.data.jarvis.JarvisController.consumeSettingsRequest()
+        com.shriram.cinecode.data.jarvis.JarvisController.consumeSettingsRequest()
     }
 
     val pendingApprovals by viewModel.pendingApprovals.collectAsState()
@@ -362,26 +362,26 @@ fun ChatScreen(
     val claudeState by viewModel.claudeAccount.state.collectAsState()
     // a chat on a custom provider's model needs no Claude login: it can send (and shows no sign-in prompt) signed out
     val claudeChatState = if (
-        com.example.gemini.data.agent.claude.ClaudeChatBackend.providerOf(selectedModelId).isNotEmpty() &&
-        (claudeState == com.example.gemini.data.agent.claude.ClaudeStatus.SIGNED_OUT || claudeState == com.example.gemini.data.agent.claude.ClaudeStatus.SIGNING_IN)
-    ) com.example.gemini.data.agent.claude.ClaudeStatus.READY else claudeState
+        com.shriram.cinecode.data.agent.claude.ClaudeChatBackend.providerOf(selectedModelId).isNotEmpty() &&
+        (claudeState == com.shriram.cinecode.data.agent.claude.ClaudeStatus.SIGNED_OUT || claudeState == com.shriram.cinecode.data.agent.claude.ClaudeStatus.SIGNING_IN)
+    ) com.shriram.cinecode.data.agent.claude.ClaudeStatus.READY else claudeState
     val claudeStatusError by viewModel.claudeAccount.statusError.collectAsState()
     val openClaudeSetup = {
-        claudeSettingsPage = com.example.gemini.ui.claude.ClaudeSettingsPage.ACCOUNT
+        claudeSettingsPage = com.shriram.cinecode.ui.claude.ClaudeSettingsPage.ACCOUNT
         showSettingsDialog = true
     }
-    val serverRestarting = serverStatus is com.example.gemini.data.local.LocalServerStatus.Starting ||
-        serverStatus is com.example.gemini.data.local.LocalServerStatus.Stopping
+    val serverRestarting = serverStatus is com.shriram.cinecode.data.local.LocalServerStatus.Starting ||
+        serverStatus is com.shriram.cinecode.data.local.LocalServerStatus.Stopping
     val restartLocalServer = {
-        com.example.gemini.ui.components.AppToastHelper.showToast(if (AuthPreferences.currentRemoteMode) "Restarting the server over SSH…" else "Restarting the local server…", com.example.gemini.ui.components.ChatToastType.INFO)
-        com.example.gemini.data.local.LocalServerManager.restartServer(context)
+        com.shriram.cinecode.ui.components.AppToastHelper.showToast(if (AuthPreferences.currentRemoteMode) "Restarting the server over SSH…" else "Restarting the local server…", com.shriram.cinecode.ui.components.ChatToastType.INFO)
+        com.shriram.cinecode.data.local.LocalServerManager.restartServer(context)
     }
     val recheckClaude = {
-        com.example.gemini.ui.components.AppToastHelper.showToast("Checking Claude Code…", com.example.gemini.ui.components.ChatToastType.INFO)
+        com.shriram.cinecode.ui.components.AppToastHelper.showToast("Checking Claude Code…", com.shriram.cinecode.ui.components.ChatToastType.INFO)
         viewModel.claudeAccount.refreshStatus()
     }
-    val agyEntry = if (com.example.gemini.domain.model.AgentKind.AGY in enabledAgents) {
-        com.example.gemini.ui.agents.agyStatusEntry(
+    val agyEntry = if (com.shriram.cinecode.domain.model.AgentKind.AGY in enabledAgents) {
+        com.shriram.cinecode.ui.agents.agyStatusEntry(
             state = systemConnectionState,
             authInfo = agyAuthInfo,
             isAuthBusy = isAuthBusy,
@@ -390,14 +390,14 @@ fun ChatScreen(
             onSignIn = { viewModel.loginToAgyHub(force = true) },
             onCheckAuth = { viewModel.checkAgyAuthStatus(userInitiated = true) },
             onRetry = {
-                com.example.gemini.ui.components.AppToastHelper.showToast("Reconnecting to Antigravity…", com.example.gemini.ui.components.ChatToastType.INFO)
+                com.shriram.cinecode.ui.components.AppToastHelper.showToast("Reconnecting to Antigravity…", com.shriram.cinecode.ui.components.ChatToastType.INFO)
                 viewModel.retryConnections()
             },
             onRestartServer = restartLocalServer
         )
     } else null
-    val claudeEntry = if (com.example.gemini.domain.model.AgentKind.CLAUDE in enabledAgents) {
-        com.example.gemini.ui.agents.claudeStatusEntry(
+    val claudeEntry = if (com.shriram.cinecode.domain.model.AgentKind.CLAUDE in enabledAgents) {
+        com.shriram.cinecode.ui.agents.claudeStatusEntry(
             state = claudeState,
             status = claudeStatus,
             error = claudeStatusError,
@@ -411,22 +411,22 @@ fun ChatScreen(
     val agentEntries = listOfNotNull(agyEntry, claudeEntry)
 
     // Slash commands Claude's CLI only shows in a terminal: the app opens its own screen instead
-    val handleClaudeCommand: (com.example.gemini.data.agent.claude.ClaudeAppCommand) -> Unit = { cmd ->
+    val handleClaudeCommand: (com.shriram.cinecode.data.agent.claude.ClaudeAppCommand) -> Unit = { cmd ->
         when (cmd) {
-            com.example.gemini.data.agent.claude.ClaudeAppCommand.Usage -> showClaudeUsage = true
-            com.example.gemini.data.agent.claude.ClaudeAppCommand.Context -> showClaudeContext = true
-            com.example.gemini.data.agent.claude.ClaudeAppCommand.ModelPicker -> showModelSelector = true
-            com.example.gemini.data.agent.claude.ClaudeAppCommand.Mcp -> {
-                claudeSettingsPage = com.example.gemini.ui.claude.ClaudeSettingsPage.MCP
+            com.shriram.cinecode.data.agent.claude.ClaudeAppCommand.Usage -> showClaudeUsage = true
+            com.shriram.cinecode.data.agent.claude.ClaudeAppCommand.Context -> showClaudeContext = true
+            com.shriram.cinecode.data.agent.claude.ClaudeAppCommand.ModelPicker -> showModelSelector = true
+            com.shriram.cinecode.data.agent.claude.ClaudeAppCommand.Mcp -> {
+                claudeSettingsPage = com.shriram.cinecode.ui.claude.ClaudeSettingsPage.MCP
                 showSettingsDialog = true
             }
-            com.example.gemini.data.agent.claude.ClaudeAppCommand.Settings -> {
-                claudeSettingsPage = com.example.gemini.ui.claude.ClaudeSettingsPage.DEFAULTS
+            com.shriram.cinecode.data.agent.claude.ClaudeAppCommand.Settings -> {
+                claudeSettingsPage = com.shriram.cinecode.ui.claude.ClaudeSettingsPage.DEFAULTS
                 showSettingsDialog = true
             }
-            com.example.gemini.data.agent.claude.ClaudeAppCommand.NewChat -> viewModel.startNewChat(com.example.gemini.domain.model.AgentKind.CLAUDE)
-            is com.example.gemini.data.agent.claude.ClaudeAppCommand.Done ->
-                com.example.gemini.ui.components.AppToastHelper.showToast(cmd.message, com.example.gemini.ui.components.ChatToastType.SUCCESS)
+            com.shriram.cinecode.data.agent.claude.ClaudeAppCommand.NewChat -> viewModel.startNewChat(com.shriram.cinecode.domain.model.AgentKind.CLAUDE)
+            is com.shriram.cinecode.data.agent.claude.ClaudeAppCommand.Done ->
+                com.shriram.cinecode.ui.components.AppToastHelper.showToast(cmd.message, com.shriram.cinecode.ui.components.ChatToastType.SUCCESS)
         }
     }
     var showAccountsDialog by remember { mutableStateOf(false) }
@@ -438,7 +438,7 @@ fun ChatScreen(
     }
 
     LaunchedEffect(Unit) {
-        com.example.gemini.ui.components.AppToastHelper.toastFlow.collect { toast ->
+        com.shriram.cinecode.ui.components.AppToastHelper.toastFlow.collect { toast ->
             currentToast = toast
         }
     }
@@ -545,12 +545,12 @@ fun ChatScreen(
     val pluginActionStatusMessage by viewModel.pluginActionStatusMessage.collectAsState()
     val pluginActionErrorMessage by viewModel.pluginActionErrorMessage.collectAsState()
 
-    var allSlashCommands by remember { mutableStateOf(com.example.gemini.data.remote.SlashCommandsCache.getCachedSync()) }
+    var allSlashCommands by remember { mutableStateOf(com.shriram.cinecode.data.remote.SlashCommandsCache.getCachedSync()) }
     val effectiveSlashCommands = if (isClaudeChat) claudeSlashCommands else allSlashCommands
 
     LaunchedEffect(agyHubUrl, systemConnectionState) {
         if (systemConnectionState.isHubOnline) {
-            val fetched = com.example.gemini.data.remote.SlashCommandsCache.getCommands(agyHubUrl)
+            val fetched = com.shriram.cinecode.data.remote.SlashCommandsCache.getCommands(agyHubUrl)
             if (fetched.isNotEmpty()) {
                 allSlashCommands = fetched
             }
@@ -628,12 +628,12 @@ fun ChatScreen(
     val imeInsets = WindowInsets.imeAnimationTarget
     var isKeyboardAnimating by remember { mutableStateOf(false) }
 
-    val focusCoordinator = com.example.gemini.ui.components.LocalAppFocusCoordinator.current
+    val focusCoordinator = com.shriram.cinecode.ui.components.LocalAppFocusCoordinator.current
     val chatInputFocusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
 
     DisposableEffect(focusCoordinator) {
         focusCoordinator.registerScreen(
-            mode = com.example.gemini.AppViewMode.CHAT,
+            mode = com.shriram.cinecode.AppViewMode.CHAT,
             onRequestFocus = {
                 try {
                     chatInputFocusRequester.requestFocus()
@@ -644,7 +644,7 @@ fun ChatScreen(
             }
         )
         onDispose {
-            focusCoordinator.unregisterScreen(com.example.gemini.AppViewMode.CHAT)
+            focusCoordinator.unregisterScreen(com.shriram.cinecode.AppViewMode.CHAT)
         }
     }
 
@@ -749,7 +749,7 @@ fun ChatScreen(
 
     var userSentMessageTrigger by remember { mutableStateOf(0) }
 
-    val isDarkTheme = com.example.gemini.theme.isAppInDarkTheme()
+    val isDarkTheme = com.shriram.cinecode.theme.isAppInDarkTheme()
 
     // Background prewarm to ensure zero UI-thread lag during scroll (recent window of 12 messages)
     LaunchedEffect(messages.size, isDarkTheme) {
@@ -774,7 +774,7 @@ fun ChatScreen(
 
     // The end of a turn is one step: the working row stays until the reply's footer (tokens, actions) exists, then
     // the two cross-fade in place while the end of the chat stays pinned (no animated scroll afterwards)
-    val lastIsAssistantWithText = lastMsg?.role == com.example.gemini.domain.model.MessageRole.ASSISTANT && lastMsg.content.isNotEmpty()
+    val lastIsAssistantWithText = lastMsg?.role == com.shriram.cinecode.domain.model.MessageRole.ASSISTANT && lastMsg.content.isNotEmpty()
     val footerShown = feedItems.lastOrNull() is ChatFeedItem.AssistantFooter
     var tailFinishing by remember(convKey) { mutableStateOf(false) }
     var wasRunning by remember(convKey) { mutableStateOf(isRunningOrStreaming) }
@@ -819,7 +819,7 @@ fun ChatScreen(
                 claudeModelsError != null -> "Models unavailable"
                 else -> "Choose model"
             },
-            family = com.example.gemini.domain.model.ModelFamily.CLAUDE
+            family = com.shriram.cinecode.domain.model.ModelFamily.CLAUDE
         )
     } else AiModel.findInList(enabledModels, selectedModelId, preferredModelName)
     val currentQuota = quotas.find { it.modelId == selectedModelId }
@@ -827,7 +827,7 @@ fun ChatScreen(
     val activeChatProject by TermuxDaemonManager.activeProject.collectAsState()
     val usedProjects by TermuxDaemonManager.projects.collectAsState()
     var showProjectDropdown by remember { mutableStateOf(false) }
-    var chatProjectFiles by remember { mutableStateOf<List<com.example.gemini.data.daemon.FileNode>>(emptyList()) }
+    var chatProjectFiles by remember { mutableStateOf<List<com.shriram.cinecode.data.daemon.FileNode>>(emptyList()) }
 
     LaunchedEffect(Unit) {
         TermuxDaemonManager.loadProjects(conversations)
@@ -946,7 +946,7 @@ fun ChatScreen(
     }
 
     LaunchedEffect(fileLinkHandler) {
-        com.example.gemini.ui.components.ActiveFileLinkHandlerHolder.current = fileLinkHandler
+        com.shriram.cinecode.ui.components.ActiveFileLinkHandlerHolder.current = fileLinkHandler
     }
 
     val safeUriHandler = remember(currentUriHandler, fileLinkHandler) {
@@ -973,7 +973,7 @@ fun ChatScreen(
     CompositionLocalProvider(
         LocalFileLinkHandler provides fileLinkHandler,
         androidx.compose.ui.platform.LocalUriHandler provides safeUriHandler,
-        com.example.gemini.ui.components.LocalSnackbarHostState provides snackbarHostState
+        com.shriram.cinecode.ui.components.LocalSnackbarHostState provides snackbarHostState
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             ModalNavigationDrawer(
@@ -1049,9 +1049,9 @@ fun ChatScreen(
                 },
                 // the sidebar stays open: the picker floats over it so the new look shows on the sidebar and the chat
                 onOpenThemes = { showThemePanel = !showThemePanel },
-                agyEnabled =com.example.gemini.domain.model.AgentKind.AGY in enabledAgents,
+                agyEnabled =com.shriram.cinecode.domain.model.AgentKind.AGY in enabledAgents,
                 accountsButton = {
-                    com.example.gemini.ui.agents.AccountsButton(
+                    com.shriram.cinecode.ui.agents.AccountsButton(
                         agy = agyEntry,
                         claude = claudeEntry,
                         agyAuth = agyAuthInfo,
@@ -1060,7 +1060,7 @@ fun ChatScreen(
                     )
                 },
                 claudeActions = remember(viewModel) {
-                    com.example.gemini.ui.drawer.ClaudeDrawerActions(
+                    com.shriram.cinecode.ui.drawer.ClaudeDrawerActions(
                         loadMessages = { id -> viewModel.loadClaudeMessages(id) },
                         rename = { id, title -> viewModel.renameConversation(id, title) },
                         restart = { id, onDone -> viewModel.claudeBackend.restartChat(id, onDone) }
@@ -1069,7 +1069,7 @@ fun ChatScreen(
             )
         }
     ) {
-        com.example.gemini.ui.agents.BridgeVersionDialog()
+        com.shriram.cinecode.ui.agents.BridgeVersionDialog()
         if (pendingLoginUrl != null) {
             val targetUrl = pendingLoginUrl!!
             val remoteSignIn = AuthPreferences.currentRemoteMode
@@ -1123,7 +1123,7 @@ fun ChatScreen(
                                 Text(
                                     text = it,
                                     fontSize = 12.sp,
-                                    color = if (it.startsWith("✓")) com.example.gemini.theme.AppColors.success else Color.Red
+                                    color = if (it.startsWith("✓")) com.shriram.cinecode.theme.AppColors.success else Color.Red
                                 )
                             }
                         }
@@ -1270,8 +1270,8 @@ fun ChatScreen(
                             }
                         }
                         val showStatusDot = isLocalToolsInstalled || AuthPreferences.currentRemoteMode ||
-                            com.example.gemini.data.local.LocalEnvironmentManager.isInstalled(context) ||
-                            systemConnectionState.status != com.example.gemini.data.remote.SystemStatus.OFFLINE
+                            com.shriram.cinecode.data.local.LocalEnvironmentManager.isInstalled(context) ||
+                            systemConnectionState.status != com.shriram.cinecode.data.remote.SystemStatus.OFFLINE
                         var statusMenuOpen by remember { mutableStateOf(false) }
 
                         // title on the left; "◐ project" and the new-chat button on the right. Title and project shorten
@@ -1314,9 +1314,9 @@ fun ChatScreen(
                                     if (showStatusDot) {
                                         // upper half Antigravity, lower half Claude Code (one solid dot when they agree);
                                         // the dot itself always opens the agents' status, also before the chat starts
-                                        val agyEntry = agentEntries.find { it.agent == com.example.gemini.domain.model.AgentKind.AGY }
-                                        val claudeEntry = agentEntries.find { it.agent == com.example.gemini.domain.model.AgentKind.CLAUDE }
-                                        val dotTop = agyEntry?.color ?: claudeEntry?.color ?: com.example.gemini.data.remote.SystemStatus.OFFLINE.dotColor
+                                        val agyEntry = agentEntries.find { it.agent == com.shriram.cinecode.domain.model.AgentKind.AGY }
+                                        val claudeEntry = agentEntries.find { it.agent == com.shriram.cinecode.domain.model.AgentKind.CLAUDE }
+                                        val dotTop = agyEntry?.color ?: claudeEntry?.color ?: com.shriram.cinecode.data.remote.SystemStatus.OFFLINE.dotColor
                                         val dotBottom = if (agyEntry != null) claudeEntry?.color else null
                                         Box(
                                             modifier = Modifier
@@ -1325,7 +1325,7 @@ fun ChatScreen(
                                                 .clickable { statusMenuOpen = true },
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            com.example.gemini.ui.agents.AgentStatusDot(
+                                            com.shriram.cinecode.ui.agents.AgentStatusDot(
                                                 top = dotTop,
                                                 bottom = dotBottom,
                                                 size = 8.dp,
@@ -1346,7 +1346,7 @@ fun ChatScreen(
                                             Icon(
                                                 imageVector = Icons.Rounded.LightMode,
                                                 contentDescription = "Screen stays on",
-                                                tint = com.example.gemini.theme.AppColors.warning,
+                                                tint = com.shriram.cinecode.theme.AppColors.warning,
                                                 modifier = Modifier.size(13.dp)
                                             )
                                             DropdownMenu(
@@ -1362,7 +1362,7 @@ fun ChatScreen(
                                                         Icon(
                                                             imageVector = Icons.Rounded.LightMode,
                                                             contentDescription = null,
-                                                            tint = com.example.gemini.theme.AppColors.warning,
+                                                            tint = com.shriram.cinecode.theme.AppColors.warning,
                                                             modifier = Modifier.size(16.dp)
                                                         )
                                                         Spacer(modifier = Modifier.width(6.dp))
@@ -1416,7 +1416,7 @@ fun ChatScreen(
                                         )
                                     }
                                 }
-                                com.example.gemini.ui.agents.AgentStatusMenu(
+                                com.shriram.cinecode.ui.agents.AgentStatusMenu(
                                     entries = agentEntries,
                                     expanded = statusMenuOpen,
                                     onDismiss = { statusMenuOpen = false },
@@ -1517,8 +1517,8 @@ fun ChatScreen(
                         .fillMaxWidth()
                 ) {
                     val sysStatus = systemConnectionState.status
-                    val isServerInitializing = sysStatus == com.example.gemini.data.remote.SystemStatus.STARTING || sysStatus == com.example.gemini.data.remote.SystemStatus.ACQUIRING_CSRF || (sysStatus == com.example.gemini.data.remote.SystemStatus.OFFLINE && isInitialGracePeriod)
-                    val isServerStopped = sysStatus == com.example.gemini.data.remote.SystemStatus.OFFLINE && !isInitialGracePeriod
+                    val isServerInitializing = sysStatus == com.shriram.cinecode.data.remote.SystemStatus.STARTING || sysStatus == com.shriram.cinecode.data.remote.SystemStatus.ACQUIRING_CSRF || (sysStatus == com.shriram.cinecode.data.remote.SystemStatus.OFFLINE && isInitialGracePeriod)
+                    val isServerStopped = sysStatus == com.shriram.cinecode.data.remote.SystemStatus.OFFLINE && !isInitialGracePeriod
                     // Jarvis' chats are not in `conversations` (they are hidden and listed apart, under Jarvis), but they are
                     // existing chats too: while one loads, show the loading skeleton like for any other chat
                     val isExistingConversation = currentConv != null && currentConv?.title != "New Chat" &&
@@ -1541,7 +1541,7 @@ fun ChatScreen(
                                 verticalArrangement = Arrangement.Center
                             ) {
                                 if (isFreshNewChat) {
-                                    com.example.gemini.ui.components.AgentPicker(
+                                    com.shriram.cinecode.ui.components.AgentPicker(
                                         selected = currentConv?.agent ?: newChatAgent,
                                         onSelect = { viewModel.setNewChatAgent(it) },
                                         modifier = Modifier.padding(bottom = 20.dp),
@@ -1549,7 +1549,7 @@ fun ChatScreen(
                                         statusColors = agentEntries.associate { it.agent to it.color }
                                     )
                                 }
-                                com.example.gemini.ui.components.ServerStoppedPromptCard()
+                                com.shriram.cinecode.ui.components.ServerStoppedPromptCard()
                             }
                         }
                     } else if (!isClaudeChat && isServerInitializing && messages.isEmpty()) {
@@ -1569,18 +1569,18 @@ fun ChatScreen(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.Center
                                 ) {
-                                    com.example.gemini.ui.components.AgentPicker(
+                                    com.shriram.cinecode.ui.components.AgentPicker(
                                         selected = currentConv?.agent ?: newChatAgent,
                                         onSelect = { viewModel.setNewChatAgent(it) },
                                         modifier = Modifier.padding(bottom = 20.dp),
                                         agents = enabledAgents,
                                         statusColors = agentEntries.associate { it.agent to it.color }
                                     )
-                                    com.example.gemini.ui.components.EngineWarmingUpView()
+                                    com.shriram.cinecode.ui.components.EngineWarmingUpView()
                                 }
                             }
                         } else {
-                            com.example.gemini.ui.components.EngineWarmingUpView()
+                            com.shriram.cinecode.ui.components.EngineWarmingUpView()
                         }
                     } else if (!conversationError.isNullOrBlank() && messages.isEmpty() && (isExistingConversation || currentConv != null)) {
                         Column(
@@ -1635,7 +1635,7 @@ fun ChatScreen(
                             }
                         }
                     } else if (isExistingChat) {
-                        com.example.gemini.ui.components.ConversationLoadingSkeleton()
+                        com.shriram.cinecode.ui.components.ConversationLoadingSkeleton()
                     } else if (messages.isEmpty()) {
                         BoxWithConstraints(
                             modifier = Modifier.fillMaxSize()
@@ -1651,7 +1651,7 @@ fun ChatScreen(
                                 verticalArrangement = Arrangement.Center
                             ) {
                                 if (isFreshNewChat) {
-                                    com.example.gemini.ui.components.AgentPicker(
+                                    com.shriram.cinecode.ui.components.AgentPicker(
                                         selected = currentConv?.agent ?: newChatAgent,
                                         onSelect = { viewModel.setNewChatAgent(it) },
                                         modifier = Modifier.padding(bottom = 20.dp),
@@ -1661,29 +1661,29 @@ fun ChatScreen(
                                 }
 
                                 if (!isNetworkConnected) {
-                                    com.example.gemini.ui.components.NewChatOfflinePromptCard(
+                                    com.shriram.cinecode.ui.components.NewChatOfflinePromptCard(
                                         modifier = Modifier.padding(bottom = 20.dp)
                                     )
                                 }
 
-                                if (isClaudeChat && claudeChatState != com.example.gemini.data.agent.claude.ClaudeStatus.READY) {
-                                    com.example.gemini.ui.claude.ClaudeStatusPrompt(
+                                if (isClaudeChat && claudeChatState != com.shriram.cinecode.data.agent.claude.ClaudeStatus.READY) {
+                                    com.shriram.cinecode.ui.claude.ClaudeStatusPrompt(
                                         state = claudeChatState,
                                         error = claudeStatusError,
                                         onSignIn = { showClaudeLogin = true },
                                         onSetup = openClaudeSetup,
-                                        onRestartServer = { com.example.gemini.data.local.LocalServerManager.restartServer(context) },
+                                        onRestartServer = { com.shriram.cinecode.data.local.LocalServerManager.restartServer(context) },
                                         onRetry = { viewModel.claudeAccount.refreshStatus() },
                                         onServerLogs = { showLocalServerOutputDialog = true },
                                         serverStarting = serverRestarting
                                     )
                                 } else when (if (isClaudeChat) null else systemConnectionState.status) {
-                                    com.example.gemini.data.remote.SystemStatus.CHECKING_AUTH -> {
-                                        com.example.gemini.ui.components.NewChatCheckingAuthPromptCard()
+                                    com.shriram.cinecode.data.remote.SystemStatus.CHECKING_AUTH -> {
+                                        com.shriram.cinecode.ui.components.NewChatCheckingAuthPromptCard()
                                     }
-                                    com.example.gemini.data.remote.SystemStatus.UNAUTHENTICATED -> {
+                                    com.shriram.cinecode.data.remote.SystemStatus.UNAUTHENTICATED -> {
                                         if (isNetworkConnected) {
-                                            com.example.gemini.ui.components.NewChatSignInPromptCard(
+                                            com.shriram.cinecode.ui.components.NewChatSignInPromptCard(
                                                 onSignInClick = { viewModel.loginToAgyHub(force = true) }
                                             )
                                         }
@@ -1718,11 +1718,11 @@ fun ChatScreen(
 
                         CompositionLocalProvider(
                             androidx.compose.ui.platform.LocalDensity provides customDensity,
-                            com.example.gemini.ui.components.LocalQuestionPanelActive provides true
+                            com.shriram.cinecode.ui.components.LocalQuestionPanelActive provides true
                         ) {
                                 // iOS-style vertical bounce at the top and bottom (also for a short chat that cannot scroll);
                                 // only this list: code blocks and other sideways scrollers keep Android's own edge effect
-                                val chatBounce = com.example.gemini.ui.components.rememberBouncyLazyScroll(listState)
+                                val chatBounce = com.shriram.cinecode.ui.components.rememberBouncyLazyScroll(listState)
                                 LazyColumn(
                                     state = listState,
                                     modifier = Modifier.fillMaxSize().then(chatBounce.modifier),
@@ -1756,7 +1756,7 @@ fun ChatScreen(
                                                 }
                                             }
                                         }
-                                        is ChatFeedItem.Divider -> com.example.gemini.ui.components.WaveDivider(label = feedItem.label)
+                                        is ChatFeedItem.Divider -> com.shriram.cinecode.ui.components.WaveDivider(label = feedItem.label)
                                         is ChatFeedItem.User -> {
                                             val msgIndex = messages.indexOfFirst { it.id == feedItem.message.id }
                                             val willDeleteOutput = msgIndex < messages.lastIndex
@@ -1875,8 +1875,8 @@ fun ChatScreen(
 
                                     if (showWorkingRow) {
                                         item(key = "working_spinner", contentType = "working_spinner") {
-                                            com.example.gemini.ui.components.AgentWorkingSpinner(
-                                                color = if (isClaudeChat) com.example.gemini.ui.components.ClaudeAccent else com.example.gemini.ui.components.AgyAccent,
+                                            com.shriram.cinecode.ui.components.AgentWorkingSpinner(
+                                                color = if (isClaudeChat) com.shriram.cinecode.ui.components.ClaudeAccent else com.shriram.cinecode.ui.components.AgyAccent,
                                                 compacting = isClaudeChat && claudeCompacting,
                                                 // leaves in the frame the reply's footer arrives, which fades in in its place
                                                 modifier = Modifier.animateItem(fadeInSpec = tween(180), placementSpec = null, fadeOutSpec = null)
@@ -1946,13 +1946,13 @@ fun ChatScreen(
                     val slashQuery = slash?.query ?: ""
 
                     // `/plu:` browses custom AntiGem plugins and their skills; custom commands join the normal list
-                    val customCommands = com.example.gemini.data.remote.CustomSlashCommands.commands.toList()
-                    val installedPlugins = com.example.gemini.ui.browser.BrowserExtensionManager.instance.extensions.toList()
+                    val customCommands = com.shriram.cinecode.data.remote.CustomSlashCommands.commands.toList()
+                    val installedPlugins = com.shriram.cinecode.ui.browser.BrowserExtensionManager.instance.extensions.toList()
                     val slashSuggestions = remember(slashQuery, effectiveSlashCommands, isSlashActive, customCommands, installedPlugins) {
                         if (!isSlashActive) emptyList()
-                        else if (slashQuery.startsWith("plu:", ignoreCase = true)) com.example.gemini.data.remote.PromptExpansion.pluginSuggestions(slashQuery.substring(4))
+                        else if (slashQuery.startsWith("plu:", ignoreCase = true)) com.shriram.cinecode.data.remote.PromptExpansion.pluginSuggestions(slashQuery.substring(4))
                         else {
-                            (com.example.gemini.data.remote.PromptExpansion.baseSlashItems() + effectiveSlashCommands).filter { item ->
+                            (com.shriram.cinecode.data.remote.PromptExpansion.baseSlashItems() + effectiveSlashCommands).filter { item ->
                                 slashQuery.isBlank() ||
                                 item.name.contains(slashQuery, ignoreCase = true) ||
                                 item.command.removePrefix("/").contains(slashQuery, ignoreCase = true) ||
@@ -1962,7 +1962,7 @@ fun ChatScreen(
                     }
 
                     // a Claude command that needs no argument runs on tap (when nothing else is typed and no turn runs)
-                    val slashRunsOnTap: (com.example.gemini.data.remote.SlashCommandItem) -> Boolean = { item ->
+                    val slashRunsOnTap: (com.shriram.cinecode.data.remote.SlashCommandItem) -> Boolean = { item ->
                         isClaudeChat && item.type != "app" && item.type != "plugin" && item.type != "custom" && item.argumentHint.isBlank() &&
                             (slash == null || slash.nothingBefore) && !isActivelyRunning && attachments.isEmpty()
                     }
@@ -2193,9 +2193,9 @@ fun ChatScreen(
                 // Agent prompts docked above the input (both agents): permission requests, then questions
                 val approvalItems = remember(pendingApprovals, claudePending, isClaudeChat) {
                     if (isClaudeChat) {
-                        com.example.gemini.ui.claude.claudeApprovalItems(claudePending, claudeBackend)
+                        com.shriram.cinecode.ui.claude.claudeApprovalItems(claudePending, claudeBackend)
                     } else {
-                        com.example.gemini.ui.agents.agyApprovalItems(
+                        com.shriram.cinecode.ui.agents.agyApprovalItems(
                             pendingApprovals,
                             onApprove = { toolCall, msgId, scope -> viewModel.approveAndExecuteTerminalTool(toolCall, msgId, scope) },
                             onReject = { toolCall, msgId, reason -> viewModel.rejectTerminalTool(toolCall, msgId, reason) }
@@ -2203,14 +2203,14 @@ fun ChatScreen(
                     }
                 }
                 // keep the last requests on screen while the panel animates away
-                val lastApprovalItems = remember { arrayOf(emptyList<com.example.gemini.ui.agents.ApprovalItem>()) }
+                val lastApprovalItems = remember { arrayOf(emptyList<com.shriram.cinecode.ui.agents.ApprovalItem>()) }
                 SideEffect { if (approvalItems.isNotEmpty()) lastApprovalItems[0] = approvalItems }
                 AnimatedVisibility(
                     visible = approvalItems.isNotEmpty(),
                     enter = expandVertically() + fadeIn(),
                     exit = shrinkVertically() + fadeOut()
                 ) {
-                    com.example.gemini.ui.agents.AgentApprovalPanel(
+                    com.shriram.cinecode.ui.agents.AgentApprovalPanel(
                         items = approvalItems.ifEmpty { lastApprovalItems[0] },
                         onAllowAll = if (isClaudeChat) {
                             { claudePending.filter { it.toolName != "ExitPlanMode" }.forEach { claudeBackend.approveToolAlways(it.toolUseId, -1) } }
@@ -2226,8 +2226,8 @@ fun ChatScreen(
                 }
 
                 val pendingQuestion = remember(messages, isClaudeChat) {
-                    com.example.gemini.ui.agents.findPendingQuestion(
-                        if (isClaudeChat) com.example.gemini.domain.model.AgentKind.CLAUDE else com.example.gemini.domain.model.AgentKind.AGY,
+                    com.shriram.cinecode.ui.agents.findPendingQuestion(
+                        if (isClaudeChat) com.shriram.cinecode.domain.model.AgentKind.CLAUDE else com.shriram.cinecode.domain.model.AgentKind.AGY,
                         messages
                     )
                 }
@@ -2237,7 +2237,7 @@ fun ChatScreen(
                     exit = shrinkVertically() + fadeOut()
                 ) {
                     pendingQuestion?.let { q ->
-                        com.example.gemini.ui.agents.AgentQuestionPanel(
+                        com.shriram.cinecode.ui.agents.AgentQuestionPanel(
                             question = q,
                             onSubmit = { responses, summary -> viewModel.submitUserChoices(q.toolCall, q.messageId, responses, summary) },
                             onSkip = { responses -> viewModel.skipUserChoices(q.toolCall, q.messageId, responses) },
@@ -2253,27 +2253,27 @@ fun ChatScreen(
                         enter = expandVertically() + fadeIn(),
                         exit = shrinkVertically() + fadeOut()
                     ) {
-                        com.example.gemini.ui.claude.ClaudeStartupNotice(claudeStartup ?: "")
+                        com.shriram.cinecode.ui.claude.ClaudeStartupNotice(claudeStartup ?: "")
                     }
                     if (messages.isNotEmpty() && !serverRestarting) {
-                        com.example.gemini.ui.claude.ClaudeStatusBanner(
+                        com.shriram.cinecode.ui.claude.ClaudeStatusBanner(
                             state = claudeChatState,
                             onSignIn = { showClaudeLogin = true },
                             onSetup = openClaudeSetup,
-                            onRestartServer = { com.example.gemini.data.local.LocalServerManager.restartServer(context) },
+                            onRestartServer = { com.shriram.cinecode.data.local.LocalServerManager.restartServer(context) },
                             onRetry = { viewModel.claudeAccount.refreshStatus() }
                         )
                     }
-                    com.example.gemini.ui.claude.ClaudeControlsStrip(claudeBackend, viewModel.claudePrefs)
+                    com.shriram.cinecode.ui.claude.ClaudeControlsStrip(claudeBackend, viewModel.claudePrefs)
                 }
 
                 // Chat Input Bar with Bottom Model & Thinking Selector Pills (Claude Android Style)
                 ChatInputBar(
                     isOnline = if (isClaudeChat) !claudeState.isBlocking else systemConnectionState.canSend,
-                    isAuth = if (isClaudeChat) claudeChatState != com.example.gemini.data.agent.claude.ClaudeStatus.SIGNED_OUT && claudeChatState != com.example.gemini.data.agent.claude.ClaudeStatus.SIGNING_IN else systemConnectionState.isAuth,
+                    isAuth = if (isClaudeChat) claudeChatState != com.shriram.cinecode.data.agent.claude.ClaudeStatus.SIGNED_OUT && claudeChatState != com.shriram.cinecode.data.agent.claude.ClaudeStatus.SIGNING_IN else systemConnectionState.isAuth,
                     offlineMessage = if (isClaudeChat) when (claudeState) {
-                        com.example.gemini.data.agent.claude.ClaudeStatus.NOT_INSTALLED -> "Claude Code is not installed. Set it up in Settings."
-                        com.example.gemini.data.agent.claude.ClaudeStatus.BRIDGE_OUTDATED -> "Restart the local server to use Claude Code."
+                        com.shriram.cinecode.data.agent.claude.ClaudeStatus.NOT_INSTALLED -> "Claude Code is not installed. Set it up in Settings."
+                        com.shriram.cinecode.data.agent.claude.ClaudeStatus.BRIDGE_OUTDATED -> "Restart the local server to use Claude Code."
                         else -> "The local server is offline. Start it to send messages."
                     } else "Server is offline. Start the server to send messages.",
                     selectedModel = currentModel,
@@ -2299,9 +2299,9 @@ fun ChatScreen(
                         } else emptyList()
                         if (unreadable.isNotEmpty()) {
                             // Claude models cannot read audio or video: say so instead of sending a file it would reject
-                            com.example.gemini.ui.components.AppToastHelper.showToast(
+                            com.shriram.cinecode.ui.components.AppToastHelper.showToast(
                                 "Claude can't read audio or video files. Remove them, or tap the mic to dictate instead.",
-                                com.example.gemini.ui.components.ChatToastType.ERROR
+                                com.shriram.cinecode.ui.components.ChatToastType.ERROR
                             )
                             return@ChatInputBar
                         }
@@ -2337,9 +2337,9 @@ fun ChatScreen(
     }
 
     // Model Selector Bottom Sheet (Active Model at Top & Expandable Categories)
-    if (isClaudeChat) com.example.gemini.ui.claude.ClaudeProviderSwitchDialog(claudeBackend)
+    if (isClaudeChat) com.shriram.cinecode.ui.claude.ClaudeProviderSwitchDialog(claudeBackend)
     if (showModelSelector && isClaudeChat) {
-        com.example.gemini.ui.claude.ClaudeModelSheet(claudeBackend, viewModel.claudeAccount) { showModelSelector = false }
+        com.shriram.cinecode.ui.claude.ClaudeModelSheet(claudeBackend, viewModel.claudeAccount) { showModelSelector = false }
     } else if (showModelSelector) {
         ModelSelectorBottomSheet(
             selectedModelId = selectedModelId,
@@ -2535,25 +2535,25 @@ fun ChatScreen(
     }
 
     if (showClaudeLogin) {
-        com.example.gemini.ui.claude.ClaudeLoginDialog(viewModel.claudeAccount) { showClaudeLogin = false }
+        com.shriram.cinecode.ui.claude.ClaudeLoginDialog(viewModel.claudeAccount) { showClaudeLogin = false }
     }
 
     // asked once the local environment (rootfs) is installed, before the local server starts
-    if (!hasChosenAgents && (isLocalToolsInstalled || com.example.gemini.data.local.LocalEnvironmentManager.isInstalled(context) || AuthPreferences.currentRemoteMode)) {
-        com.example.gemini.ui.agents.AgentChoiceDialog { viewModel.applyAgents(it) }
+    if (!hasChosenAgents && (isLocalToolsInstalled || com.shriram.cinecode.data.local.LocalEnvironmentManager.isInstalled(context) || AuthPreferences.currentRemoteMode)) {
+        com.shriram.cinecode.ui.agents.AgentChoiceDialog { viewModel.applyAgents(it) }
     }
     if (isApplyingAgents) {
-        com.example.gemini.ui.agents.AgentsApplyingDialog()
+        com.shriram.cinecode.ui.agents.AgentsApplyingDialog()
     }
     if (showClaudeUsage) {
-        com.example.gemini.ui.claude.ClaudeUsageDialog(viewModel.claudeAccount, claudeBackend) { showClaudeUsage = false }
+        com.shriram.cinecode.ui.claude.ClaudeUsageDialog(viewModel.claudeAccount, claudeBackend) { showClaudeUsage = false }
     }
     if (showClaudeContext) {
-        com.example.gemini.ui.claude.ClaudeContextDialog(claudeBackend) { showClaudeContext = false }
+        com.shriram.cinecode.ui.claude.ClaudeContextDialog(claudeBackend) { showClaudeContext = false }
     }
 
     if (showAccountsDialog) {
-        com.example.gemini.ui.agents.AccountsDialog(
+        com.shriram.cinecode.ui.agents.AccountsDialog(
             agy = agyEntry,
             claude = claudeEntry,
             agyAuth = agyAuthInfo,
@@ -2720,7 +2720,7 @@ fun ChatScreen(
                     Icon(
                         imageVector = Icons.Default.Cancel,
                         contentDescription = null,
-                        tint = com.example.gemini.theme.AppColors.danger,
+                        tint = com.shriram.cinecode.theme.AppColors.danger,
                         modifier = Modifier.size(22.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -2741,7 +2741,7 @@ fun ChatScreen(
                     Spacer(modifier = Modifier.height(6.dp))
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = com.example.gemini.theme.AppColors.terminalBg,
+                        color = com.shriram.cinecode.theme.AppColors.terminalBg,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
@@ -2827,7 +2827,7 @@ fun ChatScreen(
 
     // Local Server Output & Logs Dialog
     if (showLocalServerOutputDialog) {
-        com.example.gemini.ui.components.LocalServerOutputDialog(
+        com.shriram.cinecode.ui.components.LocalServerOutputDialog(
             onDismiss = { showLocalServerOutputDialog = false }
         )
     }
@@ -2852,15 +2852,15 @@ fun ChatScreen(
     // Terminal Launcher First-Launch Onboarding Dialog: tells users the separate terminal icon exists,
     // with "hidden" preselected (the icon is off by default; most users only need the in-app terminal)
     if (!hasSeenTerminalLauncherOnboarding && !isInFloatingWindow) {
-        com.example.gemini.ui.onboarding.TerminalLauncherOnboardingDialog(
-            initialEnabled = remember(context) { com.example.gemini.data.preferences.TerminalLauncherManager.isLauncherEnabled(context) },
-            initialStyle = remember(context) { com.example.gemini.data.preferences.TerminalLauncherManager.getLauncherStyle(context) },
+        com.shriram.cinecode.ui.onboarding.TerminalLauncherOnboardingDialog(
+            initialEnabled = remember(context) { com.shriram.cinecode.data.preferences.TerminalLauncherManager.isLauncherEnabled(context) },
+            initialStyle = remember(context) { com.shriram.cinecode.data.preferences.TerminalLauncherManager.getLauncherStyle(context) },
             onConfirm = { enabled, style ->
                 scope.launch {
                     viewModel.authPreferences.setTerminalLauncherEnabled(enabled)
                     viewModel.authPreferences.setTerminalLauncherStyle(style)
                     viewModel.authPreferences.setHasSeenTerminalLauncherOnboarding(true)
-                    com.example.gemini.data.preferences.TerminalLauncherManager.applyLauncherSetting(
+                    com.shriram.cinecode.data.preferences.TerminalLauncherManager.applyLauncherSetting(
                         context = context,
                         enabled = enabled,
                         style = style
@@ -2996,7 +2996,7 @@ fun ChatScreen(
     }
 
     if (showGitCloneDialog) {
-        com.example.gemini.ui.components.GitCloneDialog(
+        com.shriram.cinecode.ui.components.GitCloneDialog(
             onCloned = { clonedProj ->
                 showGitCloneDialog = false
                 TermuxDaemonManager.setActiveProject(clonedProj)
@@ -3007,7 +3007,7 @@ fun ChatScreen(
     }
 
     if (showWorkspaceFolderBrowserDialog) {
-        com.example.gemini.ui.files.FileExplorerDialog(
+        com.shriram.cinecode.ui.files.FileExplorerDialog(
             stateKey = "chat_workspace",
             title = "Choose the chat's project folder",
             confirmLabel = "Use this folder",
@@ -3125,14 +3125,14 @@ fun ChatScreen(
 
     // Network Inspector Dialog (DevTools from Settings)
     if (showNetworkInspectorDialog) {
-        com.example.gemini.ui.components.NetworkInspectorDialog(
+        com.shriram.cinecode.ui.components.NetworkInspectorDialog(
             onDismiss = { showNetworkInspectorDialog = false }
         )
     }
 
     // Floating theme picker: above the sidebar and the chat, touches outside it still reach them
     if (showThemePanel) {
-        com.example.gemini.ui.settings.ThemeQuickPanel(
+        com.shriram.cinecode.ui.settings.ThemeQuickPanel(
             themeMode = themeMode,
             onSetThemeMode = { viewModel.setThemeMode(it) },
             onClose = { showThemePanel = false },
@@ -3150,18 +3150,18 @@ fun ChatToastBanner(
     modifier: Modifier = Modifier
 ) {
     val bgColor = when (toast.type) {
-        ChatToastType.SUCCESS -> com.example.gemini.theme.AppColors.successContainer
-        ChatToastType.ERROR -> com.example.gemini.theme.AppColors.dangerContainer
-        ChatToastType.INFO -> com.example.gemini.theme.AppColors.card
+        ChatToastType.SUCCESS -> com.shriram.cinecode.theme.AppColors.successContainer
+        ChatToastType.ERROR -> com.shriram.cinecode.theme.AppColors.dangerContainer
+        ChatToastType.INFO -> com.shriram.cinecode.theme.AppColors.card
     }
     val borderColor = when (toast.type) {
-        ChatToastType.SUCCESS -> com.example.gemini.theme.AppColors.success.copy(alpha = 0.7f)
-        ChatToastType.ERROR -> com.example.gemini.theme.AppColors.danger.copy(alpha = 0.7f)
+        ChatToastType.SUCCESS -> com.shriram.cinecode.theme.AppColors.success.copy(alpha = 0.7f)
+        ChatToastType.ERROR -> com.shriram.cinecode.theme.AppColors.danger.copy(alpha = 0.7f)
         ChatToastType.INFO -> ClaudeTerracotta.copy(alpha = 0.7f)
     }
     val iconColor = when (toast.type) {
-        ChatToastType.SUCCESS -> com.example.gemini.theme.AppColors.success
-        ChatToastType.ERROR -> com.example.gemini.theme.AppColors.danger
+        ChatToastType.SUCCESS -> com.shriram.cinecode.theme.AppColors.success
+        ChatToastType.ERROR -> com.shriram.cinecode.theme.AppColors.danger
         ChatToastType.INFO -> ClaudeTerracotta
     }
     val icon = when (toast.type) {
@@ -3169,7 +3169,7 @@ fun ChatToastBanner(
         ChatToastType.ERROR -> Icons.Outlined.ErrorOutline
         ChatToastType.INFO -> Icons.Outlined.Info
     }
-    val textColor = com.example.gemini.theme.AppColors.onBackground
+    val textColor = com.shriram.cinecode.theme.AppColors.onBackground
 
     Surface(
         modifier = modifier
@@ -3227,8 +3227,8 @@ private data class SlashTrigger(val index: Int, val query: String, val nothingBe
 /** An `@file` mention being typed (no space after it yet): where its `@` is and the text after it. */
 private data class MentionTrigger(val index: Int, val query: String)
 
-private fun flattenFileNodes(nodes: List<com.example.gemini.data.daemon.FileNode>): List<com.example.gemini.data.daemon.FileNode> {
-    val result = mutableListOf<com.example.gemini.data.daemon.FileNode>()
+private fun flattenFileNodes(nodes: List<com.shriram.cinecode.data.daemon.FileNode>): List<com.shriram.cinecode.data.daemon.FileNode> {
+    val result = mutableListOf<com.shriram.cinecode.data.daemon.FileNode>()
     for (node in nodes) {
         if (!node.isDir) {
             result.add(node)

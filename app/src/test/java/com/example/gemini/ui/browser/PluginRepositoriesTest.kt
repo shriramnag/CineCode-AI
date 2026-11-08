@@ -1,4 +1,4 @@
-package com.example.gemini.ui.browser
+package com.shriram.cinecode.ui.browser
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull

@@ -1,10 +1,10 @@
-package com.example.gemini.data.remote.services
+package com.shriram.cinecode.data.remote.services
 
 import android.util.Log
-import com.example.gemini.data.preferences.AuthPreferences
-import com.example.gemini.data.remote.AgyHubClient.GlobalPermissionGrants
-import com.example.gemini.data.remote.AgyHubClient.GlobalUserSettings
-import com.example.gemini.data.remote.AgyHubClient.ProjectItem
+import com.shriram.cinecode.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.remote.AgyHubClient.GlobalPermissionGrants
+import com.shriram.cinecode.data.remote.AgyHubClient.GlobalUserSettings
+import com.shriram.cinecode.data.remote.AgyHubClient.ProjectItem
 import exa.language_server_pb.AgentPermissionPreset
 import exa.language_server_pb.AgentSettingPolicy
 import exa.language_server_pb.ArtifactReviewMode

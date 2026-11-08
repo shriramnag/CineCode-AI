@@ -1,4 +1,4 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.*
@@ -24,10 +24,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.example.gemini.theme.ClaudeTerracotta
-import com.example.gemini.theme.ClaudeThinkingDark
-import com.example.gemini.theme.ClaudeThinkingLight
-import com.example.gemini.theme.QuotaGreen
+import com.shriram.cinecode.theme.ClaudeTerracotta
+import com.shriram.cinecode.theme.ClaudeThinkingDark
+import com.shriram.cinecode.theme.ClaudeThinkingLight
+import com.shriram.cinecode.theme.QuotaGreen
 
 /**
  * Collapsible & Editable Summary Card shown at the top of the chat

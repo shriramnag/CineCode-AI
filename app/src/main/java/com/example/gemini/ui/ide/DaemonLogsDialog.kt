@@ -1,4 +1,4 @@
-package com.example.gemini.ui.ide
+package com.shriram.cinecode.ui.ide
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -20,8 +20,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gemini.data.daemon.DaemonStatus
-import com.example.gemini.data.daemon.TermuxDaemonManager
+import com.shriram.cinecode.data.daemon.DaemonStatus
+import com.shriram.cinecode.data.daemon.TermuxDaemonManager
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -75,9 +75,9 @@ fun DaemonLogsDialog(
                 Surface(
                     shape = RoundedCornerShape(8.dp),
                     color = when (status) {
-                        DaemonStatus.RUNNING -> com.example.gemini.theme.AppColors.success
-                        DaemonStatus.STARTING -> com.example.gemini.theme.AppColors.warning
-                        else -> com.example.gemini.theme.AppColors.danger
+                        DaemonStatus.RUNNING -> com.shriram.cinecode.theme.AppColors.success
+                        DaemonStatus.STARTING -> com.shriram.cinecode.theme.AppColors.warning
+                        else -> com.shriram.cinecode.theme.AppColors.danger
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -144,7 +144,7 @@ fun DaemonLogsDialog(
                 // Terminal Log Console
                 Surface(
                     shape = RoundedCornerShape(6.dp),
-                    color = com.example.gemini.theme.AppColors.editorBg,
+                    color = com.shriram.cinecode.theme.AppColors.editorBg,
                     modifier = Modifier
                         .fillMaxSize()
                         .weight(1f)
@@ -171,10 +171,10 @@ fun DaemonLogsDialog(
                                         fontFamily = FontFamily.Monospace,
                                         fontSize = 11.sp,
                                         color = when {
-                                            logLine.contains("🎉") || logLine.contains("✅") -> com.example.gemini.theme.AppColors.success
-                                            logLine.contains("❌") -> com.example.gemini.theme.AppColors.danger
-                                            logLine.contains("SSH Execution Output") -> com.example.gemini.theme.AppColors.info
-                                            else -> com.example.gemini.theme.AppColors.editorText
+                                            logLine.contains("🎉") || logLine.contains("✅") -> com.shriram.cinecode.theme.AppColors.success
+                                            logLine.contains("❌") -> com.shriram.cinecode.theme.AppColors.danger
+                                            logLine.contains("SSH Execution Output") -> com.shriram.cinecode.theme.AppColors.info
+                                            else -> com.shriram.cinecode.theme.AppColors.editorText
                                         }
                                     ),
                                     modifier = Modifier.padding(vertical = 2.dp)

@@ -1,4 +1,4 @@
-package com.example.gemini.data.files
+package com.shriram.cinecode.data.files
 
 import android.content.ActivityNotFoundException
 import android.content.ClipData

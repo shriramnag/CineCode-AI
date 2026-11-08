@@ -1,8 +1,8 @@
-package com.example.gemini.data.daemon
+package com.shriram.cinecode.data.daemon
 
 import android.content.Context
 import android.util.Log
-import com.example.gemini.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.preferences.AuthPreferences
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -73,11 +73,11 @@ object TermuxDaemonManager {
     private val _openTabs = MutableStateFlow<List<OpenTab>>(emptyList())
     val openTabs: StateFlow<List<OpenTab>> = _openTabs.asStateFlow()
 
-    suspend fun loadProjects(conversations: List<com.example.gemini.domain.model.Conversation> = emptyList()): List<ProjectItem> = withContext(Dispatchers.IO) {
+    suspend fun loadProjects(conversations: List<com.shriram.cinecode.domain.model.Conversation> = emptyList()): List<ProjectItem> = withContext(Dispatchers.IO) {
         var daemonList = IdeApiClient.getProjects()
         if (daemonList.isEmpty()) {
             val httpUrl = AuthPreferences.currentBridgeHttpUrl
-            val res = com.example.gemini.data.remote.AgyBridgeService().fetchProjects(httpUrl)
+            val res = com.shriram.cinecode.data.remote.AgyBridgeService().fetchProjects(httpUrl)
             if (res.isSuccess) {
                 daemonList = res.getOrThrow().map { ProjectItem(it.name, it.path) }
             }
@@ -108,15 +108,15 @@ object TermuxDaemonManager {
 
         // Reactively observe unified bridge system connection state (zero polling)
         scope.launch {
-            com.example.gemini.data.remote.AgyBridgeService.instance.systemConnectionState.collect { state ->
+            com.shriram.cinecode.data.remote.AgyBridgeService.instance.systemConnectionState.collect { state ->
                 when (state) {
-                    is com.example.gemini.data.remote.SystemConnectionState.Connected -> {
+                    is com.shriram.cinecode.data.remote.SystemConnectionState.Connected -> {
                         _status.value = DaemonStatus.RUNNING
                         val ep = AuthPreferences.currentBridgeHttpUrl.removePrefix("http://").removePrefix("https://")
                         _statusMessage.value = "Running on $ep"
                     }
-                    is com.example.gemini.data.remote.SystemConnectionState.Offline,
-                    is com.example.gemini.data.remote.SystemConnectionState.Error -> {
+                    is com.shriram.cinecode.data.remote.SystemConnectionState.Offline,
+                    is com.shriram.cinecode.data.remote.SystemConnectionState.Error -> {
                         _status.value = DaemonStatus.ERROR
                         val ep = AuthPreferences.currentBridgeHttpUrl.removePrefix("http://").removePrefix("https://")
                         _statusMessage.value = "Server Offline ($ep)"

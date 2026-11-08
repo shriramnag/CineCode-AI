@@ -1,4 +1,4 @@
-package com.example.gemini.data.remote.core
+package com.shriram.cinecode.data.remote.core
 
 import android.util.Log
 import kotlinx.coroutines.flow.MutableSharedFlow

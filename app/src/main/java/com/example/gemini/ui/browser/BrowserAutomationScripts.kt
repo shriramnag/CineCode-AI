@@ -1,4 +1,4 @@
-package com.example.gemini.ui.browser
+package com.shriram.cinecode.ui.browser
 
 /** Input and viewport control shared by all browser extensions. */
 object BrowserAutomationScripts {

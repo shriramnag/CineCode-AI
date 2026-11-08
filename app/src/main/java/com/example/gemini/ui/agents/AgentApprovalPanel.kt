@@ -1,4 +1,4 @@
-package com.example.gemini.ui.agents
+package com.shriram.cinecode.ui.agents
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
@@ -56,13 +56,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gemini.domain.model.AgentKind
-import com.example.gemini.ui.components.MarkdownContent
-import com.example.gemini.ui.components.accent
-import com.example.gemini.ui.components.label
+import com.shriram.cinecode.domain.model.AgentKind
+import com.shriram.cinecode.ui.components.MarkdownContent
+import com.shriram.cinecode.ui.components.accent
+import com.shriram.cinecode.ui.components.label
 
-private val AllowGreen: androidx.compose.ui.graphics.Color get() = com.example.gemini.theme.AppColors.success
-private val DenyRed: androidx.compose.ui.graphics.Color get() = com.example.gemini.theme.AppColors.danger
+private val AllowGreen: androidx.compose.ui.graphics.Color get() = com.shriram.cinecode.theme.AppColors.success
+private val DenyRed: androidx.compose.ui.graphics.Color get() = com.shriram.cinecode.theme.AppColors.danger
 
 class ApprovalChoice(val label: String, val description: String? = null, val onClick: () -> Unit)
 
@@ -325,7 +325,7 @@ private fun previewText(raw: String): AnnotatedString = buildAnnotatedString {
             line.startsWith("+ ") -> withStyle(SpanStyle(color = AllowGreen)) { append(line) }
             line.startsWith("- ") -> withStyle(SpanStyle(color = DenyRed)) { append(line) }
             line.startsWith("$ ") -> withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(line) }
-            line.startsWith("# ") -> withStyle(SpanStyle(color = com.example.gemini.theme.AppColors.textSecondary)) { append(line) }
+            line.startsWith("# ") -> withStyle(SpanStyle(color = com.shriram.cinecode.theme.AppColors.textSecondary)) { append(line) }
             else -> append(line)
         }
     }

@@ -1,4 +1,4 @@
-package com.example.gemini.ui.agents
+package com.shriram.cinecode.ui.agents
 
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -35,9 +35,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gemini.domain.model.AgentKind
-import com.example.gemini.ui.components.accent
-import com.example.gemini.ui.components.label
+import com.shriram.cinecode.domain.model.AgentKind
+import com.shriram.cinecode.ui.components.accent
+import com.shriram.cinecode.ui.components.label
 
 /** Sheet header shared by both agents' pickers: agent mark, title, "Agent · detail" line, refresh. */
 @Composable

@@ -1,4 +1,4 @@
-package com.example.gemini.ui.ide
+package com.shriram.cinecode.ui.ide
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -20,7 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gemini.theme.ClaudeTerracotta
+import com.shriram.cinecode.theme.ClaudeTerracotta
 import java.io.File
 
 sealed class DiffLineType {
@@ -65,11 +65,11 @@ fun UnifiedDiffViewer(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(com.example.gemini.theme.AppColors.editorBg)
+            .background(com.shriram.cinecode.theme.AppColors.editorBg)
     ) {
         // --- 1. Diff Header Toolbar ---
         Surface(
-            color = com.example.gemini.theme.AppColors.editorPanel,
+            color = com.shriram.cinecode.theme.AppColors.editorPanel,
             tonalElevation = 2.dp,
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -97,7 +97,7 @@ fun UnifiedDiffViewer(
                             fontSize = 13.5.sp,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            color = com.example.gemini.theme.AppColors.editorText,
+                            color = com.shriram.cinecode.theme.AppColors.editorText,
                             modifier = Modifier.weight(1f, fill = false)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
@@ -105,8 +105,8 @@ fun UnifiedDiffViewer(
                             shape = RoundedCornerShape(4.dp),
                             color = when {
                                 commitHash != null -> ClaudeTerracotta.copy(alpha = 0.25f)
-                                isStaged -> com.example.gemini.theme.AppColors.success.copy(alpha = 0.25f)
-                                else -> com.example.gemini.theme.AppColors.warning.copy(alpha = 0.25f)
+                                isStaged -> com.shriram.cinecode.theme.AppColors.success.copy(alpha = 0.25f)
+                                else -> com.shriram.cinecode.theme.AppColors.warning.copy(alpha = 0.25f)
                             }
                         ) {
                             Text(
@@ -120,8 +120,8 @@ fun UnifiedDiffViewer(
                                 maxLines = 1,
                                 color = when {
                                     commitHash != null -> ClaudeTerracotta
-                                    isStaged -> com.example.gemini.theme.AppColors.success
-                                    else -> com.example.gemini.theme.AppColors.warning
+                                    isStaged -> com.shriram.cinecode.theme.AppColors.success
+                                    else -> com.shriram.cinecode.theme.AppColors.warning
                                 },
                                 modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
                             )
@@ -132,7 +132,7 @@ fun UnifiedDiffViewer(
                         fontSize = 11.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        color = com.example.gemini.theme.AppColors.editorMuted
+                        color = com.shriram.cinecode.theme.AppColors.editorMuted
                     )
                 }
 
@@ -142,12 +142,12 @@ fun UnifiedDiffViewer(
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
-                        .background(com.example.gemini.theme.AppColors.editorBg, RoundedCornerShape(4.dp))
+                        .background(com.shriram.cinecode.theme.AppColors.editorBg, RoundedCornerShape(4.dp))
                         .padding(horizontal = 6.dp, vertical = 2.dp)
                 ) {
-                    Text(text = "+$additionsCount", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = com.example.gemini.theme.AppColors.success)
+                    Text(text = "+$additionsCount", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = com.shriram.cinecode.theme.AppColors.success)
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = "-$deletionsCount", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = com.example.gemini.theme.AppColors.danger)
+                    Text(text = "-$deletionsCount", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = com.shriram.cinecode.theme.AppColors.danger)
                 }
 
                 Spacer(modifier = Modifier.width(6.dp))
@@ -160,7 +160,7 @@ fun UnifiedDiffViewer(
                     Icon(
                         imageVector = Icons.Default.Edit,
                         contentDescription = "Open Current File (Editable)",
-                        tint = com.example.gemini.theme.AppColors.success,
+                        tint = com.shriram.cinecode.theme.AppColors.success,
                         modifier = Modifier.size(17.dp)
                     )
                 }
@@ -186,7 +186,7 @@ fun UnifiedDiffViewer(
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = "Close Diff",
-                        tint = com.example.gemini.theme.AppColors.editorMuted,
+                        tint = com.shriram.cinecode.theme.AppColors.editorMuted,
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -231,11 +231,11 @@ fun UnifiedDiffViewer(
 @Composable
 private fun DiffLineRow(line: ParsedDiffLine) {
     val (bgColor, textColor, gutterSign) = when (line.type) {
-        DiffLineType.Addition -> Triple(com.example.gemini.theme.AppColors.editorAddedBg, com.example.gemini.theme.AppColors.editorAddedText, "+")
-        DiffLineType.Deletion -> Triple(com.example.gemini.theme.AppColors.editorRemovedBg, com.example.gemini.theme.AppColors.editorRemovedText, "-")
-        DiffLineType.HunkHeader -> Triple(com.example.gemini.theme.AppColors.editorInfoBg, com.example.gemini.theme.AppColors.editorInfoText, "@")
-        DiffLineType.Meta -> Triple(com.example.gemini.theme.AppColors.editorPanel, com.example.gemini.theme.AppColors.editorMuted, " ")
-        DiffLineType.Context -> Triple(Color.Transparent, com.example.gemini.theme.AppColors.editorText, " ")
+        DiffLineType.Addition -> Triple(com.shriram.cinecode.theme.AppColors.editorAddedBg, com.shriram.cinecode.theme.AppColors.editorAddedText, "+")
+        DiffLineType.Deletion -> Triple(com.shriram.cinecode.theme.AppColors.editorRemovedBg, com.shriram.cinecode.theme.AppColors.editorRemovedText, "-")
+        DiffLineType.HunkHeader -> Triple(com.shriram.cinecode.theme.AppColors.editorInfoBg, com.shriram.cinecode.theme.AppColors.editorInfoText, "@")
+        DiffLineType.Meta -> Triple(com.shriram.cinecode.theme.AppColors.editorPanel, com.shriram.cinecode.theme.AppColors.editorMuted, " ")
+        DiffLineType.Context -> Triple(Color.Transparent, com.shriram.cinecode.theme.AppColors.editorText, " ")
     }
 
     Row(
@@ -249,7 +249,7 @@ private fun DiffLineRow(line: ParsedDiffLine) {
         Row(
             modifier = Modifier
                 .width(68.dp)
-                .background(com.example.gemini.theme.AppColors.editorBg)
+                .background(com.shriram.cinecode.theme.AppColors.editorBg)
                 .padding(horizontal = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -257,13 +257,13 @@ private fun DiffLineRow(line: ParsedDiffLine) {
                 text = line.oldLineNum?.toString() ?: "",
                 fontFamily = FontFamily.Monospace,
                 fontSize = 11.sp,
-                color = com.example.gemini.theme.AppColors.editorMuted
+                color = com.shriram.cinecode.theme.AppColors.editorMuted
             )
             Text(
                 text = line.newLineNum?.toString() ?: "",
                 fontFamily = FontFamily.Monospace,
                 fontSize = 11.sp,
-                color = com.example.gemini.theme.AppColors.editorMuted
+                color = com.shriram.cinecode.theme.AppColors.editorMuted
             )
         }
 

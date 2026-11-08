@@ -1,4 +1,4 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import android.content.ContentValues
 import android.content.Context
@@ -13,11 +13,11 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.core.content.FileProvider
-import com.example.gemini.data.remote.AgyHubClient
-import com.example.gemini.domain.chat.TrajectoryEngine
-import com.example.gemini.domain.model.ChatMessage
-import com.example.gemini.domain.model.MessageRole
-import com.example.gemini.domain.model.ToolCall
+import com.shriram.cinecode.data.remote.AgyHubClient
+import com.shriram.cinecode.domain.chat.TrajectoryEngine
+import com.shriram.cinecode.domain.model.ChatMessage
+import com.shriram.cinecode.domain.model.MessageRole
+import com.shriram.cinecode.domain.model.ToolCall
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File

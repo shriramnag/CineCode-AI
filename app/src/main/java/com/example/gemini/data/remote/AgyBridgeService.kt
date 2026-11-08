@@ -1,13 +1,13 @@
-package com.example.gemini.data.remote
+package com.shriram.cinecode.data.remote
 
 import android.util.Log
-import com.example.gemini.data.preferences.AuthPreferences
-import com.example.gemini.data.remote.core.AgyCsrfManager
-import com.example.gemini.domain.model.AiModel
-import com.example.gemini.domain.model.ChatMessage
-import com.example.gemini.domain.model.MessageRole
-import com.example.gemini.domain.model.TokenUsage
-import com.example.gemini.domain.model.ToolCall
+import com.shriram.cinecode.data.preferences.AuthPreferences
+import com.shriram.cinecode.data.remote.core.AgyCsrfManager
+import com.shriram.cinecode.domain.model.AiModel
+import com.shriram.cinecode.domain.model.ChatMessage
+import com.shriram.cinecode.domain.model.MessageRole
+import com.shriram.cinecode.domain.model.TokenUsage
+import com.shriram.cinecode.domain.model.ToolCall
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
@@ -65,7 +65,7 @@ enum class BridgeConnectionState {
 
 data class AgyHubStatus(
     val status: String = "idle", // "idle", "starting", "online", "error", "stopped"
-    val port: String = com.example.gemini.BuildConfig.HUB_PORT.toString(),
+    val port: String = com.shriram.cinecode.BuildConfig.HUB_PORT.toString(),
     val csrfToken: String? = null,
     val error: String? = null,
     val logs: List<String> = emptyList()
@@ -92,7 +92,7 @@ sealed class AgyStreamEvent {
         val activeTools: List<ToolCall> = emptyList()
     ) : AgyStreamEvent()
 
-    data class QuotaUpdate(val quotaSummary: com.example.gemini.domain.model.QuotaSummaryResponse) : AgyStreamEvent()
+    data class QuotaUpdate(val quotaSummary: com.shriram.cinecode.domain.model.QuotaSummaryResponse) : AgyStreamEvent()
     data class Completed(
         val tokenUsage: TokenUsage?,
         val conversationId: String? = null,
@@ -118,8 +118,8 @@ class AgyBridgeService(
             chain.proceed(b.build())
         }
         .apply {
-            if (com.example.gemini.data.remote.inspector.NetworkInspectorManager.isEnabled) {
-                addInterceptor(com.example.gemini.data.remote.inspector.NetworkInspectorInterceptor("IDE Bridge (HTTP)"))
+            if (com.shriram.cinecode.data.remote.inspector.NetworkInspectorManager.isEnabled) {
+                addInterceptor(com.shriram.cinecode.data.remote.inspector.NetworkInspectorInterceptor("IDE Bridge (HTTP)"))
             }
         }
         .build()
@@ -143,8 +143,8 @@ class AgyBridgeService(
             chain.proceed(b.build())
         }
         .apply {
-            if (com.example.gemini.data.remote.inspector.NetworkInspectorManager.isEnabled) {
-                addInterceptor(com.example.gemini.data.remote.inspector.NetworkInspectorInterceptor("IDE Bridge (HTTP)"))
+            if (com.shriram.cinecode.data.remote.inspector.NetworkInspectorManager.isEnabled) {
+                addInterceptor(com.shriram.cinecode.data.remote.inspector.NetworkInspectorInterceptor("IDE Bridge (HTTP)"))
             }
         }
         .build()
@@ -311,7 +311,7 @@ class AgyBridgeService(
     suspend fun fetchQuotas(
         httpBaseUrl: String = AuthPreferences.currentBridgeHttpUrl,
         force: Boolean = false
-    ): Result<com.example.gemini.domain.model.QuotaSummaryResponse> = withContext(Dispatchers.IO) {
+    ): Result<com.shriram.cinecode.domain.model.QuotaSummaryResponse> = withContext(Dispatchers.IO) {
         try {
             if (!awaitBridgeReady()) {
                 return@withContext Result.failure(Exception("IDE Bridge is offline"))
@@ -337,9 +337,9 @@ class AgyBridgeService(
         }
     }
 
-    fun parseQuotaSummary(json: JSONObject): com.example.gemini.domain.model.QuotaSummaryResponse {
+    fun parseQuotaSummary(json: JSONObject): com.shriram.cinecode.domain.model.QuotaSummaryResponse {
         val groupsArr = json.optJSONArray("groups") ?: JSONArray()
-        val groupsList = mutableListOf<com.example.gemini.domain.model.ModelQuotaGroup>()
+        val groupsList = mutableListOf<com.shriram.cinecode.domain.model.ModelQuotaGroup>()
 
         for (i in 0 until groupsArr.length()) {
             val groupObj = groupsArr.getJSONObject(i)
@@ -364,7 +364,7 @@ class AgyBridgeService(
                 val cd = it.optString("countdown", "").ifBlank {
                     AgyHubClient.formatQuotaResetCountdown(rTime)
                 }
-                com.example.gemini.domain.model.QuotaWindowInfo(
+                com.shriram.cinecode.domain.model.QuotaWindowInfo(
                     window = it.optString("window", "5h"),
                     displayName = it.optString("displayName", ""),
                     remainingFraction = it.optDouble("remainingFraction", 1.0).toFloat(),
@@ -382,7 +382,7 @@ class AgyBridgeService(
                 val cd = it.optString("countdown", "").ifBlank {
                     AgyHubClient.formatQuotaResetCountdown(rTime)
                 }
-                com.example.gemini.domain.model.QuotaWindowInfo(
+                com.shriram.cinecode.domain.model.QuotaWindowInfo(
                     window = it.optString("window", "weekly"),
                     displayName = it.optString("displayName", ""),
                     remainingFraction = it.optDouble("remainingFraction", 1.0).toFloat(),
@@ -395,7 +395,7 @@ class AgyBridgeService(
             }
 
             groupsList.add(
-                com.example.gemini.domain.model.ModelQuotaGroup(
+                com.shriram.cinecode.domain.model.ModelQuotaGroup(
                     groupId = gId,
                     groupName = groupName,
                     description = desc,
@@ -405,7 +405,7 @@ class AgyBridgeService(
             )
         }
 
-        return com.example.gemini.domain.model.QuotaSummaryResponse(
+        return com.shriram.cinecode.domain.model.QuotaSummaryResponse(
             groups = groupsList,
             lastUpdated = json.optString("lastUpdated", "")
         )
@@ -427,7 +427,7 @@ class AgyBridgeService(
                     val json = JSONObject(body)
                     val hubObj = json.optJSONObject("hub")
                     val st = hubObj?.optString("status", if (hubObj.optBoolean("active", false)) "online" else "stopped") ?: "stopped"
-                    val p = java.net.URI(AuthPreferences.currentHubUrl).port.takeIf { it > 0 }?.toString() ?: com.example.gemini.BuildConfig.HUB_PORT.toString()
+                    val p = java.net.URI(AuthPreferences.currentHubUrl).port.takeIf { it > 0 }?.toString() ?: com.shriram.cinecode.BuildConfig.HUB_PORT.toString()
                     val csrf = hubObj?.optString("csrf_token")?.takeIf { it.isNotBlank() }
                     val err = hubObj?.optString("error")?.takeIf { it.isNotBlank() }
                     val logsArr = hubObj?.optJSONArray("logs")
@@ -486,7 +486,7 @@ class AgyBridgeService(
                         "hub_status" -> {
                             val st = root.optString("status", "idle")
                             val p = root.optString("port").takeIf { it.isNotBlank() }
-                                ?: java.net.URI(AuthPreferences.currentHubUrl).port.takeIf { it > 0 }?.toString() ?: com.example.gemini.BuildConfig.HUB_PORT.toString()
+                                ?: java.net.URI(AuthPreferences.currentHubUrl).port.takeIf { it > 0 }?.toString() ?: com.shriram.cinecode.BuildConfig.HUB_PORT.toString()
                             val csrf = root.optString("csrf_token").takeIf { it.isNotBlank() }
                                 ?: root.optString("csrfToken").takeIf { it.isNotBlank() }
                             val err = root.optString("error").takeIf { it.isNotBlank() }
@@ -726,7 +726,7 @@ class AgyBridgeService(
         base64Data: String,
         projectPath: String? = null,
         httpBaseUrl: String = AuthPreferences.currentBridgeHttpUrl
-    ): Result<com.example.gemini.domain.model.ChatAttachment> = withContext(Dispatchers.IO) {
+    ): Result<com.shriram.cinecode.domain.model.ChatAttachment> = withContext(Dispatchers.IO) {
         try {
             val payload = JSONObject().apply {
                 put("filename", filename)
@@ -747,7 +747,7 @@ class AgyBridgeService(
                 }
                 val body = response.body?.string() ?: "{}"
                 val obj = JSONObject(body)
-                val att = com.example.gemini.domain.model.ChatAttachment(
+                val att = com.shriram.cinecode.domain.model.ChatAttachment(
                     id = obj.optString("id", "att_${System.currentTimeMillis()}"),
                     name = obj.optString("name", filename),
                     path = obj.optString("path", ""),
@@ -786,8 +786,8 @@ class AgyBridgeService(
                     val obj = arr.getJSONObject(i)
                     val roleStr = obj.optString("role", "user")
                     val role =
-                        if (roleStr == "agent" || roleStr == "assistant") com.example.gemini.domain.model.MessageRole.ASSISTANT
-                        else com.example.gemini.domain.model.MessageRole.USER
+                        if (roleStr == "agent" || roleStr == "assistant") com.shriram.cinecode.domain.model.MessageRole.ASSISTANT
+                        else com.shriram.cinecode.domain.model.MessageRole.USER
                     val content = obj.optString("content", "")
                     val thinking = obj.optString("thinking").takeIf { it.isNotBlank() }
 
@@ -820,7 +820,7 @@ class AgyBridgeService(
                     val contextSummary = obj.optString("contextSummary").takeIf { it.isNotBlank() && it != "null" }
                     val stepIndex = if (obj.has("stepIndex")) obj.optInt("stepIndex") else null
 
-                    var tokenUsage: com.example.gemini.domain.model.TokenUsage? = null
+                    var tokenUsage: com.shriram.cinecode.domain.model.TokenUsage? = null
                     val usageObj = obj.optJSONObject("tokenUsage")
                     if (usageObj != null) {
                         val inTok = usageObj.optInt("inputTokens", 0)
@@ -828,7 +828,7 @@ class AgyBridgeService(
                         val cacheTok = usageObj.optInt("cacheReadTokens", 0)
                         val totalTok = usageObj.optInt("totalTokens", inTok + outTok)
                         val dur = (obj.optDouble("durationSeconds", 0.0) * 1000).toLong()
-                        tokenUsage = com.example.gemini.domain.model.TokenUsage(
+                        tokenUsage = com.shriram.cinecode.domain.model.TokenUsage(
                             promptTokens = inTok,
                             outputTokens = outTok,
                             cachedTokens = cacheTok,

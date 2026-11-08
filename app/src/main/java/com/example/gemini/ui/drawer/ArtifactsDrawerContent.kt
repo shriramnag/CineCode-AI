@@ -1,4 +1,4 @@
-package com.example.gemini.ui.drawer
+package com.shriram.cinecode.ui.drawer
 
 import android.content.Context
 import androidx.compose.animation.*
@@ -30,13 +30,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.example.gemini.domain.model.ArtifactSnapshot
-import com.example.gemini.theme.ClaudeTerracotta
-import com.example.gemini.theme.GeminiBlue
-import com.example.gemini.ui.components.ArtifactDownloadHelper
-import com.example.gemini.ui.components.FullScreenImageDialog
-import com.example.gemini.ui.components.LocalFileLinkHandler
-import com.example.gemini.ui.components.LocalSnackbarHostState
+import com.shriram.cinecode.domain.model.ArtifactSnapshot
+import com.shriram.cinecode.theme.ClaudeTerracotta
+import com.shriram.cinecode.theme.GeminiBlue
+import com.shriram.cinecode.ui.components.ArtifactDownloadHelper
+import com.shriram.cinecode.ui.components.FullScreenImageDialog
+import com.shriram.cinecode.ui.components.LocalFileLinkHandler
+import com.shriram.cinecode.ui.components.LocalSnackbarHostState
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -281,7 +281,7 @@ private fun ArtifactCardItem(
                     val (icon, bgTint, iconTint) = when {
                         isPlan -> Triple(Icons.Outlined.AutoAwesome, ClaudeTerracotta.copy(alpha = 0.16f), ClaudeTerracotta)
                         isWalkthrough -> Triple(Icons.Outlined.Description, GeminiBlue.copy(alpha = 0.16f), GeminiBlue)
-                        else -> Triple(Icons.AutoMirrored.Outlined.InsertDriveFile, com.example.gemini.theme.AppColors.accentTeal.copy(alpha = 0.16f), com.example.gemini.theme.AppColors.accentTeal)
+                        else -> Triple(Icons.AutoMirrored.Outlined.InsertDriveFile, com.shriram.cinecode.theme.AppColors.accentTeal.copy(alpha = 0.16f), com.shriram.cinecode.theme.AppColors.accentTeal)
                     }
                     Box(
                         modifier = Modifier

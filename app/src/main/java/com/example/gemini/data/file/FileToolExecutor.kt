@@ -1,7 +1,7 @@
-package com.example.gemini.data.file
+package com.shriram.cinecode.data.file
 
 import android.util.Log
-import com.example.gemini.data.ssh.TermuxSshManager
+import com.shriram.cinecode.data.ssh.TermuxSshManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject

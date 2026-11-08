@@ -1,4 +1,4 @@
-package com.example.gemini
+package com.shriram.cinecode
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -7,10 +7,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import com.example.gemini.data.preferences.AuthPreferences
-import com.example.gemini.theme.GeminiTheme
-import com.example.gemini.theme.isSystemInDarkThemeRobust
-import com.example.gemini.ui.components.LocalTerminalDialog
+import com.shriram.cinecode.data.preferences.AuthPreferences
+import com.shriram.cinecode.theme.GeminiTheme
+import com.shriram.cinecode.theme.isSystemInDarkThemeRobust
+import com.shriram.cinecode.ui.components.LocalTerminalDialog
 
 class TermuxActivity : ComponentActivity() {
 
@@ -19,7 +19,7 @@ class TermuxActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        com.example.gemini.data.service.TermuxService.start(this)
+        com.shriram.cinecode.data.service.TermuxService.start(this)
 
         setContent {
             val initialThemeMode = remember { authPreferences.getThemeModeSync() }

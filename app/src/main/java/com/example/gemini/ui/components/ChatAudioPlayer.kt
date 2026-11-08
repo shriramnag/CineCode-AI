@@ -1,4 +1,4 @@
-package com.example.gemini.ui.components
+package com.shriram.cinecode.ui.components
 
 import android.media.MediaPlayer
 import android.net.Uri
@@ -26,9 +26,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gemini.data.preferences.AuthPreferences
-import com.example.gemini.domain.model.ChatAttachment
-import com.example.gemini.theme.ClaudeTerracotta
+import com.shriram.cinecode.data.preferences.AuthPreferences
+import com.shriram.cinecode.domain.model.ChatAttachment
+import com.shriram.cinecode.theme.ClaudeTerracotta
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch

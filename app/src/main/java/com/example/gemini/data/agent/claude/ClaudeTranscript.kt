@@ -1,14 +1,14 @@
-package com.example.gemini.data.agent.claude
+package com.shriram.cinecode.data.agent.claude
 
-import com.example.gemini.domain.model.ChatAttachment
-import com.example.gemini.domain.model.ChatMessage
-import com.example.gemini.domain.model.ChoiceOption
-import com.example.gemini.domain.model.ChoiceQuestion
-import com.example.gemini.domain.model.ChoiceQuestionnaire
-import com.example.gemini.domain.model.MessageRole
-import com.example.gemini.domain.model.TokenUsage
-import com.example.gemini.domain.model.ToolCall
-import com.example.gemini.domain.model.ToolType
+import com.shriram.cinecode.domain.model.ChatAttachment
+import com.shriram.cinecode.domain.model.ChatMessage
+import com.shriram.cinecode.domain.model.ChoiceOption
+import com.shriram.cinecode.domain.model.ChoiceQuestion
+import com.shriram.cinecode.domain.model.ChoiceQuestionnaire
+import com.shriram.cinecode.domain.model.MessageRole
+import com.shriram.cinecode.domain.model.TokenUsage
+import com.shriram.cinecode.domain.model.ToolCall
+import com.shriram.cinecode.domain.model.ToolType
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement

@@ -1,10 +1,10 @@
-package com.example.gemini.domain.chat
+package com.shriram.cinecode.domain.chat
 
 import android.util.Log
-import com.example.gemini.domain.model.ChatAttachment
-import com.example.gemini.domain.model.ChatMessage
-import com.example.gemini.domain.model.MessageRole
-import com.example.gemini.domain.model.ToolCall
+import com.shriram.cinecode.domain.model.ChatAttachment
+import com.shriram.cinecode.domain.model.ChatMessage
+import com.shriram.cinecode.domain.model.MessageRole
+import com.shriram.cinecode.domain.model.ToolCall
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
