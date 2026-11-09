@@ -318,6 +318,16 @@ class LocalPtySession(
                 envMap["ANDROID_ROOT"] = "/system"
                 envMap["LANG"] = "en_US.UTF-8"
                 envMap["LC_ALL"] = "en_US.UTF-8"
+                val nativeLibDir = context.applicationInfo.nativeLibraryDir
+                val ldPaths = listOf(
+                    lib.absolutePath,
+                    "${prefix.absolutePath}/lib",
+                    nativeLibDir,
+                    "${context.filesDir.absolutePath}/lib",
+                    "/system/lib64",
+                    "/system/lib"
+                ).filter { it.isNotBlank() }
+                envMap["LD_LIBRARY_PATH"] = ldPaths.joinToString(":")
                 envMap["COLUMNS"] = "$safeCols"
                 envMap["LINES"] = "$safeRows"
                 envMap["PS1"] = "$ "

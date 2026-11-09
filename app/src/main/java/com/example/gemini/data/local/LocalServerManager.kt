@@ -120,7 +120,11 @@ object LocalServerManager {
                 if (!binDir.exists()) {
                     binDir.mkdirs()
                 }
-                extractAssetToBin(context, binDir, "agy_ide_bridge")
+                try {
+                    extractAssetToBin(context, binDir, "agy_ide_bridge")
+                } catch (e: Exception) {
+                    Log.w(TAG, "agy_ide_bridge asset not extracted", e)
+                }
                 try {
                     extractAssetToBin(context, binDir, "backup_bootstrap")
                 } catch (e: Exception) {

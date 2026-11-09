@@ -17,7 +17,7 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 
 private const val TAG = "AppUpdateManager"
-private const val DEFAULT_VERSION_URL = "https://raw.githubusercontent.com/shriramnag/CineCode-AI/master/version.json"
+private const val DEFAULT_VERSION_URL = "https://raw.githubusercontent.com/shriramnag/CineCode-AI/main/version.json"
 
 data class AppUpdateInfo(
     val versionCode: Int,
@@ -60,20 +60,27 @@ class AppUpdateManager(private val context: Context) {
                 .build()
 
             var response = httpClient.newCall(request).execute()
-            if (!response.isSuccessful && response.code == 404 && versionJsonUrl.contains("/master/")) {
-                val fallbackRequest = request.newBuilder()
-                    .url(versionJsonUrl.replace("/master/", "/main/"))
-                    .build()
-                val fallbackResponse = try {
-                    httpClient.newCall(fallbackRequest).execute()
-                } catch (_: Exception) {
-                    null
+            if (!response.isSuccessful && response.code == 404) {
+                val alternateUrl = when {
+                    versionJsonUrl.contains("/main/") -> versionJsonUrl.replace("/main/", "/master/")
+                    versionJsonUrl.contains("/master/") -> versionJsonUrl.replace("/master/", "/main/")
+                    else -> null
                 }
-                if (fallbackResponse != null && fallbackResponse.isSuccessful) {
-                    response.close()
-                    response = fallbackResponse
-                } else {
-                    fallbackResponse?.close()
+                if (alternateUrl != null) {
+                    val fallbackRequest = request.newBuilder()
+                        .url(alternateUrl)
+                        .build()
+                    val fallbackResponse = try {
+                        httpClient.newCall(fallbackRequest).execute()
+                    } catch (_: Exception) {
+                        null
+                    }
+                    if (fallbackResponse != null && fallbackResponse.isSuccessful) {
+                        response.close()
+                        response = fallbackResponse
+                    } else {
+                        fallbackResponse?.close()
+                    }
                 }
             }
             if (!response.isSuccessful) {

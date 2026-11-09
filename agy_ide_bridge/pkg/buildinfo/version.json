@@ -1,11 +1,13 @@
 {
-  "version_code": 119,
-  "version_name": "1.0.19",
+  "version_code": 341125,
+  "version_name": "0.227.542",
   "min_supported_version_code": 1,
+  "url": "https://github.com/shriramnag/CineCode-AI/releases/download/v0.227.542/CineCode-AI-Signed.apk",
   "changelog": [
-    "Added notes and todos in the app(see in floating one) and its mcp",
-    "Fix bug of copying on expand of code causing crash",
-    "Added video better preview support"
+    "CineCode AI v0.227.542 (Signed APK) का नया अपडेट",
+    "बग्स और क्रैश होने की समस्याओं को पूरी तरह ठीक किया गया है",
+    "टर्मिनल और कोडिंग फीचर्स में नए सुधार",
+    "ऐप की परफॉर्मेंस और स्पीड को बेहतर किया गया है"
   ],
   "is_critical": false
 }

@@ -61,7 +61,8 @@ object LocalEnvironmentManager {
     // Minimum 10 MB required for a real Termux bootstrap archive
     private const val MIN_BOOTSTRAP_SIZE_BYTES = 10 * 1024 * 1024L
 
-    const val HARDCODED_ROOTFS_URL = "https://github.com/Santoshkurmi/antigem/releases/download/rootfs-v1/bootrapz_2026-10-04.zip"
+    const val HARDCODED_ROOTFS_URL = "https://github.com/shriramnag/CineCode-AI/releases/download/rootfs-v1/bootrapz_2026-10-04.zip"
+    const val FALLBACK_ROOTFS_URL = "https://github.com/Santoshkurmi/antigem/releases/download/rootfs-v1/bootrapz_2026-10-04.zip"
     const val HARDCODED_ROOTFS_TAG = "rootfs-v1"
     const val HARDCODED_ROOTFS_ASSET = "bootrapz_2026-10-04.zip"
     const val HARDCODED_ROOTFS_SIZE_BYTES = 350 * 1024 * 1024L
@@ -925,20 +926,34 @@ object LocalEnvironmentManager {
                     updateInstallNotification(appContext, "Downloading $titlePrefix", "Connecting...", -1)
 
                     try {
-                        val request = Request.Builder()
-                            .url(targetUrl)
-                            .header("User-Agent", "GeminiApp-LocalTerminal/${Build.SUPPORTED_ABIS.firstOrNull() ?: "arm64"}")
-                            .build()
+                        var reqUrl = targetUrl
+                        var response = httpClient.newCall(
+                            Request.Builder()
+                                .url(reqUrl)
+                                .header("User-Agent", "GeminiApp-LocalTerminal/${Build.SUPPORTED_ABIS.firstOrNull() ?: "arm64"}")
+                                .build()
+                        ).execute()
 
-                        httpClient.newCall(request).execute().use { response ->
-                            if (!response.isSuccessful) {
-                                val errorMsg = "Download failed: HTTP ${response.code} from release server."
+                        if (!response.isSuccessful && response.code == 404 && reqUrl == HARDCODED_ROOTFS_URL) {
+                            response.close()
+                            reqUrl = FALLBACK_ROOTFS_URL
+                            response = httpClient.newCall(
+                                Request.Builder()
+                                    .url(reqUrl)
+                                    .header("User-Agent", "GeminiApp-LocalTerminal/${Build.SUPPORTED_ABIS.firstOrNull() ?: "arm64"}")
+                                    .build()
+                            ).execute()
+                        }
+
+                        response.use { resp ->
+                            if (!resp.isSuccessful) {
+                                val errorMsg = "Download failed: HTTP ${resp.code} from release server."
                                 updateInstallNotification(appContext, "Installation Failed", errorMsg, -2, ongoing = false, force = true)
                                 _installerState.value = LocalInstallerState.Error(errorMessage = errorMsg, canRetry = true)
                                 return@withContext false
                             }
 
-                            val body = response.body
+                            val body = resp.body
                             if (body == null) {
                                 val errorMsg = "Download failed: Empty response body."
                                 updateInstallNotification(appContext, "Installation Failed", errorMsg, -2, ongoing = false, force = true)
@@ -1716,9 +1731,34 @@ object LocalEnvironmentManager {
                 return@withContext false
             }
 
+            // Ensure libandroid-support.so is available in libDir before running verification
+            val supportSo = File(libDir, "libandroid-support.so")
+            if (!supportSo.exists()) {
+                val nativeLib = File(appContext.applicationInfo.nativeLibraryDir, "libandroid-support.so")
+                if (nativeLib.exists()) {
+                    try {
+                        libDir.mkdirs()
+                        nativeLib.copyTo(supportSo, overwrite = true)
+                        supportSo.setReadable(true, false)
+                        supportSo.setExecutable(true, false)
+                        Os.chmod(supportSo.absolutePath, 493)
+                        log("Installed libandroid-support.so prior to shell verification test")
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed copying libandroid-support.so before test: ${e.message}")
+                    }
+                }
+            }
+            try {
+                libDir.walkTopDown().filter { it.isFile && (it.name.endsWith(".so") || it.name.contains(".so.")) }.forEach { so ->
+                    so.setReadable(true, false)
+                    so.setExecutable(true, false)
+                    try { Os.chmod(so.absolutePath, 493) } catch (_: Exception) {}
+                }
+            } catch (_: Exception) {}
+
             log("Running verification test command in shell...")
             val testRes = executeCommand(
-                command = "echo 'GEMINI_LOCAL_TOOLS_OK' && pwd && which bash",
+                command = "echo 'GEMINI_LOCAL_TOOLS_OK' && pwd && (which bash || which sh)",
                 context = appContext
             )
             log("Verification output: ${testRes.output.trim()}")
@@ -2173,6 +2213,35 @@ object LocalEnvironmentManager {
 
         projectsDir.mkdirs()
 
+        // Ensure libandroid-support.so exists in $PREFIX/lib
+        val libDirFile = File(prefixDir, "lib")
+        libDirFile.mkdirs()
+        val supportSoInLib = File(libDirFile, "libandroid-support.so")
+        if (!supportSoInLib.exists()) {
+            val nativeLibDir = context.applicationInfo.nativeLibraryDir
+            val supportSoInApk = File(nativeLibDir, "libandroid-support.so")
+            if (supportSoInApk.exists()) {
+                try {
+                    supportSoInApk.copyTo(supportSoInLib, overwrite = true)
+                    supportSoInLib.setReadable(true, false)
+                    supportSoInLib.setExecutable(true, false)
+                    Os.chmod(supportSoInLib.absolutePath, 493) // 0755
+                    log("Installed libandroid-support.so from native library dir to ${supportSoInLib.absolutePath}")
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed copying libandroid-support.so: ${e.message}")
+                }
+            }
+        }
+
+        // Ensure all .so shared libraries in $PREFIX/lib have read and execute permissions (0755)
+        try {
+            libDirFile.walkTopDown().filter { it.isFile && (it.name.endsWith(".so") || it.name.contains(".so.")) }.forEach { soFile ->
+                soFile.setReadable(true, false)
+                soFile.setExecutable(true, false)
+                try { Os.chmod(soFile.absolutePath, 493) } catch (_: Exception) {}
+            }
+        } catch (_: Exception) {}
+
         // Setup $HOME/.bashrc only if not provided by the archive
         val bashrc = File(homeDir, ".bashrc")
         if (!bashrc.exists()) {
@@ -2181,6 +2250,7 @@ object LocalEnvironmentManager {
 export PREFIX="${prefixDir.absolutePath}"
 export HOME="${homeDir.absolutePath}"
 export PATH="${homeDir.absolutePath}/.local/bin:${binDir.absolutePath}:${binDir.absolutePath}/applets:/system/bin:/system/xbin"
+export LD_LIBRARY_PATH="${prefixDir.absolutePath}/lib:${context.applicationInfo.nativeLibraryDir}:/system/lib64:/system/lib"
 export TMPDIR="${prefixDir.absolutePath}/tmp"
 export TERM="xterm-256color"
 export COLORTERM="truecolor"
@@ -2223,6 +2293,7 @@ fi
                 """export PREFIX="${prefixDir.absolutePath}"
 export HOME="${homeDir.absolutePath}"
 export PATH="${homeDir.absolutePath}/.local/bin:${binDir.absolutePath}:${binDir.absolutePath}/applets:/system/bin:/system/xbin"
+export LD_LIBRARY_PATH="${prefixDir.absolutePath}/lib:${context.applicationInfo.nativeLibraryDir}:/system/lib64:/system/lib"
 export TMPDIR="${prefixDir.absolutePath}/tmp"
 export TERM="xterm-256color"
 export COLORTERM="truecolor"
@@ -2475,6 +2546,17 @@ All files created here persist inside the application.
             env["LANG"] = "en_US.UTF-8"
             env["LC_ALL"] = "en_US.UTF-8"
 
+            val nativeLibDir = context.applicationInfo.nativeLibraryDir
+            val ldPaths = listOf(
+                lib.absolutePath,
+                "${prefix.absolutePath}/lib",
+                nativeLibDir,
+                "${context.filesDir.absolutePath}/lib",
+                "/system/lib64",
+                "/system/lib"
+            ).filter { it.isNotBlank() }
+            env["LD_LIBRARY_PATH"] = ldPaths.joinToString(":")
+
             if (resolvedWorkingDir == null || !File(resolvedWorkingDir).exists()) {
                 resolvedWorkingDir = home.absolutePath
             }
@@ -2709,6 +2791,17 @@ All files created here persist inside the application.
         env["HOME"] = homeDir.absolutePath
         env["TMPDIR"] = tmpDir.absolutePath
         env["PATH"] = "${homeDir.absolutePath}/.local/bin:${binDir.absolutePath}:${prefixDir.absolutePath}/bin:/system/bin:/system/xbin"
+        val libDir = getLibDir(context)
+        val nativeLibDir = context.applicationInfo.nativeLibraryDir
+        val ldPaths = listOf(
+            libDir.absolutePath,
+            "${prefixDir.absolutePath}/lib",
+            nativeLibDir,
+            "${context.filesDir.absolutePath}/lib",
+            "/system/lib64",
+            "/system/lib"
+        ).filter { it.isNotBlank() }
+        env["LD_LIBRARY_PATH"] = ldPaths.joinToString(":")
         env["DEBIAN_FRONTEND"] = "noninteractive"
         env["TERM"] = "xterm-256color"
         env["COLORTERM"] = "truecolor"

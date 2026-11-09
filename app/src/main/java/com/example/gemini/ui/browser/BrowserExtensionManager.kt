@@ -141,11 +141,22 @@ class BrowserExtensionManager private constructor() {
     }
 
     private fun copyAssets(context: Context, source: String, destination: File) {
-        val entries = context.assets.list(source).orEmpty()
+        val entries = try {
+            context.assets.list(source).orEmpty()
+        } catch (_: Exception) {
+            emptyArray<String>()
+        }
         if (entries.isEmpty()) {
             destination.parentFile?.mkdirs()
-            context.assets.open(source).use { input -> destination.outputStream().use { input.copyTo(it) } }
-        } else entries.forEach { copyAssets(context, "$source/$it", File(destination, it)) }
+            try {
+                context.assets.open(source).use { input -> destination.outputStream().use { input.copyTo(it) } }
+            } catch (e: Exception) {
+                Log.w(TAG, "Asset $source could not be copied as file: ${e.message}")
+            }
+        } else {
+            destination.mkdirs()
+            entries.forEach { copyAssets(context, "$source/$it", File(destination, it)) }
+        }
     }
 
     private fun removeLegacyRuntime(context: Context) {
