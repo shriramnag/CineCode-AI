@@ -17,7 +17,7 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 
 private const val TAG = "AppUpdateManager"
-private const val DEFAULT_VERSION_URL = "https://raw.githubusercontent.com/santoshkurmi/antigem/master/version.json"
+private const val DEFAULT_VERSION_URL = "https://raw.githubusercontent.com/shriramnag/CineCode-AI/master/version.json"
 
 data class AppUpdateInfo(
     val versionCode: Int,
@@ -59,7 +59,23 @@ class AppUpdateManager(private val context: Context) {
                 .header("Cache-Control", "no-cache")
                 .build()
 
-            val response = httpClient.newCall(request).execute()
+            var response = httpClient.newCall(request).execute()
+            if (!response.isSuccessful && response.code == 404 && versionJsonUrl.contains("/master/")) {
+                val fallbackRequest = request.newBuilder()
+                    .url(versionJsonUrl.replace("/master/", "/main/"))
+                    .build()
+                val fallbackResponse = try {
+                    httpClient.newCall(fallbackRequest).execute()
+                } catch (_: Exception) {
+                    null
+                }
+                if (fallbackResponse != null && fallbackResponse.isSuccessful) {
+                    response.close()
+                    response = fallbackResponse
+                } else {
+                    fallbackResponse?.close()
+                }
+            }
             if (!response.isSuccessful) {
                 val errorMsg = when (response.code) {
                     404 -> "version.json not found on GitHub repository (HTTP 404). Please ensure version.json is pushed to the repository."
@@ -101,7 +117,8 @@ class AppUpdateManager(private val context: Context) {
                 currentPkg == "com.shriram.cinecode" -> "termux"
                 else -> "standard"
             }
-            val downloadUrl = "https://github.com/santoshkurmi/antigem/releases/download/v$remoteVersionName/antiGem-$flavorType-v$remoteVersionName-release.apk"
+            val downloadUrl = json.optString("url").takeIf { it.isNotBlank() }
+                ?: "https://github.com/shriramnag/CineCode-AI/releases/download/v$remoteVersionName/CineCode-AI-Signed.apk"
 
             if (remoteVersionCode > BuildConfig.VERSION_CODE && downloadUrl.isNotBlank()) {
                 // Verify that the APK asset is actually published and downloadable on GitHub
