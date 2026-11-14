@@ -132,10 +132,36 @@ class BrowserExtensionManager private constructor() {
 
     private fun deviceId() = appContext?.let { android.provider.Settings.Secure.getString(it.contentResolver, android.provider.Settings.Secure.ANDROID_ID) }.orEmpty()
 
+    fun isLocalNodeAvailable(context: Context): Boolean {
+        val node = File(LocalEnvironmentManager.getBinDir(context), "node")
+        return node.isFile && node.canExecute()
+    }
+
+    private fun ensurePackaged(context: Context) {
+        if (!packaged) {
+            copyAssets(context, "browser-runtime", runtimeFile(context).parentFile!!)
+            copyAssets(context, "browser-extensions", File(context.filesDir, "browser-extensions"))
+            removeLegacyRuntime(context)
+            packaged = true
+        }
+    }
+
     fun init(context: Context) {
-        appContext = context.applicationContext
+        val appCtx = context.applicationContext
+        appContext = appCtx
         scope.launch {
-            runCatching { ensureHost() }.onFailure { lastError = it.message; Log.e(TAG, "Extension host failed", it) }
+            runCatching {
+                hostMutex.withLock { ensurePackaged(appCtx) }
+                if (AuthPreferences.currentRemoteMode || isLocalNodeAvailable(appCtx)) {
+                    ensureHost()
+                } else {
+                    lastError = null
+                    Log.i(TAG, "Deferring browser extension host startup: Node.js is not installed in local terminal yet")
+                }
+            }.onFailure {
+                lastError = it.message
+                Log.w(TAG, "Extension host initialization deferred: ${it.message}")
+            }
             loadExtensions()
         }
     }
@@ -188,13 +214,11 @@ class BrowserExtensionManager private constructor() {
 
     suspend fun ensureHost() = withContext(Dispatchers.IO) { hostMutex.withLock {
         val context = appContext ?: throw IllegalStateException("Extension manager is not initialized")
-        if (!packaged) {
-            copyAssets(context, "browser-runtime", runtimeFile(context).parentFile!!)
-            copyAssets(context, "browser-extensions", File(context.filesDir, "browser-extensions"))
-            removeLegacyRuntime(context)
-            packaged = true
+        ensurePackaged(context)
+        if (runCatching { JSONObject(hostRequest("/health")).optBoolean("ready") }.getOrDefault(false)) {
+            lastError = null
+            return@withLock
         }
-        if (runCatching { JSONObject(hostRequest("/health")).optBoolean("ready") }.getOrDefault(false)) return@withLock
         if (AuthPreferences.currentRemoteMode) {
             // Remote mode: the plugin host runs on the server (Node.js there), reached through an SSH port forward
             try {
@@ -299,6 +323,8 @@ class BrowserExtensionManager private constructor() {
         // WebView may not even have a renderer to inspect until its first load has started.
         view.loadUrl(url)
         if (BrowserIdentity.isGoogleSignInUrl(url)) return
+        val ctx = appContext ?: return
+        if (!AuthPreferences.currentRemoteMode && !isLocalNodeAvailable(ctx)) return
         scope.launch {
             runCatching { prepareTab(tab) }.onFailure { lastError = it.message; Log.w(TAG, "Extension preparation failed", it) }
         }

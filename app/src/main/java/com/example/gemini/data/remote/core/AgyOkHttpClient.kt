@@ -62,9 +62,9 @@ object AgyOkHttpClient {
                 if (token.isBlank()) {
                     // App launch: the hub is (nearly) up but its token has not arrived yet. Sending without it is
                     // always rejected (the CSRF errors shown at launch), so wait a moment for it instead. Not when
-                    // the hub is down or failed: then the request fails right away as before.
+                    // the hub is idle, down, or failed: then the request fails right away as before.
                     val hubState = com.shriram.cinecode.data.remote.AgyBridgeService.instance.hubStatus.value.status
-                    if (hubState == "starting" || hubState == "online" || hubState == "idle") {
+                    if (hubState == "starting" || hubState == "online") {
                         token = try {
                             kotlinx.coroutines.runBlocking { AgyCsrfManager.instance.awaitToken(CSRF_WAIT_MS) }
                         } catch (_: Exception) { "" }

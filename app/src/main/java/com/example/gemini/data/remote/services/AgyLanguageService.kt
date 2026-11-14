@@ -95,7 +95,14 @@ suspend fun <Req : Any, Resp : Any> GrpcCall<Req, Resp>.executeSafely(
     }
     Result.failure(err)
 } catch (e: IOException) {
-    android.util.Log.e("AGY_RPC", "❌ [AgyLanguageService.executeSafely] IOException: ${e.message}", e)
+    val isOfflineRefused = e is java.net.ConnectException ||
+        e.cause is java.net.ConnectException ||
+        (e.message?.contains("Failed to connect", ignoreCase = true) == true)
+    if (isOfflineRefused) {
+        android.util.Log.w("AGY_RPC", "⚠️ [AgyLanguageService.executeSafely] AGY Hub offline (${e.message})")
+    } else {
+        android.util.Log.e("AGY_RPC", "❌ [AgyLanguageService.executeSafely] IOException: ${e.message}", e)
+    }
     Result.failure(AgyRpcError.DaemonOffline("Failed to connect to AGY Hub: ${e.message}", e))
 } catch (e: Throwable) {
     android.util.Log.e("AGY_RPC", "❌ [AgyLanguageService.executeSafely] Throwable: ${e.message}", e)
@@ -139,7 +146,14 @@ fun <Req : Any, Resp : Any> GrpcStreamingCall<Req, Resp>.asFlowSafely(
         }
         channel.close(err)
     } catch (e: IOException) {
-        android.util.Log.e("CHAT_OPEN_DEBUG", "❌ [AgyLanguageService.asFlowSafely] IOException: ${e.message}", e)
+        val isOfflineRefused = e is java.net.ConnectException ||
+            e.cause is java.net.ConnectException ||
+            (e.message?.contains("Failed to connect", ignoreCase = true) == true)
+        if (isOfflineRefused) {
+            android.util.Log.w("CHAT_OPEN_DEBUG", "⚠️ [AgyLanguageService.asFlowSafely] AGY Hub offline (${e.message})")
+        } else {
+            android.util.Log.e("CHAT_OPEN_DEBUG", "❌ [AgyLanguageService.asFlowSafely] IOException: ${e.message}", e)
+        }
         channel.close(AgyRpcError.DaemonOffline("Stream connection broken: ${e.message}", e))
     } catch (e: Throwable) {
         android.util.Log.e("CHAT_OPEN_DEBUG", "❌ [AgyLanguageService.asFlowSafely] Throwable: ${e.message}", e)

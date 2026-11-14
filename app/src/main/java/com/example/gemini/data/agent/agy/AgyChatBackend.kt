@@ -270,18 +270,43 @@ class AgyChatBackend(
                 }
                 return@launch
             }
+            if (!AuthPreferences.currentRemoteMode && !com.shriram.cinecode.data.local.LocalEnvironmentManager.isInstalled(application)) {
+                _agyAuthInfo.value = _agyAuthInfo.value.copy(
+                    status = com.shriram.cinecode.data.remote.AgyHubClient.AgyAuthStatus.OFFLINE,
+                    isOffline = true
+                )
+                _isAuthBusy.value = false
+                agyBridgeService.updateAuthChecking(false)
+                if (userInitiated) {
+                    _authFeedbackMessage.tryEmit("Local tools are not installed yet.")
+                }
+                return@launch
+            }
+            if (!userInitiated && !agyBridgeService.systemConnectionState.value.isHubOnline) {
+                val isStarting = agyBridgeService.hubStatus.value.status == "starting"
+                val becameOnline = if (isStarting) agyBridgeService.awaitHubReady(timeoutMs = 5000L) else false
+                if (!becameOnline && !agyBridgeService.systemConnectionState.value.isHubOnline) {
+                    _agyAuthInfo.value = _agyAuthInfo.value.copy(
+                        status = com.shriram.cinecode.data.remote.AgyHubClient.AgyAuthStatus.OFFLINE,
+                        isOffline = true
+                    )
+                    _isAuthBusy.value = false
+                    agyBridgeService.updateAuthChecking(false)
+                    return@launch
+                }
+            }
             val hubUrl = AuthPreferences.currentHubUrl
             var res = agyHubClient.fetchDetailedAuthInfo(hubUrl)
 
-            // If failed on non-manual check during startup/connection phase, retry shortly
-            if (res.isFailure && !userInitiated) {
+            // If failed on non-manual check during startup/connection phase, retry shortly only if hub is still online
+            if (res.isFailure && !userInitiated && agyBridgeService.systemConnectionState.value.isHubOnline) {
                 delay(800)
-                if (isNetworkConnected()) {
+                if (isNetworkConnected() && agyBridgeService.systemConnectionState.value.isHubOnline) {
                     res = agyHubClient.fetchDetailedAuthInfo(hubUrl)
                 }
-                if (res.isFailure) {
+                if (res.isFailure && agyBridgeService.systemConnectionState.value.isHubOnline) {
                     delay(1500)
-                    if (isNetworkConnected()) {
+                    if (isNetworkConnected() && agyBridgeService.systemConnectionState.value.isHubOnline) {
                         res = agyHubClient.fetchDetailedAuthInfo(hubUrl)
                     }
                 }
@@ -654,8 +679,16 @@ class AgyChatBackend(
             }
         }
 
-        // Initial auth status check
-        checkAgyAuthStatus(userInitiated = false)
+        // Initial auth status check only if hub is already online; monitorHubStatus triggers it as soon as hub comes online
+        if (agyBridgeService.systemConnectionState.value.isHubOnline) {
+            checkAgyAuthStatus(userInitiated = false)
+        } else {
+            _agyAuthInfo.value = _agyAuthInfo.value.copy(
+                status = com.shriram.cinecode.data.remote.AgyHubClient.AgyAuthStatus.OFFLINE,
+                isOffline = true
+            )
+            agyBridgeService.updateAuthChecking(false)
+        }
     }
 
     fun refreshActiveInstances() {
@@ -820,20 +853,23 @@ class AgyChatBackend(
     override fun onAppForegrounded() {
         android.util.Log.d("ChatViewModel", "App foregrounded: inspecting RPC streams...")
         backendScope.launch {
+            val hubOnline = agyBridgeService.systemConnectionState.value.isHubOnline
             val conv = _currentConversation.value
             val isExistingConv = conv != null && conv.title != "New Chat" && _conversations.value.any { it.id == conv.id }
             val isSyncActive = syncJob?.isActive == true
             val isStreamActive = persistentStreamJob?.isActive == true
 
-            if (!isSyncActive || _isServerOnline.value != true) {
-                syncAgyConversations(force = true)
-            }
-            if (conv != null && isExistingConv && (!isStreamActive || _isServerOnline.value != true)) {
-                startPersistentStream(conv.id)
-            }
-            refreshQuotas()
-            if (!_agyAuthInfo.value.isLoggedIn || _agyAuthInfo.value.status == com.shriram.cinecode.data.remote.AgyHubClient.AgyAuthStatus.CHECKING) {
-                checkAgyAuthStatus(userInitiated = false)
+            if (hubOnline) {
+                if (!isSyncActive || _isServerOnline.value != true) {
+                    syncAgyConversations(force = true)
+                }
+                if (conv != null && isExistingConv && (!isStreamActive || _isServerOnline.value != true)) {
+                    startPersistentStream(conv.id)
+                }
+                refreshQuotas(force = false)
+                if (!_agyAuthInfo.value.isLoggedIn || _agyAuthInfo.value.status == com.shriram.cinecode.data.remote.AgyHubClient.AgyAuthStatus.CHECKING) {
+                    checkAgyAuthStatus(userInitiated = false)
+                }
             }
             com.shriram.cinecode.data.daemon.TermuxDaemonManager.checkHealthAndReconnect(isSilent = true)
         }
@@ -2014,6 +2050,9 @@ class AgyChatBackend(
 
     fun refreshQuotas(force: Boolean = true, showToastFeedback: Boolean = false) {
         backendScope.launch {
+            if (!showToastFeedback && !agyBridgeService.systemConnectionState.value.isHubOnline) {
+                return@launch
+            }
             _isRefreshingModels.value = true
             var failureError: String? = null
             try {
