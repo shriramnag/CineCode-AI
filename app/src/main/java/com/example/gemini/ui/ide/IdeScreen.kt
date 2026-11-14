@@ -124,6 +124,8 @@ fun IdeScreen(
     var runnerHeightFraction by remember { mutableFloatStateOf(0.5f) }
     var isRunnerMaximized by remember { mutableStateOf(true) }
     var lastExecutedProfile by remember { mutableStateOf<RunConfiguration?>(null) }
+    var lastExecutedCommand by remember { mutableStateOf("") }
+    var healAttemptCount by remember { mutableIntStateOf(0) }
 
     fun refreshRunConfigurations() {
         val projPath = activeProject?.path
@@ -139,6 +141,9 @@ fun IdeScreen(
     }
 
     fun executeRun(profile: RunConfiguration) {
+        if (lastExecutedProfile?.name != profile.name) {
+            healAttemptCount = 0
+        }
         lastExecutedProfile = profile
         val projectPath = activeProject?.path ?: ""
         val rawCmd = profile.command ?: ""
@@ -149,6 +154,7 @@ fun IdeScreen(
             RunConfigManager.resolveVariables(fallback?.command ?: "bash", activeTabPath, projectPath)
         }
         val resolvedCwd = RunConfigManager.resolveWorkingDir(profile.cwd, activeTabPath, projectPath)
+        lastExecutedCommand = resolvedCmd
 
         val escapedCmd = resolvedCmd.replace("\\", "\\\\").replace("\"", "\\\"").replace("$", "\\$")
         val wrappedCmd = "echo -e \"\\033[1;32m▶ $escapedCmd\\033[0m\"; $resolvedCmd"
@@ -1711,43 +1717,75 @@ fun IdeScreen(
                         shadowElevation = 0.dp,
                         tonalElevation = 0.dp
                     ) {
-                        LocalTerminalContent(
-                            customSession = session,
-                            showFloatingPill = false,
-                            backgroundColor = com.shriram.cinecode.theme.AppColors.terminalBg,
-                            isMaximized = isRunnerMaximized,
-                            onToggleMaximize = {
-                                if (isRunnerMaximized) {
-                                    isRunnerMaximized = false
-                                    if (runnerHeightFraction >= 0.95f || runnerHeightFraction <= 0.2f) {
-                                        runnerHeightFraction = 0.5f
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            val activeTab = openTabs.find { it.path == activeTabPath }
+                            SelfHealingRunnerBanner(
+                                session = session,
+                                command = lastExecutedCommand,
+                                activeFilePath = activeTab?.path ?: activeTabPath,
+                                activeFileContent = activeTab?.content,
+                                healAttemptCount = healAttemptCount,
+                                onAutoFixInChat = { prompt ->
+                                    healAttemptCount++
+                                    session.close()
+                                    runnerSession = null
+                                    if (viewModel != null) {
+                                        viewModel.sendMessage(prompt)
+                                        onNavigateToChat()
+                                    } else {
+                                        Toast.makeText(context, "AI चैट उपलब्ध नहीं है", Toast.LENGTH_SHORT).show()
                                     }
-                                } else {
-                                    isRunnerMaximized = true
+                                },
+                                onReRun = {
+                                    session.close()
+                                    runnerSession = null
+                                    lastExecutedProfile?.let { executeRun(it) }
                                 }
-                            },
-                            onDragDelta = { dragAmount ->
-                                val currentPx = if (isRunnerMaximized) maxHeightPx else maxHeightPx * runnerHeightFraction
-                                val newPx = (currentPx - dragAmount).coerceIn(maxHeightPx * 0.2f, maxHeightPx)
-                                val fraction = (newPx / maxHeightPx).coerceIn(0.2f, 1.0f)
-                                if (dragAmount < 0 && fraction >= 0.98f) {
-                                    isRunnerMaximized = true
-                                    runnerHeightFraction = 1.0f
-                                } else {
-                                    isRunnerMaximized = false
-                                    runnerHeightFraction = fraction
-                                }
-                            },
-                            onRetry = {
-                                session.close()
-                                runnerSession = null
-                                lastExecutedProfile?.let { executeRun(it) }
-                            },
-                            onClose = {
-                                session.close()
-                                runnerSession = null
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxWidth()
+                            ) {
+                                LocalTerminalContent(
+                                    customSession = session,
+                                    showFloatingPill = false,
+                                    backgroundColor = com.shriram.cinecode.theme.AppColors.terminalBg,
+                                    isMaximized = isRunnerMaximized,
+                                    onToggleMaximize = {
+                                        if (isRunnerMaximized) {
+                                            isRunnerMaximized = false
+                                            if (runnerHeightFraction >= 0.95f || runnerHeightFraction <= 0.2f) {
+                                                runnerHeightFraction = 0.5f
+                                            }
+                                        } else {
+                                            isRunnerMaximized = true
+                                        }
+                                    },
+                                    onDragDelta = { dragAmount ->
+                                        val currentPx = if (isRunnerMaximized) maxHeightPx else maxHeightPx * runnerHeightFraction
+                                        val newPx = (currentPx - dragAmount).coerceIn(maxHeightPx * 0.2f, maxHeightPx)
+                                        val fraction = (newPx / maxHeightPx).coerceIn(0.2f, 1.0f)
+                                        if (dragAmount < 0 && fraction >= 0.98f) {
+                                            isRunnerMaximized = true
+                                            runnerHeightFraction = 1.0f
+                                        } else {
+                                            isRunnerMaximized = false
+                                            runnerHeightFraction = fraction
+                                        }
+                                    },
+                                    onRetry = {
+                                        session.close()
+                                        runnerSession = null
+                                        lastExecutedProfile?.let { executeRun(it) }
+                                    },
+                                    onClose = {
+                                        session.close()
+                                        runnerSession = null
+                                    }
+                                )
                             }
-                        )
+                        }
                     }
                 }
             }

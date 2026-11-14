@@ -1549,26 +1549,40 @@ fun ChatScreen(
                                         statusColors = agentEntries.associate { it.agent to it.color }
                                     )
                                 }
-                                com.shriram.cinecode.ui.components.ServerStoppedPromptCard()
+                                com.shriram.cinecode.ui.components.HomeStatusDashboard(
+                                    systemConnectionState = systemConnectionState,
+                                    serverStatus = serverStatus,
+                                    isBridgeOnline = isBridgeOnline == true,
+                                    isLocalToolsInstalled = isLocalToolsInstalled,
+                                    isInitialGracePeriod = isInitialGracePeriod,
+                                    activeProjectName = activeChatProject?.name ?: "CineCode",
+                                    onStartOrRestartEngine = {
+                                        com.shriram.cinecode.data.local.LocalServerManager.startServer(context, forceRestart = false)
+                                    },
+                                    onOpenServerLogs = { showLocalServerOutputDialog = true },
+                                    onOpenIde = onNavigateToIde,
+                                    onOpenTerminal = onNavigateToTerminal,
+                                    onOpenBrowser = onNavigateToBrowser,
+                                    onOpenSettings = { showSettingsDialog = true },
+                                    onInsertStarterPrompt = { prompt -> inputState.setTextAndPlaceCursorAtEnd(prompt) }
+                                )
                             }
                         }
                     } else if (!isClaudeChat && isServerInitializing && messages.isEmpty()) {
-                        if (isFreshNewChat && enabledAgents.size > 1) {
-                            // a new chat keeps its agent picker while Antigravity starts (Claude can be picked and used
-                            // meanwhile); before, the whole view was replaced and the picker vanished until the hub was up
-                            BoxWithConstraints(
-                                modifier = Modifier.fillMaxSize()
+                        BoxWithConstraints(
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            val minHeight = maxHeight
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .verticalScroll(emptyScrollState)
+                                    .heightIn(min = minHeight)
+                                    .padding(horizontal = 24.dp, vertical = 24.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
                             ) {
-                                val minHeight = maxHeight
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .verticalScroll(emptyScrollState)
-                                        .heightIn(min = minHeight)
-                                        .padding(horizontal = 24.dp, vertical = 24.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
-                                ) {
+                                if (isFreshNewChat && enabledAgents.size > 1) {
                                     com.shriram.cinecode.ui.components.AgentPicker(
                                         selected = currentConv?.agent ?: newChatAgent,
                                         onSelect = { viewModel.setNewChatAgent(it) },
@@ -1576,11 +1590,23 @@ fun ChatScreen(
                                         agents = enabledAgents,
                                         statusColors = agentEntries.associate { it.agent to it.color }
                                     )
-                                    com.shriram.cinecode.ui.components.EngineWarmingUpView()
                                 }
+                                com.shriram.cinecode.ui.components.HomeStatusDashboard(
+                                    systemConnectionState = systemConnectionState,
+                                    serverStatus = serverStatus,
+                                    isBridgeOnline = isBridgeOnline == true,
+                                    isLocalToolsInstalled = isLocalToolsInstalled,
+                                    isInitialGracePeriod = isInitialGracePeriod,
+                                    activeProjectName = activeChatProject?.name ?: "CineCode",
+                                    onStartOrRestartEngine = restartLocalServer,
+                                    onOpenServerLogs = { showLocalServerOutputDialog = true },
+                                    onOpenIde = onNavigateToIde,
+                                    onOpenTerminal = onNavigateToTerminal,
+                                    onOpenBrowser = onNavigateToBrowser,
+                                    onOpenSettings = { showSettingsDialog = true },
+                                    onInsertStarterPrompt = { prompt -> inputState.setTextAndPlaceCursorAtEnd(prompt) }
+                                )
                             }
-                        } else {
-                            com.shriram.cinecode.ui.components.EngineWarmingUpView()
                         }
                     } else if (!conversationError.isNullOrBlank() && messages.isEmpty() && (isExistingConversation || currentConv != null)) {
                         Column(
@@ -1689,19 +1715,20 @@ fun ChatScreen(
                                         }
                                     }
                                     else -> {
-                                        Text(
-                                            text = "How can I help you today?",
-                                            fontSize = 22.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = MaterialTheme.colorScheme.onSurface,
-                                            textAlign = TextAlign.Center
-                                        )
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        Text(
-                                            text = "Ask a question, brainstorm ideas, or start coding",
-                                            fontSize = 14.sp,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
-                                            textAlign = TextAlign.Center
+                                        com.shriram.cinecode.ui.components.HomeStatusDashboard(
+                                            systemConnectionState = systemConnectionState,
+                                            serverStatus = serverStatus,
+                                            isBridgeOnline = isBridgeOnline == true,
+                                            isLocalToolsInstalled = isLocalToolsInstalled,
+                                            isInitialGracePeriod = isInitialGracePeriod,
+                                            activeProjectName = activeChatProject?.name ?: "CineCode",
+                                            onStartOrRestartEngine = restartLocalServer,
+                                            onOpenServerLogs = { showLocalServerOutputDialog = true },
+                                            onOpenIde = onNavigateToIde,
+                                            onOpenTerminal = onNavigateToTerminal,
+                                            onOpenBrowser = onNavigateToBrowser,
+                                            onOpenSettings = { showSettingsDialog = true },
+                                            onInsertStarterPrompt = { prompt -> inputState.setTextAndPlaceCursorAtEnd(prompt) }
                                         )
                                     }
                                 }

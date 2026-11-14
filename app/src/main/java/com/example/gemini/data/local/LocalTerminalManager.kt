@@ -81,6 +81,9 @@ class LocalPtySession(
     private val _isExited = MutableStateFlow(false)
     val isExited: StateFlow<Boolean> = _isExited.asStateFlow()
 
+    private val _exitCode = MutableStateFlow<Int?>(null)
+    val exitCode: StateFlow<Int?> = _exitCode.asStateFlow()
+
     private val _title = MutableStateFlow(initialTitle)
     val title: StateFlow<String> = _title.asStateFlow()
 
@@ -1020,8 +1023,18 @@ class LocalPtySession(
         }
     }
 
+    fun readCleanTranscriptTail(maxLines: Int = 80): String {
+        return try {
+            val raw = terminalSession.emulator?.screen?.getTranscriptText() ?: ""
+            com.shriram.cinecode.data.ai.SelfHealingCoordinator.extractCompactErrorTail(raw, maxLines)
+        } catch (_: Exception) {
+            ""
+        }
+    }
+
     override fun onSessionFinished(finishedSession: TerminalSession) {
         if (!isSsh) {
+            _exitCode.value = runCatching { finishedSession.exitStatus }.getOrNull()
             notifySessionClosed()
         }
     }
