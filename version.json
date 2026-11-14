@@ -1,13 +1,13 @@
 {
-  "version_code": 341125,
-  "version_name": "0.227.542",
+  "version_code": 341126,
+  "version_name": "0.227.543-beta",
   "min_supported_version_code": 1,
-  "url": "https://github.com/shriramnag/CineCode-AI/releases/download/v0.227.542/CineCode-AI-Signed.apk",
+  "url": "https://github.com/shriramnag/CineCode-AI/releases/download/v0.227.543-beta/CineCode-AI-v0.227.543-beta-Signed.apk",
   "changelog": [
-    "CineCode AI v0.227.542 (Signed APK) का नया अपडेट",
+    "CineCode AI v0.227.543-beta (Signed Beta APK) का नया अपडेट",
+    "YouTube Create स्टाइल Semantic Beta Versioning (auto-increment) जोड़ा गया",
     "बग्स और क्रैश होने की समस्याओं को पूरी तरह ठीक किया गया है",
-    "टर्मिनल और कोडिंग फीचर्स में नए सुधार",
-    "ऐप की परफॉर्मेंस और स्पीड को बेहतर किया गया है"
+    "टर्मिनल, कोडिंग और परफॉर्मेंस में नए सुधार"
   ],
   "is_critical": false
 }

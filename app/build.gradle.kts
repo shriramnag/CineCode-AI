@@ -1,9 +1,32 @@
+import groovy.json.JsonSlurper
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.wire)
 }
+
+val versionManifestFile = rootProject.file("version.json")
+
+@Suppress("UNCHECKED_CAST")
+val versionManifest: Map<String, Any?> = if (versionManifestFile.exists()) {
+    JsonSlurper().parse(versionManifestFile) as? Map<String, Any?> ?: emptyMap()
+} else {
+    emptyMap()
+}
+
+val appVersionCode: Int = project.findProperty("APP_VERSION_CODE")
+    ?.toString()
+    ?.toIntOrNull()
+    ?: (versionManifest["version_code"] as? Number)?.toInt()
+    ?: 341126
+
+val appVersionName: String = project.findProperty("APP_VERSION_NAME")
+    ?.toString()
+    ?.takeIf { it.isNotBlank() }
+    ?: (versionManifest["version_name"] as? String)?.takeIf { it.isNotBlank() }
+    ?: "0.227.543-beta"
 
 android {
     namespace = "com.shriram.cinecode"
@@ -13,8 +36,8 @@ android {
         applicationId = "com.shriram.cinecode"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = appVersionCode
+        versionName = appVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
