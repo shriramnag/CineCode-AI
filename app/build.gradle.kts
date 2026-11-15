@@ -33,7 +33,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.shriram.cinecode"
+        applicationId = "com.shriramnag.cinecodeai"
         minSdk = 26
         targetSdk = 36
         versionCode = appVersionCode

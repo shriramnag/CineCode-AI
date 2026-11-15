@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Code
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Psychology
 import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.material3.*
@@ -38,6 +39,8 @@ fun MultiAgentTeamBar(
     stepProgress: Float = 0.65f, // 0f to 1f
     modifier: Modifier = Modifier
 ) {
+    var memoryLocked by remember { mutableStateOf(true) }
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -45,7 +48,7 @@ fun MultiAgentTeamBar(
             .testTag("multi_agent_team_bar"),
         shape = RoundedCornerShape(16.dp),
         tonalElevation = 3.dp,
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f)
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.90f)
     ) {
         Column(
             modifier = Modifier
@@ -58,17 +61,44 @@ fun MultiAgentTeamBar(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "🤖 Multi-Agent Team Mode",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    text = "Active: ${currentRole.title}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = "🤖 Multi-Agent Team Mode",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                // Quick Memory Rules Toggle
+                Surface(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .clickable { memoryLocked = !memoryLocked }
+                        .testTag("memory_rules_toggle"),
+                    color = if (memoryLocked) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surface,
+                    shape = RoundedCornerShape(50),
+                    border = BorderStroke(1.dp, if (memoryLocked) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outline)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Lock,
+                            contentDescription = null,
+                            modifier = Modifier.size(12.dp),
+                            tint = if (memoryLocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = if (memoryLocked) "Memory Rules: Locked (4GB Light)" else "Memory Rules: Standard",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (memoryLocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
 
             // Role selector chips
