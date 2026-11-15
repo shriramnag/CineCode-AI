@@ -512,6 +512,8 @@ fun ChatScreen(
         }
     }
     var pendingMessageAction by remember { mutableStateOf<PendingMessageAction?>(null) }
+    var currentAgentRole by remember { mutableStateOf(com.shriram.cinecode.ui.components.AgentTeamRole.CODER) }
+    var showMediaVoiceStudio by remember { mutableStateOf(false) }
     val thinkingPref by viewModel.thinkingPreference.collectAsState()
     val terminatedToolDialogState by viewModel.terminatedToolDialog.collectAsState()
     val isOAuthServerListening by viewModel.isOAuthServerListening.collectAsState()
@@ -1494,6 +1496,13 @@ fun ChatScreen(
                                 )
                             }
                         }
+                        IconButton(onClick = { showMediaVoiceStudio = true }) {
+                            Icon(
+                                imageVector = Icons.Outlined.VideoCameraFront,
+                                contentDescription = "AI Media & Voice Studio",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.background
@@ -1511,6 +1520,15 @@ fun ChatScreen(
                     .navigationBarsPadding()
                     .windowInsetsPadding(WindowInsets.imeAnimationTarget)
             ) {
+                com.shriram.cinecode.ui.components.MultiAgentTeamBar(
+                    currentRole = currentAgentRole,
+                    onRoleSelected = { currentAgentRole = it },
+                    stepProgress = when(currentAgentRole) {
+                        com.shriram.cinecode.ui.components.AgentTeamRole.PLANNER -> 0.33f
+                        com.shriram.cinecode.ui.components.AgentTeamRole.CODER -> 0.66f
+                        com.shriram.cinecode.ui.components.AgentTeamRole.VALIDATOR -> 1.0f
+                    }
+                )
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -2917,6 +2935,16 @@ fun ChatScreen(
             conversation = currentConv,
             messages = messages,
             onDismiss = { showChatTelemetryDialog = false }
+        )
+    }
+
+    if (showMediaVoiceStudio) {
+        com.shriram.cinecode.ui.components.AiMediaVoiceStudioDialog(
+            initialText = inputState.text.toString(),
+            onDismiss = { showMediaVoiceStudio = false },
+            onAudioSaved = { file ->
+                // Audio saved successfully
+            }
         )
     }
 
