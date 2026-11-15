@@ -124,7 +124,12 @@ object IdeApiClient {
                 response.isSuccessful
             }
         } catch (e: Exception) {
-            Log.e(TAG, "checkHealth failed: ${e.message}")
+            val isOffline = e is java.net.ConnectException || e.cause is java.net.ConnectException || e.message?.contains("Failed to connect", ignoreCase = true) == true
+            if (isOffline) {
+                Log.w(TAG, "checkHealth: IDE Bridge offline (${e.message})")
+            } else {
+                Log.e(TAG, "checkHealth failed: ${e.message}")
+            }
             false
         }
     }
@@ -168,7 +173,12 @@ object IdeApiClient {
                 list
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error fetching projects", e)
+            val isOffline = e is java.net.ConnectException || e.cause is java.net.ConnectException || e.message?.contains("Failed to connect", ignoreCase = true) == true
+            if (isOffline) {
+                Log.w(TAG, "getProjects: IDE Bridge offline (${e.message})")
+            } else {
+                Log.e(TAG, "Error fetching projects", e)
+            }
             emptyList()
         }
     }
