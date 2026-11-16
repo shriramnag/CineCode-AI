@@ -678,6 +678,11 @@ private fun MainSettingsMenu(
     SettingsRowList(
         scrollState = scrollState,
         cardBg = cardBg,
+        headerContent = {
+            com.shriram.cinecode.ui.components.CineCodeApiIntegrationSection(
+                isLocalBridgeOnline = isServerOnline || isBridgeOnline
+            )
+        },
         groups = listOf(
             listOf(
                 row(SettingsSection.APPEARANCE, Icons.Outlined.Palette, c.accentPink, com.shriram.cinecode.theme.ThemeManager.current.name),

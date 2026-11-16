@@ -295,7 +295,10 @@ fun ChatScreen(
     var showStopConfirmDialog by remember { mutableStateOf(false) }
     var isInitialGracePeriod by remember { mutableStateOf(true) }
 
+    val isCloudApiActive by com.shriram.cinecode.data.remote.CloudBridgeStore.isCloudActiveFlow.collectAsState()
+
     LaunchedEffect(Unit) {
+        com.shriram.cinecode.data.remote.CloudBridgeStore.ensureInitialized(context)
         kotlinx.coroutines.delay(3500)
         isInitialGracePeriod = false
     }
@@ -1507,6 +1510,10 @@ fun ChatScreen(
                     .navigationBarsPadding()
                     .windowInsetsPadding(WindowInsets.imeAnimationTarget)
             ) {
+                com.shriram.cinecode.ui.components.CineCodeConnectionStatusPill(
+                    isLocalBridgeOnline = isBridgeOnline == true || isServerOnline == true,
+                    onClick = { showSettingsDialog = true }
+                )
                 com.shriram.cinecode.ui.components.MultiAgentTeamBar(
                     currentRole = currentAgentRole,
                     onRoleSelected = { currentAgentRole = it },
@@ -2301,8 +2308,8 @@ fun ChatScreen(
 
                 // Chat Input Bar with Bottom Model & Thinking Selector Pills (Claude Android Style)
                 ChatInputBar(
-                    isOnline = if (isClaudeChat) !claudeState.isBlocking else systemConnectionState.canSend,
-                    isAuth = if (isClaudeChat) claudeChatState != com.shriram.cinecode.data.agent.claude.ClaudeStatus.SIGNED_OUT && claudeChatState != com.shriram.cinecode.data.agent.claude.ClaudeStatus.SIGNING_IN else systemConnectionState.isAuth,
+                    isOnline = if (isClaudeChat) !claudeState.isBlocking else (systemConnectionState.canSend || isCloudApiActive),
+                    isAuth = if (isClaudeChat) claudeChatState != com.shriram.cinecode.data.agent.claude.ClaudeStatus.SIGNED_OUT && claudeChatState != com.shriram.cinecode.data.agent.claude.ClaudeStatus.SIGNING_IN else (systemConnectionState.isAuth || isCloudApiActive),
                     offlineMessage = if (isClaudeChat) when (claudeState) {
                         com.shriram.cinecode.data.agent.claude.ClaudeStatus.NOT_INSTALLED -> "Claude Code is not installed. Set it up in Settings."
                         com.shriram.cinecode.data.agent.claude.ClaudeStatus.BRIDGE_OUTDATED -> "Restart the local server to use Claude Code."

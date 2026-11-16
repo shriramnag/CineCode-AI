@@ -47,7 +47,8 @@ fun SettingsRowList(
     groups: List<List<SettingsRowItem>>,
     cardBg: Color,
     modifier: Modifier = Modifier,
-    scrollState: ScrollState = rememberScrollState()
+    scrollState: ScrollState = rememberScrollState(),
+    headerContent: (@Composable () -> Unit)? = null
 ) {
     // iOS-style bounce, also when the page is short and cannot scroll
     Column(
@@ -56,6 +57,7 @@ fun SettingsRowList(
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
+        headerContent?.invoke()
         groups.filter { it.isNotEmpty() }.forEach { SettingsRowGroup(it, cardBg) }
     }
 }

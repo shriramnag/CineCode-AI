@@ -1293,8 +1293,12 @@ class AgyChatBackend(
 
         val state = systemConnectionState.value
         if (!state.canSend) {
+            if (com.shriram.cinecode.data.remote.CloudBridgeStore.hasApiKey(application)) {
+                sendViaCloudNativeFallback(content)
+                return
+            }
             val reason = when (state.status) {
-                com.shriram.cinecode.data.remote.SystemStatus.OFFLINE -> "Server is offline. Please start the server."
+                com.shriram.cinecode.data.remote.SystemStatus.OFFLINE -> "Server is offline. Please start the server or add an API Key in Settings."
                 com.shriram.cinecode.data.remote.SystemStatus.STARTING -> "Server is starting up. Please wait..."
                 com.shriram.cinecode.data.remote.SystemStatus.ACQUIRING_CSRF -> "Acquiring security token. Please wait..."
                 com.shriram.cinecode.data.remote.SystemStatus.CHECKING_AUTH -> "Verifying authentication. Please wait..."
@@ -2470,6 +2474,79 @@ class AgyChatBackend(
         clearOptimisticSend()
         _streamRun.value = null
         _queuedMessages.value = emptyList()
+    }
+
+    private fun sendViaCloudNativeFallback(content: String) {
+        val currentAtts = _attachments.value
+        val finalPrompt = content.trim().ifBlank {
+            if (currentAtts.any { it.isAudio }) "Voice note" else if (currentAtts.any { it.isImage }) "Image" else "Attachment"
+        }
+        _attachments.value = emptyList()
+
+        val existingConv = _currentConversation.value
+        val cleanTitle = com.shriram.cinecode.data.remote.PromptExpansion.collapse(finalPrompt)
+            .trim().lines().firstOrNull { it.isNotBlank() }?.let {
+                it.take(40) + if (it.length > 40) "..." else ""
+            } ?: "Cloud Native Chat"
+
+        val conv = (existingConv ?: Conversation(
+            id = "cloud_${UUID.randomUUID()}",
+            title = cleanTitle,
+            agent = AgentKind.AGY
+        )).let {
+            val needsTitle = it.title == "New Chat" || it.title == "Antigravity Chat" || it.title.isBlank()
+            it.copy(
+                title = if (needsTitle) cleanTitle else it.title,
+                updatedAt = System.currentTimeMillis()
+            )
+        }
+        _currentConversation.value = conv
+
+        val exists = _conversations.value.any { it.id == conv.id }
+        _conversations.value = (if (exists) {
+            _conversations.value.map { if (it.id == conv.id) conv else it }
+        } else {
+            listOf(conv) + _conversations.value
+        }).sortedByDescending { it.updatedAt }
+
+        val userMsg = ChatMessage(
+            conversationId = conv.id,
+            role = MessageRole.USER,
+            content = finalPrompt,
+            attachments = currentAtts
+        )
+        val assistantMsgId = UUID.randomUUID().toString()
+        val selectedModel = com.shriram.cinecode.data.remote.CloudBridgeStore.selectedModelFlow.value
+        val placeholderAssistant = ChatMessage(
+            id = assistantMsgId,
+            conversationId = conv.id,
+            role = MessageRole.ASSISTANT,
+            content = "⏳ Cloud Native ($selectedModel) से जवाब आ रहा है...",
+            isStreaming = true,
+            modelId = selectedModel
+        )
+
+        _messages.value = _messages.value + userMsg + placeholderAssistant
+        _isStreaming.value = true
+
+        backendScope.launch {
+            val result = com.shriram.cinecode.data.remote.CloudBridgeStore.chatDirect(
+                context = application,
+                prompt = finalPrompt,
+                modelName = selectedModel
+            )
+            val replyText = result.getOrElse { err ->
+                "⚠️ Cloud API Error: ${err.message ?: "Unable to connect to Google AI Studio."}"
+            }
+            _messages.value = _messages.value.map { msg ->
+                if (msg.id == assistantMsgId) {
+                    msg.copy(content = replyText, isStreaming = false)
+                } else {
+                    msg
+                }
+            }
+            _isStreaming.value = false
+        }
     }
 
     fun dispose() {
