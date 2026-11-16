@@ -3,6 +3,7 @@ package com.shriram.cinecode.ui.chat
 import com.shriram.cinecode.ui.components.ChatToast
 import com.shriram.cinecode.ui.components.ChatToastType
 import com.shriram.cinecode.ui.components.AppToastHelper
+import com.shriram.cinecode.ui.browser.CineCodeBrowserManager
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
@@ -1157,14 +1158,7 @@ fun ChatScreen(
                         }
                         Button(
                             onClick = {
-                                try {
-                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(targetUrl)).apply {
-                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                    }
-                                    context.startActivity(intent)
-                                } catch (e: Exception) {
-                                    android.util.Log.e("ChatScreen", "Failed to open browser: ${e.message}")
-                                }
+                                CineCodeBrowserManager.launchRealBrowser(context, targetUrl)
                                 // a remote sign-in stays open for the paste step
                                 if (!remoteSignIn) viewModel.clearPendingLoginUrl()
                             },
@@ -1201,14 +1195,7 @@ fun ChatScreen(
                 confirmButton = {
                     Button(
                         onClick = {
-                            try {
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(issue.verificationUrl)).apply {
-                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                }
-                                context.startActivity(intent)
-                            } catch (e: Exception) {
-                                android.util.Log.e("ChatScreen", "Failed to open browser: ${e.message}")
-                            }
+                            CineCodeBrowserManager.launchRealBrowser(context, issue.verificationUrl)
                             viewModel.clearAgyLoginIssue()
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = ClaudeTerracotta)
@@ -2451,8 +2438,7 @@ fun ChatScreen(
             isLocalToolsInstalled = isLocalToolsInstalled,
             onLoginWithGoogle = {
                 val url = viewModel.getGoogleOAuthUrl()
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                context.startActivity(intent)
+                CineCodeBrowserManager.launchRealBrowser(context, url)
             },
             onToggleServer = { enable ->
                 viewModel.toggleOAuthServer(enable)

@@ -18,6 +18,7 @@ kotlinxSerializationJson = "1.7.3"
 datastore = "1.1.1"
 wire = "7.0.4"
 androidxWebkit = "1.17.1"
+androidxBrowser = "1.8.0"
 coil = "2.6.0"
 jsch = "0.1.55"
 sora = "0.23.4"
@@ -52,6 +53,7 @@ kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-t
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 androidx-webkit = { module = "androidx.webkit:webkit", version.ref = "androidxWebkit" }
+androidx-browser = { module = "androidx.browser:browser", version.ref = "androidxBrowser" }
 okhttp-sse = { module = "com.squareup.okhttp3:okhttp-sse", version.ref = "okhttp" }
 wire-runtime = { module = "com.squareup.wire:wire-runtime", version.ref = "wire" }
 wire-grpc-client = { module = "com.squareup.wire:wire-grpc-client", version.ref = "wire" }

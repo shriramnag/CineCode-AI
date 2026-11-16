@@ -1,7 +1,5 @@
 package com.shriram.cinecode.ui.claude
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -39,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.shriram.cinecode.data.agent.claude.ClaudeAccountManager
+import com.shriram.cinecode.ui.browser.CineCodeBrowserManager
 import com.shriram.cinecode.ui.components.ClaudeAccent
 
 /**
@@ -56,7 +55,7 @@ fun ClaudeLoginDialog(account: ClaudeAccountManager, onDismiss: () -> Unit) {
     var openedFor by remember { mutableStateOf<String?>(null) }
 
     fun open(url: String) {
-        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+        CineCodeBrowserManager.launchRealBrowser(context, url)
     }
 
     // close once signed in
