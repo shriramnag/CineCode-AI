@@ -55,8 +55,17 @@ object PluginRepositories {
     const val INDEX = "antigem-plugins.json"
     private const val PREFS = "plugin_repositories"
     const val DEFAULT_REPO = "dipeshkrydv/antigem_plugins"
+    const val CINECODE_REPO = "shriramnag/CineCode-AI"
     private const val DEFAULT_REPO_ADDED = "default_repo_added"
+    private const val CINECODE_REPO_ADDED = "cinecode_repo_added"
     private val NAME = "[A-Za-z0-9_.-]+"
+
+    private val githubHttp by lazy {
+        okhttp3.OkHttpClient.Builder()
+            .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(20, java.util.concurrent.TimeUnit.SECONDS)
+            .build()
+    }
 
     val repos = mutableStateListOf<PluginRepo>()
     /** Latest listing and error per [PluginRepo.label]; [loading] holds labels being refreshed. */
@@ -67,12 +76,18 @@ object PluginRepositories {
     var installProgress by mutableStateOf<RepoInstallProgress?>(null)
         private set
 
+    var isCloudRepoFallbackActive by mutableStateOf(false)
+        private set
+
+    var syncOfflineRepos by mutableStateOf(true)
+
     private var appContext: Context? = null
 
     fun init(context: Context) {
         if (appContext != null) return
         appContext = context.applicationContext
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        syncOfflineRepos = prefs.getBoolean("sync_offline_repos", true)
         prefs.getString("repos", null)?.let { stored ->
             runCatching { val array = JSONArray(stored); repos.addAll((0 until array.length()).map { parse(array.getString(it)) }) }
         }
@@ -83,6 +98,18 @@ object PluginRepositories {
             prefs.edit().putBoolean(DEFAULT_REPO_ADDED, true).apply()
             persist()
         }
+        if (!prefs.getBoolean(CINECODE_REPO_ADDED, false)) {
+            val cinecode = parse(CINECODE_REPO)
+            if (repos.none { it.label.equals(cinecode.label, ignoreCase = true) }) repos.add(0, cinecode)
+            prefs.edit().putBoolean(CINECODE_REPO_ADDED, true).apply()
+            persist()
+        }
+    }
+
+    fun updateSyncOfflineRepos(enabled: Boolean) {
+        syncOfflineRepos = enabled
+        appContext?.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            ?.edit()?.putBoolean("sync_offline_repos", enabled)?.apply()
     }
 
     /** Accepts `owner/repo`, `owner/repo@branch`, `https://github.com/owner/repo` and `…/tree/branch` URLs. */
@@ -115,13 +142,93 @@ object PluginRepositories {
     suspend fun refresh(repo: PluginRepo) {
         if (repo.label in loading) return
         withContext(Dispatchers.Main) { loading.add(repo.label) }
-        val result = runCatching { PluginBridge.repoList(repo.label) }
+        val bridgeResult = runCatching { PluginBridge.repoList(repo.label) }
+        val finalResult = if (bridgeResult.isSuccess) {
+            withContext(Dispatchers.Main) { isCloudRepoFallbackActive = false }
+            bridgeResult
+        } else if (syncOfflineRepos) {
+            val fallback = runCatching { fetchListingFromGitHub(repo) }
+            if (fallback.isSuccess) {
+                withContext(Dispatchers.Main) { isCloudRepoFallbackActive = true }
+            }
+            fallback
+        } else {
+            bridgeResult
+        }
         withContext(Dispatchers.Main) {
-            result.onSuccess { listings[repo.label] = it; errors.remove(repo.label) }
+            finalResult.onSuccess { listings[repo.label] = it; errors.remove(repo.label) }
                 .onFailure { errors[repo.label] = it.message ?: "Could not read ${repo.label}" }
             loading.remove(repo.label)
         }
     }
+
+    private suspend fun fetchListingFromGitHub(repo: PluginRepo): RepoListing = withContext(Dispatchers.IO) {
+        val branch = repo.ref.ifBlank { "main" }
+        val refQuery = if (repo.ref.isNotBlank()) "?ref=${repo.ref}" else ""
+
+        // 1. Try direct antigem-plugins.json from raw.githubusercontent.com or GitHub Contents API
+        val rawIndexUrl = "https://raw.githubusercontent.com/${repo.slug}/$branch/$INDEX"
+        val rawText = httpGetText(rawIndexUrl)
+        if (rawText != null && rawText.trimStart().startsWith("{")) {
+            val json = org.json.JSONObject(rawText)
+            val pluginsArr = json.optJSONArray("plugins") ?: JSONArray()
+            val list = (0 until pluginsArr.length()).mapNotNull { i ->
+                val p = pluginsArr.optJSONObject(i) ?: return@mapNotNull null
+                RepoPlugin(
+                    path = p.optString("path"),
+                    id = p.optString("id"),
+                    name = p.optString("name", p.optString("path")),
+                    version = p.optString("version", "1.0.0"),
+                    description = p.optString("description"),
+                    iconUrl = p.optString("iconUrl")
+                )
+            }
+            return@withContext RepoListing(
+                title = json.optString("title").ifBlank { repo.label },
+                plugins = list,
+                fromIndex = true
+            )
+        }
+
+        // 2. Fallback: scan api.github.com/repos/{slug}/contents (and extensions/)
+        val discovered = mutableListOf<RepoPlugin>()
+        for (sub in listOf("", "extensions")) {
+            val apiPath = if (sub.isEmpty()) "" else "/$sub"
+            val apiUrl = "https://api.github.com/repos/${repo.slug}/contents$apiPath$refQuery"
+            val contentsRaw = httpGetText(apiUrl) ?: continue
+            if (!contentsRaw.trimStart().startsWith("[")) continue
+            val entries = JSONArray(contentsRaw)
+            for (i in 0 until entries.length()) {
+                val item = entries.optJSONObject(i) ?: continue
+                if (item.optString("type") != "dir") continue
+                val folderPath = item.optString("path")
+                val manifestRaw = httpGetText("https://raw.githubusercontent.com/${repo.slug}/$branch/$folderPath/manifest.json")
+                if (manifestRaw != null && manifestRaw.trimStart().startsWith("{")) {
+                    val m = org.json.JSONObject(manifestRaw)
+                    discovered += RepoPlugin(
+                        path = folderPath,
+                        id = m.optString("id", item.optString("name")),
+                        name = m.optString("name", item.optString("name")),
+                        version = m.optString("version", "1.0.0"),
+                        description = m.optString("description", "Synced via GitHub API fallback"),
+                        iconUrl = ""
+                    )
+                }
+            }
+        }
+        RepoListing(title = "${repo.label} (Cloud GitHub)", plugins = discovered, fromIndex = false)
+    }
+
+    private fun httpGetText(url: String): String? = runCatching {
+        val req = okhttp3.Request.Builder()
+            .url(url)
+            .header("Accept", "application/vnd.github.v3+json")
+            .header("User-Agent", "CineCode-AI-Android")
+            .build()
+        githubHttp.newCall(req).execute().use { resp ->
+            if (resp.isSuccessful) resp.body?.string() else null
+        }
+    }.getOrNull()
 
     /** The installed plugin a repository entry corresponds to: same repo and folder, else the same plugin ID. */
     fun installedFor(repo: PluginRepo, plugin: RepoPlugin): BrowserExtension? {
@@ -149,10 +256,63 @@ object PluginRepositories {
             }
         }
         try {
-            BrowserExtensionManager.instance.installFromRepo(repo.label, plugin.path, folder, updateId, asNew)
+            val bridgeAttempt = runCatching {
+                BrowserExtensionManager.instance.installFromRepo(repo.label, plugin.path, folder, updateId, asNew)
+            }
+            if (bridgeAttempt.isSuccess) {
+                bridgeAttempt.getOrThrow()
+            } else {
+                installViaGitHubFallback(repo, plugin, folder)
+            }
         } finally {
             poller.cancel()
             withContext(Dispatchers.Main + NonCancellable) { installProgress = null }
+        }
+    }
+
+    private suspend fun installViaGitHubFallback(repo: PluginRepo, plugin: RepoPlugin, folder: String): BrowserExtension = withContext(Dispatchers.IO) {
+        val ctx = appContext ?: error("PluginRepositories not initialized")
+        val targetDir = java.io.File(ctx.filesDir, "extensions/${folder.trim()}").apply { mkdirs() }
+        withContext(Dispatchers.Main) {
+            installProgress = RepoInstallProgress("downloading", 0, 0, 0, 1, "Syncing from GitHub API...")
+        }
+        downloadGitHubDirectory(repo, plugin.path, targetDir)
+        java.io.File(targetDir, PluginSource.FILE).writeText(
+            PluginSource(repo.slug, repo.ref, plugin.path).toJson().toString()
+        )
+        BrowserExtensionManager.instance.loadExtensions()
+        AutonomousSkillLoader.scanLocalAndAssets(ctx)
+        BrowserExtensionManager.instance.extensions.firstOrNull { it.folderName == folder.trim() }
+            ?: BrowserExtension(
+                id = plugin.id.ifBlank { folder.trim() },
+                name = plugin.name,
+                version = plugin.version,
+                description = plugin.description,
+                folderName = folder.trim(),
+                dirPath = targetDir.absolutePath,
+                source = PluginSource(repo.slug, repo.ref, plugin.path)
+            )
+    }
+
+    private fun downloadGitHubDirectory(repo: PluginRepo, remotePath: String, destDir: java.io.File) {
+        val refQuery = if (repo.ref.isNotBlank()) "?ref=${repo.ref}" else ""
+        val apiUrl = "https://api.github.com/repos/${repo.slug}/contents/$remotePath$refQuery"
+        val raw = httpGetText(apiUrl) ?: return
+        if (!raw.trimStart().startsWith("[")) return
+        val entries = JSONArray(raw)
+        destDir.mkdirs()
+        for (i in 0 until entries.length()) {
+            val item = entries.optJSONObject(i) ?: continue
+            val name = item.optString("name")
+            val type = item.optString("type")
+            if (type == "file") {
+                val dl = item.optString("download_url")
+                if (dl.isNotBlank()) {
+                    httpGetText(dl)?.let { content -> java.io.File(destDir, name).writeText(content) }
+                }
+            } else if (type == "dir") {
+                downloadGitHubDirectory(repo, item.optString("path"), java.io.File(destDir, name))
+            }
         }
     }
 }

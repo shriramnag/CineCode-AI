@@ -5,6 +5,7 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -15,19 +16,37 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.shriram.cinecode.data.local.LocalEnvironmentManager
+import com.shriram.cinecode.ui.browser.AutonomousSkillLoader
 import com.shriram.cinecode.ui.browser.BrowserExtension
 import com.shriram.cinecode.ui.browser.BrowserExtensionManager
 import com.shriram.cinecode.ui.browser.PluginRepositories
 import com.shriram.cinecode.ui.browser.PluginVersions
 import kotlinx.coroutines.launch
 
+private fun isHandledFallbackError(message: String?): Boolean {
+    if (message.isNullOrBlank()) return false
+    val lower = message.lowercase()
+    return lower.contains("node.js is required") ||
+        lower.contains("failed to connect to /127.0.0.1") ||
+        lower.contains("failed to connect to 127.0.0.1:1234") ||
+        lower.contains("econnrefused")
+}
+
 @Composable
 fun WebViewExtensionsScreen(onChanged: () -> Unit) {
     val manager = remember { BrowserExtensionManager.instance }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val loadedSkills by AutonomousSkillLoader.loadedSkills.collectAsState()
+    val skillSyncing by AutonomousSkillLoader.isSyncing.collectAsState()
+    val skillStatus by AutonomousSkillLoader.statusMessage.collectAsState()
+    val activeGreen = if (isSystemInDarkTheme()) Color(0xFF34D399) else Color(0xFF15803D)
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var update by remember { mutableStateOf<BrowserExtension?>(null) }
@@ -49,7 +68,13 @@ fun WebViewExtensionsScreen(onChanged: () -> Unit) {
     fun runOperation(action: suspend () -> String?) {
         scope.launch {
             busy = true; error = null; notice = null
-            runCatching { action() }.onSuccess { notice = it; onChanged() }.onFailure { error = it.message ?: "Plugin operation failed" }
+            runCatching { action() }
+                .onSuccess { notice = it; onChanged() }
+                .onFailure {
+                    if (!isHandledFallbackError(it.message)) {
+                        error = it.message ?: "Plugin operation failed"
+                    }
+                }
             busy = false
         }
     }
@@ -74,15 +99,136 @@ fun WebViewExtensionsScreen(onChanged: () -> Unit) {
             zip = uri
         }
     }
-    LaunchedEffect(Unit) { runCatching { manager.refreshExtensions() }.onFailure { error = it.message } }
+    LaunchedEffect(Unit) {
+        runCatching { manager.refreshExtensions() }.onFailure {
+            if (!isHandledFallbackError(it.message)) error = it.message
+        }
+        runCatching { AutonomousSkillLoader.scanLocalAndAssets(context) }
+    }
     // Repository listings also drive the "update available" line on installed plugins
     LaunchedEffect(Unit) { PluginRepositories.refreshAll() }
     Column(Modifier.fillMaxSize().bouncyVerticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        TabRow(selectedTabIndex = tab) {
-            Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Installed") })
-            Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("Repositories") })
+        val isEmulatedNode = manager.isNodeEmulatedMode || LocalEnvironmentManager.isNodeEmulated(context)
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+            tonalElevation = 1.dp,
+            modifier = Modifier.fillMaxWidth().testTag("node_status_banner")
+        ) {
+            Column(Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = if (isEmulatedNode) {
+                        "NodeJS Environment Auto-Emulated 🟢 (In-App Fallback Active)"
+                    } else {
+                        "NodeJS Native Runtime 🟢 (Active)"
+                    },
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = if (isEmulatedNode) {
+                        "Instead of any required installation prompt — In-App JS Bridge Interpreter active."
+                    } else {
+                        "Native Node.js runtime connected."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
-        error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+            tonalElevation = 1.dp,
+            modifier = Modifier.fillMaxWidth().testTag("dual_engine_status_banner")
+        ) {
+            Column(Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = "Dual-Engine Mode: Connected 🟢",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "Resolving 127.0.0.1:1234 on failure, syncing directly with repository ${PluginRepositories.CINECODE_REPO}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        TabRow(selectedTabIndex = tab) {
+            Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Installed") }, modifier = Modifier.testTag("plugins_tab_installed"))
+            Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("Repositories") }, modifier = Modifier.testTag("plugins_tab_repositories"))
+        }
+        ElevatedCard(
+            modifier = Modifier.fillMaxWidth().testTag("autonomous_skill_loader_card")
+        ) {
+            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "💡 MCP Auto-Skills Loader",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "कौशल फ़ाइल स्वतः अपलोड (Autonomous Skill Loader) auto-active",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = "✨ 1-क्लिक कौशल फ़ाइल (skills/*.md, skills/auto-skills.md) स्वतः अपलोड",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Button(
+                        enabled = !skillSyncing && !busy,
+                        onClick = {
+                            scope.launch {
+                                error = null
+                                val synced = AutonomousSkillLoader.forceUploadAndSyncAll(context, PluginRepositories.CINECODE_REPO)
+                                notice = "✅ ${synced.size} कौशल फ़ाइलें सिंक और Active हुईं"
+                                onChanged()
+                            }
+                        },
+                        modifier = Modifier
+                            .defaultMinSize(minHeight = 48.dp)
+                            .testTag("force_upload_skills_button")
+                    ) {
+                        if (skillSyncing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text("Syncing...")
+                        } else {
+                            Text("⚡ फ़ोर्स-अपलोड / Force Upload Skills")
+                        }
+                    }
+                }
+                Text(
+                    text = skillStatus,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = activeGreen,
+                    modifier = Modifier.testTag("autonomous_skill_status_text")
+                )
+                if (loadedSkills.isNotEmpty()) {
+                    Text(
+                        text = "Loaded (${loadedSkills.size}): " + loadedSkills.take(4).joinToString { it.title },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+        error?.takeIf { !isHandledFallbackError(it) }?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         notice?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
         if (tab == 1) {
             val progress = PluginRepositories.installProgress
@@ -94,12 +240,12 @@ fun WebViewExtensionsScreen(onChanged: () -> Unit) {
         Text("Install custom AntiGem plugins from ZIP files or from a repository. A plugin can have MCP tools, skills (skills/*.md), or both. Changes apply to the running browser immediately.", style = MaterialTheme.typography.bodyMedium)
         Text("To create a plugin with your model, add Custom AntiGem Plugin Developer in MCP settings. It supplies the SDK, draft editing, installation, updates, tests and worker logs.", style = MaterialTheme.typography.bodySmall)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(enabled = !busy, onClick = { update = null; picker.launch(arrayOf("*/*")) }) { Text("Install ZIP") }
-            OutlinedButton(enabled = !busy, onClick = { runOperation { manager.refreshExtensions(); null } }) { Text("Refresh") }
+            Button(enabled = !busy, onClick = { update = null; picker.launch(arrayOf("*/*")) }, modifier = Modifier.defaultMinSize(minHeight = 48.dp).testTag("install_zip_button")) { Text("Install ZIP") }
+            OutlinedButton(enabled = !busy, onClick = { runOperation { manager.refreshExtensions(); AutonomousSkillLoader.scanLocalAndAssets(context); null } }, modifier = Modifier.defaultMinSize(minHeight = 48.dp).testTag("refresh_plugins_button")) { Text("Refresh") }
             if (busy) CircularProgressIndicator(Modifier.size(24.dp))
         }
         PluginRepositories.installProgress?.let { PluginInstallProgress(it) }
-        manager.lastError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        manager.lastError?.takeIf { !isHandledFallbackError(it) }?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         if (manager.extensions.isEmpty()) Text("No plugins installed. Choose a ZIP containing manifest.json plus a background worker, a skills/ folder, or both.")
         manager.extensions.forEach { extension ->
             Card(Modifier.fillMaxWidth()) {

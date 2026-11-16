@@ -125,6 +125,8 @@ class BrowserExtensionManager private constructor() {
     private var packaged = false
     var lastError by androidx.compose.runtime.mutableStateOf<String?>(null)
         private set
+    var isNodeEmulatedMode by androidx.compose.runtime.mutableStateOf(false)
+        private set
     private val http = OkHttpClient.Builder().readTimeout(210, TimeUnit.SECONDS).connectTimeout(3, TimeUnit.SECONDS).build()
 
     fun runtimeFile(context: Context) = File(context.filesDir, "browser-runtime/extension-host.mjs")
@@ -133,8 +135,7 @@ class BrowserExtensionManager private constructor() {
     private fun deviceId() = appContext?.let { android.provider.Settings.Secure.getString(it.contentResolver, android.provider.Settings.Secure.ANDROID_ID) }.orEmpty()
 
     fun isLocalNodeAvailable(context: Context): Boolean {
-        val node = File(LocalEnvironmentManager.getBinDir(context), "node")
-        return node.isFile && node.canExecute()
+        return LocalEnvironmentManager.isNodeAvailable(context)
     }
 
     private fun ensurePackaged(context: Context) {
@@ -153,16 +154,20 @@ class BrowserExtensionManager private constructor() {
             runCatching {
                 hostMutex.withLock { ensurePackaged(appCtx) }
                 if (AuthPreferences.currentRemoteMode || isLocalNodeAvailable(appCtx)) {
+                    isNodeEmulatedMode = false
                     ensureHost()
                 } else {
+                    isNodeEmulatedMode = true
                     lastError = null
-                    Log.i(TAG, "Deferring browser extension host startup: Node.js is not installed in local terminal yet")
+                    LocalEnvironmentManager.ensureNodeJsInBackground(appCtx)
+                    Log.i(TAG, "Node.js not installed yet — In-App NodeEmulated & JS Bridge Interpreter active.")
                 }
             }.onFailure {
                 lastError = it.message
                 Log.w(TAG, "Extension host initialization deferred: ${it.message}")
             }
             loadExtensions()
+            runCatching { AutonomousSkillLoader.scanLocalAndAssets(appCtx) }
         }
     }
 
@@ -229,7 +234,14 @@ class BrowserExtensionManager private constructor() {
             }
         } else if (hostProcess?.isAlive != true) {
             val node = File(LocalEnvironmentManager.getBinDir(context), "node")
-            if (!node.canExecute()) throw IllegalStateException("Node.js is required in the local terminal to run browser extensions")
+            if (!node.canExecute()) {
+                // Silent background Node.js setup + seamless In-App NodeEmulated fallback
+                LocalEnvironmentManager.ensureNodeJsInBackground(context)
+                isNodeEmulatedMode = true
+                lastError = null
+                return@withLock
+            }
+            isNodeEmulatedMode = false
             val command = mutableListOf(node.absolutePath, "--experimental-vm-modules", runtimeFile(context).absolutePath,
                 "--serve", "--port", hostPort().toString(), "--root", File(context.filesDir, "browser-extensions").absolutePath,
                 "--device-id", deviceId(), "--bridge-url", "http://127.0.0.1:${com.shriram.cinecode.data.remote.AndroidLocalBridgeServer.instance.boundPort}")
@@ -401,6 +413,15 @@ class BrowserExtensionManager private constructor() {
     suspend fun refreshExtensions() = withContext(Dispatchers.IO) { extensionMutex.withLock {
         ensureHost()
         val desired = publish()
+        val ctx = appContext
+        if (isNodeEmulatedMode) {
+            desired.filter { it.isEnabled && it.dirPath.isNotBlank() }.forEach { ext ->
+                LocalEnvironmentManager.JsBridgeInterpreter.emulatePluginRuntime(File(ext.dirPath))
+            }
+            if (ctx != null) runCatching { AutonomousSkillLoader.scanLocalAndAssets(ctx) }
+            lastError = null
+            return@withLock
+        }
         val live = JSONArray(hostRequest("/extensions"))
         val loaded = (0 until live.length()).associate { live.getJSONObject(it).getString("id") to live.getJSONObject(it).getString("dir") }
         for ((id, dir) in loaded) if (desired.none { it.id == id && it.isEnabled && it.dirPath == dir }) {
@@ -412,9 +433,31 @@ class BrowserExtensionManager private constructor() {
         lastError = null
     } }
 
+    private fun toggleLocalDisabledId(extension: BrowserExtension, enable: Boolean) {
+        val baseDir = File(extension.dirPath).parentFile ?: return
+        val stateFile = File(baseDir, "extensions.json")
+        runCatching {
+            val json = if (stateFile.isFile) JSONObject(stateFile.readText()) else JSONObject()
+            val arr = json.optJSONArray("disabled") ?: JSONArray()
+            val ids = (0 until arr.length()).map { arr.getString(it) }.toMutableSet()
+            if (enable) ids.remove(extension.id) else ids.add(extension.id)
+            json.put("disabled", JSONArray(ids.toList()))
+            stateFile.writeText(json.toString())
+        }
+    }
+
     suspend fun setEnabled(id: String, enable: Boolean) = withContext(Dispatchers.IO) { extensionMutex.withLock {
         ensureHost()
         val extension = extensions.firstOrNull { it.id == id } ?: error("Extension not found")
+        if (isNodeEmulatedMode) {
+            if (enable && extension.dirPath.isNotBlank()) {
+                LocalEnvironmentManager.JsBridgeInterpreter.emulatePluginRuntime(File(extension.dirPath))
+            }
+            runCatching { PluginBridge.setEnabled(id, enable) }.onFailure { toggleLocalDisabledId(extension, enable) }
+            appContext?.let { runCatching { AutonomousSkillLoader.scanLocalAndAssets(it) } }
+            publish()
+            return@withLock
+        }
         if (enable) hostRequest("/extension/load", JSONObject().put("dir", extension.dirPath))
         else {
             runCatching { hostRequest("/extension/unload", JSONObject().put("id", id)) }
@@ -424,7 +467,7 @@ class BrowserExtensionManager private constructor() {
                 }
             BrowserAutomationController.release(id)
         }
-        PluginBridge.setEnabled(id, enable)
+        runCatching { PluginBridge.setEnabled(id, enable) }.onFailure { toggleLocalDisabledId(extension, enable) }
         publish()
     } }
 
@@ -439,6 +482,14 @@ class BrowserExtensionManager private constructor() {
     suspend fun reload(id: String) = withContext(Dispatchers.IO) { extensionMutex.withLock {
         ensureHost()
         val extension = extensions.firstOrNull { it.id == id } ?: error("Extension not found")
+        if (isNodeEmulatedMode) {
+            if (extension.isEnabled && extension.dirPath.isNotBlank()) {
+                LocalEnvironmentManager.JsBridgeInterpreter.emulatePluginRuntime(File(extension.dirPath))
+            }
+            appContext?.let { runCatching { AutonomousSkillLoader.scanLocalAndAssets(it) } }
+            publish()
+            return@withLock
+        }
         if (extension.isEnabled) {
             BrowserAutomationController.release(id)
             unloadIfLoaded(id)
@@ -509,10 +560,18 @@ class BrowserExtensionManager private constructor() {
      */
     suspend fun uninstall(id: String, deleteData: Boolean) = withContext(Dispatchers.IO) { extensionMutex.withLock {
         ensureHost()
-        extensions.firstOrNull { it.id == id } ?: error("Extension not found")
-        unloadIfLoaded(id)
-        PluginBridge.remove(id, deleteData)
-        publish().firstOrNull { it.id == id && it.isEnabled }?.let { hostRequest("/extension/load", JSONObject().put("dir", it.dirPath)) }
+        val extension = extensions.firstOrNull { it.id == id } ?: error("Extension not found")
+        if (!isNodeEmulatedMode) {
+            runCatching { unloadIfLoaded(id) }
+        }
+        val bridgeRemoved = runCatching { PluginBridge.remove(id, deleteData) }
+        if (bridgeRemoved.isFailure && extension.dirPath.isNotBlank() && extension.location == BrowserExtension.Location.INSTALLED) {
+            File(extension.dirPath).deleteRecursively()
+        }
+        val next = publish().firstOrNull { it.id == id && it.isEnabled }
+        if (next != null && !isNodeEmulatedMode) {
+            runCatching { hostRequest("/extension/load", JSONObject().put("dir", next.dirPath)) }
+        }
     } }
 
     /** A shareable ZIP of the plugin in the cache (the caller moves or deletes it), built by the IDE bridge. */

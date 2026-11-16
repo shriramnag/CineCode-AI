@@ -1,5 +1,6 @@
 package com.shriram.cinecode.ui.settings
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
@@ -11,9 +12,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.shriram.cinecode.data.remote.CloudBridgeStore
 import com.shriram.cinecode.ui.browser.PluginRepo
 import com.shriram.cinecode.ui.browser.PluginRepositories
 import com.shriram.cinecode.ui.browser.PluginVersions
@@ -28,7 +33,10 @@ import kotlinx.coroutines.launch
 fun PluginRepositoriesTab(busy: Boolean, runOperation: (suspend () -> String?) -> Unit, folderTaken: (String) -> Boolean, freeFolder: (String) -> String) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var input by remember { mutableStateOf("") }
+    LaunchedEffect(Unit) { CloudBridgeStore.ensureInitialized(context) }
+    val isCloudActive by CloudBridgeStore.isCloudActiveFlow.collectAsState()
+    val activeGreen = if (isSystemInDarkTheme()) Color(0xFF34D399) else Color(0xFF15803D)
+    var input by remember { mutableStateOf(PluginRepositories.CINECODE_REPO) }
     var addError by remember { mutableStateOf<String?>(null) }
     var guide by remember { mutableStateOf<String?>(null) }
     // A new install whose default folder name is taken waits here for another name
@@ -51,6 +59,70 @@ fun PluginRepositoriesTab(busy: Boolean, runOperation: (suspend () -> String?) -
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        OutlinedTextField(
+            value = input,
+            onValueChange = { input = it; addError = null },
+            label = { Text("GitHub repository URL / path") },
+            placeholder = { Text("shriramnag/CineCode-AI or owner/repo@branch") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth().testTag("github_repo_input"),
+            isError = addError != null,
+            supportingText = { Text(addError ?: "Node.js missing fallback & offline plugins sync from GitHub API is enabled.") }
+        )
+        Button(
+            enabled = input.isNotBlank(),
+            onClick = {
+                runCatching { PluginRepositories.parse(input) }
+                    .onSuccess { parsed ->
+                        val existing = PluginRepositories.repos.firstOrNull { it.label.equals(parsed.label, ignoreCase = true) }
+                        if (existing != null) {
+                            scope.launch { PluginRepositories.refresh(existing) }
+                        } else {
+                            runCatching { PluginRepositories.add(parsed) }
+                                .onSuccess { input = ""; scope.launch { PluginRepositories.refresh(parsed) } }
+                                .onFailure { addError = it.message }
+                        }
+                    }
+                    .onFailure { addError = it.message }
+            },
+            modifier = Modifier.defaultMinSize(minHeight = 48.dp).testTag("add_sync_repo_button")
+        ) { Text("Add / Sync Repository") }
+
+        Card(Modifier.fillMaxWidth().testTag("repo_sync_status_card")) {
+            Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "🌐 Sync Offline Repos",
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Switch(
+                        checked = PluginRepositories.syncOfflineRepos,
+                        onCheckedChange = { enabled ->
+                            PluginRepositories.updateSyncOfflineRepos(enabled)
+                            if (enabled) scope.launch { PluginRepositories.refreshAll() }
+                        },
+                        modifier = Modifier.testTag("sync_offline_repos_switch")
+                    )
+                }
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = "🛠️ Custom API Key Integration status:",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = if (isCloudActive) "API Active 🟢 (Direct Cloud)" else "Local Bridge Mode 🔵 (:1235)",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (isCloudActive) activeGreen else MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.testTag("repo_api_integration_status")
+                    )
+                }
+            }
+        }
+
         Card(Modifier.fillMaxWidth()) {
             Row(Modifier.padding(start = 14.dp, end = 4.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
@@ -70,14 +142,6 @@ fun PluginRepositoriesTab(busy: Boolean, runOperation: (suspend () -> String?) -
                 IconButton(onClick = { scope.launch { saveToDownloads(context, "antigem-plugin-sdk.zip", bundledSdkZip(context), "application/zip") } }) { Icon(Icons.Outlined.FolderZip, "Download plugin SDK ZIP") }
             }
         }
-        OutlinedTextField(value = input, onValueChange = { input = it; addError = null }, label = { Text("GitHub repository") },
-            placeholder = { Text("owner/repo, owner/repo@branch or URL") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
-            isError = addError != null, supportingText = { Text(addError ?: "Only add repositories you trust: plugins run code on your device.") })
-        Button(enabled = input.isNotBlank(), onClick = {
-            runCatching { PluginRepositories.parse(input).also { PluginRepositories.add(it) } }
-                .onSuccess { repo -> input = ""; scope.launch { PluginRepositories.refresh(repo) } }
-                .onFailure { addError = it.message }
-        }) { Text("Add repository") }
 
         if (PluginRepositories.repos.isEmpty()) Text("No repositories added.", style = MaterialTheme.typography.bodySmall)
         PluginRepositories.repos.forEach { repo ->
