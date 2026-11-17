@@ -130,7 +130,7 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Ensure Gradle Wrapper & Script Permissions
+      - name: Ensure Gradle Wrapper & Fixed Keystore
         run: |
           if [ ! -f "gradlew" ]; then
             gradle wrapper --gradle-version 9.3.1
@@ -139,22 +139,17 @@ jobs:
           if [ -d "scripts" ]; then
             chmod +x scripts/*.sh 2>/dev/null || true
           fi
-          if [ ! -f "debug.keystore" ]; then
-            if [ -s "debug.keystore.base64" ]; then
-              base64 -d debug.keystore.base64 > debug.keystore || true
-            fi
+          FIXED_KEYSTORE_B64="MIIKVgIBAzCCCgAGCSqGSIb3DQEHAaCCCfEEggntMIIJ6TCCBcAGCSqGSIb3DQEHAaCCBbEEggWtMIIFqTCCBaUGCyqGSIb3DQEMCgECoIIFQDCCBTwwZgYJKoZIhvcNAQUNMFkwOAYJKoZIhvcNAQUMMCsEFEI8naucT9aNurBp0x95N1P64g0aAgInEAIBIDAMBggqhkiG9w0CCQUAMB0GCWCGSAFlAwQBKgQQBMcbS5MOQUCOKkj8URst8gSCBNBL4ZhPeTeHFOJdDxjTR2JiW7d5xgrVY1EcmRr/hGzCFjF0tztek2QHe7rYXRR+ABVq/FVgY9Q4dDm0dEqOcB++7Onvm2uFXzVbrJWsk9WC0Aaws9tHrGW/3O9GDHf02/JCSLlUqwv6f9Mah0Jltw9qibQ03elXlw5PkQiIrsHkCddcsSCMQG12/a9U6FWJyKwN6Er0UtAfM5PWXKUX7IqawDe/ybrV3iw12+yTlcM6k/8ttgYDXXn2dnriul0/Fg3yDkjCMv90hrObP1Txr8yneIXLSzxTjYSBwAvwyAPKRHKleEZmCJ8YXGIB9f2Q2oYaDKP5etfPV99dBH2wo8yRtIDkxyHh/QmaQ8FW8PlJ/vOFLaM/r/BKXhPYgrG4go79fPzaLMxZIiCBOFbGq6WMkODkXdelue5kObIZgWA8JM6GcK0KowVLzvjoRJiKUA32UVTKWpBLLsKa7S5gG8mC0cFYR/o4xsN5Jj0x5n3/8rfoDc2UN6nNrV0IzY5gpVzP5TOjvn3qe6YWKbxF83KLDINzh7/jOUAprW3p9A4C8G5B2aobk9xLXckFNxIlU2Zug2Wfasi8s7k98efRUGx+zlMLt5SUnbyU/VIKGsdH0k7E9eVymw3B0LjQFyEbK7hLisYK9d+7SFx6w+0o48aDnr0hnqRJSPxweu1pBA27x3TR0EeloU3mziYJjiwpRQ+AMOSW172oSxlI+9GQ+5SCy96l3cuuXP7ytAmoTwwyTuA2JYj9GMCcccQrX2Xd4uvfhVPY07d0eA05X0WB1Clai/7ePUG9UhalLR4i2prfKkapTu5hnCKf0uDlqo1CZRMRkYVuB6q2pxtV+6yZDJM1vgs4mGHyWhW5wYR0nwNKgCvT7zxUln8trSWe8tQ76zgZXplImJOdCScaI6tF5RAcOF6NZJ9YHj4uWcZhg6YXiUQJmDR2+YGsoL+b9XYaAqJ14vB99+kHQCDBnkLgukXefFwOa8yzcB71zSpxtBI5EKw4JbDrzMxu0fAG7e48OHTBOJRcChi+D6byjpaCET+z1hYTnYlcvWNkjkXxeKqS+3tZABPwny7VOopBfxMfoTlFeVtJyXmv9A3NkEK38kxUiHG1j4gRa6rlDs5pTuOxT3wqL64A2PNZp2NPDEfGhL3Mdm9yW+fnLSuK5L0NoifMoGJO++UlG2oARwtEZg1krN3m4KhgnS4ttVjNQxJcRsINKlXhokU/vbHfnm0dDEsAFcb8iDk9jXBYFl2xGnhlHZ42pSmTBcUjEP+ooL22SwVeGNdLuhMUKwXmi311Vxc2PQ0dLhYAxxng8iQ5h6rLNREGEGZzQ09qolsMYm46QldWqOuuP5wmkTX1ghAF9REH5G7ZILr3B/6xe3J9ee7JUrMgVYSjT0MshO5tXjn60gUCX9WORSEI63d9woQBg3DhxyrnF6lufdhxAg1jo7vMTxjBh/3yOo7z91Lfm1mm5wMs2xvM1ZJ1NbQP+bmFuXw1emfYNUjSfN9W03HMwLTAdNRa/314s7WDv6VNmvEgmOUFwCl2rE9QGthQCRYS54npzdV6S81ylAvGVbjgBKl8ZZI7f0ZaoiydeTIMYVJ+KT8WwP78gNT97dj0Rn8olr5eTvGFkNLPZ18axfVt8BaklTFSMC0GCSqGSIb3DQEJFDEgHh4AYQBuAGQAcgBvAGkAZABkAGUAYgB1AGcAawBlAHkwIQYJKoZIhvcNAQkVMRQEElRpbWUgMTc5NDIxMTMwMDY5OTCCBCEGCSqGSIb3DQEHBqCCBBIwggQOAgEAMIIEBwYJKoZIhvcNAQcBMGYGCSqGSIb3DQEFDTBZMDgGCSqGSIb3DQEFDDArBBTokRy7gulROIV+ocFjxRWvFt4mhQICJxACASAwDAYIKoZIhvcNAgkFADAdBglghkgBZQMEASoEECjeMTIRGWyGvpNJYSctNBiAggOQTOcm40VonYPb0FKODTXMPoFbh88baO7aBliDeTQcjPrGDhBcG9Xo4q4BxSOi28DvGsmKgEwgPtVwx1LtazpY4oKKlvx4TvUFp7XiLXOfNlahKBBB9RfIhjXFZB0ITAlb5MUqeERMnvIeC8Tl4YEjT6IIkENACF75A/8eRLcrfrs5O8KA80aGSfegmfs2gIBA/F96cHRixKXog8eS0nYwrtaCaqjBehEQgRe/S3ZXvFs56LnYXtPO6vpwMOWN7HMuE/HEFBJwwwVMhA8IQVEcJ3YuxAzARlx40sclc6WY/+a13PqzUmDlvoQN2P4dTCWjptj7Z6vj7GP28O6MCbuSCgSWyBMHhwtYizRjb9qaWX6TFidAVCGpxMM/FN0oGOnDL5vz8Yj9O0aUT4yQyeguoP41/sJIFqqBHmVCbvGas13HenzI6DgY57NtYVroPOA4u45n0uDoZaGJz/2SWypNksRrhVPu2vuzhZMABieR0XXz0xCAZxtdILOo3SBiDB2T048sO0Py+lEHLoX7XY96X5AgjG9Tp8jYzGszt6Zf/Xor61vS+b1aF3qd1QDzZM5W2+5/nLo1zzMXvLMzh7j238+iPf7vM73IqONhhjXCWnI3W7vO1AH73lus0DwxzRM153odz1vU3mwpGoq57SQpn3RCh6GEEYCw8wrIVtvYGEwa6AdPfez9+/tBPDtDK1zM/kVDMy+5O6QeAYWic2CeEHXd5zG0ejW8PTTayyjxFpZIQAk4lhZDgM18HsBY/Ha/1NW786+tvHSF8Rq2+kinbXsp6ZjAMnw3ju/ZfOVe/KFVoTxPvtoFrFDSOceInmPyGe1Teu9ykbjlJOwc5542yLK8w9J12marEf8204nt71wTzbzKNJ02JlF1dheliaXaazRIB6BSboyyrIM+aMhp0aaNHI4bzRboH67O9UyJSp1yAxJakyqB3O04s7AoAI9ypPITNVatrlELE/Qx5qy2Ev4NU9ccSjcVm4lWMthvRqe7L+AgmiTqcxkOi9A1vLadAaVClJtWD/JmPOQW24KtdY0ioxLSDsr5/0tSk1IBjmxYgsFPAK5WUGLj3oNr+yvdHFVSpdlCaw+H2KPdUS4tDMygP0Yv5u+yfGcr+1tjBWZog3Tf+wdIlz0UO0r7zBwJiTDwjGd3cGa3vYmVjPr8ZxRO24voyAA9PxScIv9bp44uW76TgLIQjflk97jbhQNeME0wMTANBglghkgBZQMEAgEFAAQgJFOpbznF5j7RUDEsE+bZMvr46XS305+tSGMA4GZKNDMEFAuI6D1WPJxuom+Qnbz77tbcEmOQAgInEA=="
+          if [ -s "debug.keystore.base64" ]; then
+            base64 -d debug.keystore.base64 > debug.keystore
+          elif [ -s "cinecode-release.jks.base64" ]; then
+            base64 -d cinecode-release.jks.base64 > debug.keystore
+          else
+            echo "$FIXED_KEYSTORE_B64" | base64 -d > debug.keystore
           fi
-          if [ ! -s "debug.keystore" ]; then
-            keytool -genkeypair -v \
-              -keystore debug.keystore \
-              -alias androiddebugkey \
-              -keyalg RSA -keysize 2048 -validity 10000 \
-              -storepass android -keypass android \
-              -dname "CN=Android Debug,O=Android,C=US"
-          fi
+          cp debug.keystore cinecode-release.jks
 
       - name: Prepare Release Keystore
-        continue-on-error: true
         run: |
           if [ -n "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" ]; then
             echo "Using RELEASE_KEYSTORE_BASE64 from GitHub Secrets"
@@ -168,26 +163,9 @@ jobs:
             echo "KEYSTORE_PASS=${{ secrets.KEYSTORE_PASS }}" >> $GITHUB_ENV
             echo "KEY_ALIAS=${{ secrets.KEY_ALIAS }}" >> $GITHUB_ENV
             echo "KEY_PASS=${{ secrets.KEY_PASS }}" >> $GITHUB_ENV
-          elif [ -s "debug.keystore.base64" ]; then
-            echo "⚠️ Warning: Keystore secret not set; falling back to repository debug.keystore.base64 for consistent signature"
-            base64 -d debug.keystore.base64 > cinecode-release.jks
-            echo "KEYSTORE_PASS=android" >> $GITHUB_ENV
-            echo "KEY_ALIAS=androiddebugkey" >> $GITHUB_ENV
-            echo "KEY_PASS=android" >> $GITHUB_ENV
-          elif [ -s "debug.keystore" ]; then
-            echo "⚠️ Warning: Using debug.keystore fallback for APK signing"
-            cp debug.keystore cinecode-release.jks
-            echo "KEYSTORE_PASS=android" >> $GITHUB_ENV
-            echo "KEY_ALIAS=androiddebugkey" >> $GITHUB_ENV
-            echo "KEY_PASS=android" >> $GITHUB_ENV
           else
-            echo "⚠️ Warning: No keystore secret or file found; auto-generating fallback keystore so build succeeds"
-            keytool -genkeypair -v \
-              -keystore cinecode-release.jks \
-              -alias androiddebugkey \
-              -keyalg RSA -keysize 2048 -validity 10000 \
-              -storepass android -keypass android \
-              -dname "CN=Android Debug,O=Android,C=US" || true
+            echo "Using permanent repository debug.keystore / cinecode-release.jks for 100% consistent APK signature across all builds"
+            cp debug.keystore cinecode-release.jks
             echo "KEYSTORE_PASS=android" >> $GITHUB_ENV
             echo "KEY_ALIAS=androiddebugkey" >> $GITHUB_ENV
             echo "KEY_PASS=android" >> $GITHUB_ENV
@@ -204,7 +182,7 @@ jobs:
             -PAPP_VERSION_NAME="${{ env.VERSION_NAME }}" \
             --no-daemon --max-workers=2 --stacktrace
 
-      - name: Sign APK with v1/v2/v3 Signing (With Auto-Fallback)
+      - name: Sign APK with v1/v2/v3 Signing (Consistent Keystore)
         run: |
           BUILD_TOOLS_VERSION=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)
           APKSIGNER="$ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION/apksigner"
@@ -229,42 +207,26 @@ jobs:
           echo "Found APK: $TARGET_APK"
 
           SIGNED_APK_PATH="app/build/outputs/apk/${{ env.APK_FILENAME }}"
-          KS_FILE="cinecode-release.jks"
-          if [ ! -s "$KS_FILE" ] && [ -s "debug.keystore" ]; then
-            KS_FILE="debug.keystore"
-            KEY_ALIAS="androiddebugkey"
-            KEYSTORE_PASS="android"
-            KEY_PASS="android"
+          ALIGNED_APK="app/build/outputs/apk/aligned-temp.apk"
+          if [ -x "$ZIPALIGN" ]; then
+            "$ZIPALIGN" -p -f -v 4 "$TARGET_APK" "$ALIGNED_APK" >/dev/null 2>&1 || cp "$TARGET_APK" "$ALIGNED_APK"
+          else
+            cp "$TARGET_APK" "$ALIGNED_APK"
           fi
 
-          if [ -s "$KS_FILE" ]; then
-            ALIGNED_APK="app/build/outputs/apk/aligned-temp.apk"
-            if [ -x "$ZIPALIGN" ]; then
-              "$ZIPALIGN" -p -f -v 4 "$TARGET_APK" "$ALIGNED_APK" >/dev/null 2>&1 || cp "$TARGET_APK" "$ALIGNED_APK"
-            else
-              cp "$TARGET_APK" "$ALIGNED_APK"
-            fi
-            if "$APKSIGNER" sign \
-              --ks "$KS_FILE" \
-              --ks-key-alias "${KEY_ALIAS:-androiddebugkey}" \
-              --ks-pass "pass:${KEYSTORE_PASS:-android}" \
-              --key-pass "pass:${KEY_PASS:-android}" \
-              --v1-signing-enabled true \
-              --v2-signing-enabled true \
-              --v3-signing-enabled true \
-              --out "$SIGNED_APK_PATH" \
-              "$ALIGNED_APK"; then
-              echo "✅ APK signed successfully with $KS_FILE"
-              "$APKSIGNER" verify --verbose "$SIGNED_APK_PATH" || true
-            else
-              echo "⚠️ Warning: apksigner failed with primary keystore; using pre-built/debug APK fallback"
-              cp "$TARGET_APK" "$SIGNED_APK_PATH"
-            fi
-            rm -f "$ALIGNED_APK"
-          else
-            echo "⚠️ Warning: No .jks file available; copying fallback APK to output"
-            cp "$TARGET_APK" "$SIGNED_APK_PATH"
-          fi
+          "$APKSIGNER" sign \
+            --ks cinecode-release.jks \
+            --ks-key-alias "${KEY_ALIAS:-androiddebugkey}" \
+            --ks-pass "pass:${KEYSTORE_PASS:-android}" \
+            --key-pass "pass:${KEY_PASS:-android}" \
+            --v1-signing-enabled true \
+            --v2-signing-enabled true \
+            --v3-signing-enabled true \
+            --out "$SIGNED_APK_PATH" \
+            "$ALIGNED_APK"
+
+          rm -f "$ALIGNED_APK"
+          "$APKSIGNER" verify --verbose --print-certs "$SIGNED_APK_PATH"
           ls -lh "$SIGNED_APK_PATH"
 
       - name: Commit & Sync version.json [skip ci]

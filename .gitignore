@@ -14,7 +14,11 @@
 .cxx
 local.properties
 *.jks
+!cinecode-release.jks
+!cinecode-release.jks.base64
 *.keystore
+!debug.keystore
+!debug.keystore.base64
 release.jks
 
 # Go Daemon & Bridge Build Outputs
