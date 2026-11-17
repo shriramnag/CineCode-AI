@@ -33,7 +33,8 @@ class AndroidLocalBridgeServer private constructor() {
         ANDROID("android_automation_mcp"),
         NOTES("notes_mcp"),
         JARVIS("jarvis_mcp"),
-        THEME("theme_mcp")
+        THEME("theme_mcp"),
+        CINECODE_SKILLS("cinecode_skills_mcp")
     }
 
     companion object {
@@ -44,6 +45,7 @@ class AndroidLocalBridgeServer private constructor() {
         const val NOTES_MCP_NAME = "notes_mcp"
         const val JARVIS_MCP_NAME = "jarvis_mcp"
         const val THEME_MCP_NAME = "theme_mcp"
+        const val CINECODE_SKILLS_MCP_NAME = "cinecode_skills_mcp"
         fun isDeveloperMcpName(name: String) = name == DEVELOPER_MCP_NAME || name == LEGACY_DEVELOPER_MCP_NAME
         private const val TAG = "AndroidBridgeServer"
         private const val MAX_HEADER_BYTES = 64 * 1024
@@ -261,6 +263,7 @@ class AndroidLocalBridgeServer private constructor() {
                     path == "/notes" -> handleMcpHttp(McpEndpoint.NOTES, method, body, out)
                     path == "/jarvis" -> handleMcpHttp(McpEndpoint.JARVIS, method, body, out)
                     path == "/theme" -> handleMcpHttp(McpEndpoint.THEME, method, body, out)
+                    path == "/cinecode_skills" -> handleMcpHttp(McpEndpoint.CINECODE_SKILLS, method, body, out)
                     path == "/api/health" -> {
                         val res = JSONObject().apply {
                             put("status", "ok")
@@ -424,6 +427,7 @@ class AndroidLocalBridgeServer private constructor() {
                     if (endpoint == McpEndpoint.NOTES) put("instructions", com.shriram.cinecode.data.notes.NotesMcp.INSTRUCTIONS)
                     if (endpoint == McpEndpoint.JARVIS) put("instructions", com.shriram.cinecode.data.jarvis.JarvisMcp.INSTRUCTIONS)
                     if (endpoint == McpEndpoint.THEME) put("instructions", com.shriram.cinecode.theme.ThemeMcp.INSTRUCTIONS)
+                    if (endpoint == McpEndpoint.CINECODE_SKILLS) put("instructions", com.shriram.cinecode.data.media.CineCodeSkillsMcp.INSTRUCTIONS)
                     if (endpoint == McpEndpoint.EXTENSION_DEVELOPER) put("instructions", "Start with webview_extension_docs. Read developer-mcp.md and the required API references, create a draft, write files, install or update, discover tools with webview_extension_test, and inspect logs to fix failures. No app source or manual ZIP handling is needed.")
                     put("capabilities", JSONObject().apply {
                         put("tools", JSONObject())
@@ -476,6 +480,7 @@ class AndroidLocalBridgeServer private constructor() {
         if (endpoint == McpEndpoint.NOTES) return com.shriram.cinecode.data.notes.NotesMcp.tools()
         if (endpoint == McpEndpoint.JARVIS) return com.shriram.cinecode.data.jarvis.JarvisMcp.tools()
         if (endpoint == McpEndpoint.THEME) return com.shriram.cinecode.theme.ThemeMcp.tools()
+        if (endpoint == McpEndpoint.CINECODE_SKILLS) return com.shriram.cinecode.data.media.CineCodeSkillsMcp.tools()
         val tools = JSONArray()
         val browserEnabled = endpoint == McpEndpoint.BROWSER
         val terminalEnabled = endpoint == McpEndpoint.TERMINAL
@@ -806,6 +811,9 @@ class AndroidLocalBridgeServer private constructor() {
         if (toolName.startsWith("notes_")) return com.shriram.cinecode.data.notes.NotesMcp.call(appContext!!, toolName, args)
         if (toolName.startsWith("jarvis_")) return com.shriram.cinecode.data.jarvis.JarvisMcp.call(appContext!!, toolName, args)
         if (toolName.startsWith("theme_")) return com.shriram.cinecode.theme.ThemeMcp.call(toolName, args)
+        if (toolName in setOf("execute_local_code", "camera_director", "fetch_epic_multimedia", "find_background_assets", "auto_git_push")) {
+            return com.shriram.cinecode.data.media.CineCodeSkillsMcp.call(appContext!!, toolName, args)
+        }
 
         if (toolName.startsWith("flow_")) {
             return com.shriram.cinecode.ui.browser.BrowserExtensionManager.instance.callTool("google-flow", toolName, args)

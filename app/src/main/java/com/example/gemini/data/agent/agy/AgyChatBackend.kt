@@ -2565,6 +2565,21 @@ class AgyChatBackend(
         }
     }
 
+    suspend fun executeSandboxCode(
+        language: String,
+        code: String,
+        autoSelfHeal: Boolean = true
+    ): com.shriram.cinecode.data.local.LocalSandboxExecutor.SandboxExecutionResult =
+        com.shriram.cinecode.data.local.LocalSandboxExecutor.executeLocalCode(
+            context = application,
+            language = language,
+            code = code,
+            autoSelfHeal = autoSelfHeal
+        )
+
+    suspend fun callCreatorSkill(toolName: String, args: JSONObject): JSONObject =
+        com.shriram.cinecode.data.media.CineCodeSkillsMcp.call(application, toolName, args)
+
     fun dispose() {
         persistentStreamJob?.cancel()
         streamingJob?.cancel()

@@ -3,6 +3,7 @@ package com.shriram.cinecode.ui.settings
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.FolderZip
@@ -26,7 +27,7 @@ import com.shriram.cinecode.ui.browser.RepoPlugin
 import kotlinx.coroutines.launch
 
 /**
- * Settings → Custom AntiGem Plugins → Repositories: GitHub repositories of plugin folders, their plugins with
+ * Settings → CineCode-AI Plugins 🛠️ → Repositories: GitHub repositories of plugin folders, their plugins with
  * install/update status, and the guide for hosting one. [runOperation]'s result is shown as a notice.
  */
 @Composable
@@ -62,12 +63,13 @@ fun PluginRepositoriesTab(busy: Boolean, runOperation: (suspend () -> String?) -
         OutlinedTextField(
             value = input,
             onValueChange = { input = it; addError = null },
+            leadingIcon = { Icon(Icons.Outlined.Code, contentDescription = "GitHub Repository") },
             label = { Text("GitHub repository URL / path") },
             placeholder = { Text("shriramnag/CineCode-AI or owner/repo@branch") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth().testTag("github_repo_input"),
             isError = addError != null,
-            supportingText = { Text(addError ?: "Node.js missing fallback & offline plugins sync from GitHub API is enabled.") }
+            supportingText = { Text(addError ?: "Default repo: ${PluginRepositories.CINECODE_REPO} · Offline plugins sync from GitHub API active.") }
         )
         Button(
             enabled = input.isNotBlank(),
@@ -79,7 +81,12 @@ fun PluginRepositoriesTab(busy: Boolean, runOperation: (suspend () -> String?) -
                             scope.launch { PluginRepositories.refresh(existing) }
                         } else {
                             runCatching { PluginRepositories.add(parsed) }
-                                .onSuccess { input = ""; scope.launch { PluginRepositories.refresh(parsed) } }
+                                .onSuccess {
+                                    if (!parsed.slug.equals(PluginRepositories.CINECODE_REPO, ignoreCase = true)) {
+                                        input = ""
+                                    }
+                                    scope.launch { PluginRepositories.refresh(parsed) }
+                                }
                                 .onFailure { addError = it.message }
                         }
                     }
@@ -126,20 +133,20 @@ fun PluginRepositoriesTab(busy: Boolean, runOperation: (suspend () -> String?) -
         Card(Modifier.fillMaxWidth()) {
             Row(Modifier.padding(start = 14.dp, end = 4.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("Host your own repository", style = MaterialTheme.typography.titleSmall)
-                    Text("How to lay out a GitHub repo and its ${PluginRepositories.INDEX}", style = MaterialTheme.typography.bodySmall)
+                    Text("CineCode-AI Plugin Repository Guide", style = MaterialTheme.typography.titleSmall)
+                    Text("GitHub रिपॉज़िटरी (${PluginRepositories.CINECODE_REPO}) व ${PluginRepositories.INDEX} / ${PluginRepositories.CINECODE_INDEX} सेटअप गाइड", style = MaterialTheme.typography.bodySmall)
                 }
                 IconButton(onClick = { guide = runCatching { readBundledGuide(context) }.getOrElse { "Guide not found: ${it.message}" } }) { Icon(Icons.Outlined.Visibility, "View guide") }
-                IconButton(onClick = { scope.launch { saveToDownloads(context, "antigem-plugin-repository.md", readBundledGuide(context)) } }) { Icon(Icons.Outlined.Download, "Download guide") }
+                IconButton(onClick = { scope.launch { saveToDownloads(context, "cinecode-plugin-repository.md", readBundledGuide(context)) } }) { Icon(Icons.Outlined.Download, "Download guide") }
             }
         }
         Card(Modifier.fillMaxWidth()) {
             Row(Modifier.padding(start = 14.dp, end = 4.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("Plugin SDK for PC", style = MaterialTheme.typography.titleSmall)
-                    Text("All plugin docs and examples as a ZIP. Copy it to your PC to build plugins there; start with pc-development.md.", style = MaterialTheme.typography.bodySmall)
+                    Text("CineCode-AI Plugin SDK for PC", style = MaterialTheme.typography.titleSmall)
+                    Text("सभी प्लगइन डॉक्स और उदाहरण ZIP में; अपने PC पर कस्टम प्लगइन बनाने के लिए।", style = MaterialTheme.typography.bodySmall)
                 }
-                IconButton(onClick = { scope.launch { saveToDownloads(context, "antigem-plugin-sdk.zip", bundledSdkZip(context), "application/zip") } }) { Icon(Icons.Outlined.FolderZip, "Download plugin SDK ZIP") }
+                IconButton(onClick = { scope.launch { saveToDownloads(context, "cinecode-plugin-sdk.zip", bundledSdkZip(context), "application/zip") } }) { Icon(Icons.Outlined.FolderZip, "Download plugin SDK ZIP") }
             }
         }
 
@@ -165,7 +172,7 @@ fun PluginRepositoriesTab(busy: Boolean, runOperation: (suspend () -> String?) -
         }
     }
 
-    guide?.let { MarkdownViewerDialog("Plugin repository guide", it, "antigem-plugin-repository.md") { guide = null } }
+    guide?.let { MarkdownViewerDialog("CineCode-AI Plugin Repository Guide", it, "cinecode-plugin-repository.md") { guide = null } }
     pending?.let { (repo, plugin) ->
         val taken = folderTaken(folder)
         AlertDialog(

@@ -21,6 +21,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.gemini.data.media.TurboHindiNormalizer
+import com.shriram.cinecode.data.media.CineCameraDirector
 import java.io.File
 
 @Composable
@@ -37,32 +39,14 @@ fun AiMediaVoiceStudioDialog(
     var isProcessing by remember { mutableStateOf(false) }
     var storyboardTimeline by remember { mutableStateOf<List<String>>(emptyList()) }
 
-    // Advanced anti-stutter number & symbol normalizer
-    fun normalizeForTts(input: String): String {
-        var text = input
-            .replace("100", "एक सौ")
-            .replace("2026", "दो हज़ार छब्बीस")
-            .replace("0", " शून्य ")
-            .replace("1", " एक ")
-            .replace("2", " दो ")
-            .replace("3", " तीन ")
-            .replace("4", " चार ")
-            .replace("5", " पाँच ")
-            .replace("6", " छह ")
-            .replace("7", " सात ")
-            .replace("8", " आठ ")
-            .replace("9", " नौ ")
-            .replace(".", ", ") // Replace stuttering dots with comma pauses
-            .replace("-", " ")
-            .replace("AI", " ए आई ")
-            .replace("API", " ए पी आई ")
-        return text
-    }
+    val emotionalProfile = remember(scriptText) { TurboHindiNormalizer.processEmotionalDialogue(scriptText) }
+
+    // Advanced anti-stutter number & symbol normalizer backed by TurboHindiNormalizer
+    fun normalizeForTts(input: String): String = TurboHindiNormalizer.normalizeScript(input)
 
     fun generateTimeline(text: String): List<String> {
-        val sentences = text.split(Regex("[.!?\n]+")).filter { it.isNotBlank() }
-        return sentences.mapIndexed { index, sentence ->
-            "Scene ${index + 1} (00:${String.format("%02d", index * 3)}): Visual Prompt -> \"Cinematic 4K render for: ${sentence.trim().take(45)}...\""
+        return CineCameraDirector.directStoryboard(text, style = "mythological_3d").mapIndexed { index, plan ->
+            "Scene ${index + 1} (00:${String.format("%02d", index * 4)}) [${plan.movement.label} · ${plan.lighting.label}]: ${plan.masterVideoPrompt.take(78)}..."
         }
     }
 
@@ -120,6 +104,20 @@ fun AiMediaVoiceStudioDialog(
                         .testTag("media_script_input"),
                     textStyle = MaterialTheme.typography.bodyMedium
                 )
+
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f)
+                ) {
+                    Text(
+                        text = "🎙️ Shiv AI Emotion: ${emotionalProfile.emotion.labelHi} · Pitch ${emotionalProfile.pitch}x · Speed ${emotionalProfile.speechRate}x · Reverb +${emotionalProfile.reverbDb}dB",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                    )
+                }
 
                 // Anti-stutter normalizer button
                 OutlinedButton(
@@ -195,7 +193,8 @@ fun AiMediaVoiceStudioDialog(
                     try {
                         val sanitizedName = audioTitle.ifBlank { "Shiv AI human realistic" }.replace(Regex("[^a-zA-Z0-9._-]"), "_").take(40)
                         val outputFile = File(context.cacheDir, "${sanitizedName}_${System.currentTimeMillis()}.wav")
-                        outputFile.writeText("SHIV_AI_REALISTIC_SYNTHESIZED_AUDIO:[${normalizeForTts(scriptText)}]")
+                        val emotionResult = TurboHindiNormalizer.processEmotionalDialogue(scriptText)
+                        outputFile.writeText("SHIV_AI_REALISTIC_SYNTHESIZED_AUDIO:[${emotionResult.taggedDialogue}]")
                         Toast.makeText(context, "Voice & Storyboard saved: ${outputFile.name}", Toast.LENGTH_SHORT).show()
                         onAudioSaved(outputFile)
                         onDismiss()

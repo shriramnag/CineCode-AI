@@ -19,8 +19,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.shriram.cinecode.R
 import com.shriram.cinecode.data.local.LocalEnvironmentManager
 import com.shriram.cinecode.ui.browser.AutonomousSkillLoader
 import com.shriram.cinecode.ui.browser.BrowserExtension
@@ -108,6 +110,22 @@ fun WebViewExtensionsScreen(onChanged: () -> Unit) {
     // Repository listings also drive the "update available" line on installed plugins
     LaunchedEffect(Unit) { PluginRepositories.refreshAll() }
     Column(Modifier.fillMaxSize().bouncyVerticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(
+            modifier = Modifier.fillMaxWidth().testTag("cinecode_plugins_header"),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.cinecode_plugins_title),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = stringResource(R.string.cinecode_plugins_subtitle),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
         val isEmulatedNode = manager.isNodeEmulatedMode || LocalEnvironmentManager.isNodeEmulated(context)
         Surface(
             shape = MaterialTheme.shapes.medium,
@@ -237,8 +255,8 @@ fun WebViewExtensionsScreen(onChanged: () -> Unit) {
             PluginRepositoriesTab(busy, ::runOperation, ::folderTaken, ::freeFolder)
             return@Column
         }
-        Text("Install custom AntiGem plugins from ZIP files or from a repository. A plugin can have MCP tools, skills (skills/*.md), or both. Changes apply to the running browser immediately.", style = MaterialTheme.typography.bodyMedium)
-        Text("To create a plugin with your model, add Custom AntiGem Plugin Developer in MCP settings. It supplies the SDK, draft editing, installation, updates, tests and worker logs.", style = MaterialTheme.typography.bodySmall)
+        Text(stringResource(R.string.cinecode_plugins_description), style = MaterialTheme.typography.bodyMedium)
+        Text("अपने मॉडल के साथ प्लगइन बनाने के लिए MCP सेटिंग्स में CineCode-AI Plugin Developer जोड़ें। यह SDK, ड्राफ्ट एडिटिंग, इंस्टॉलेशन, अपडेट, टेस्ट और वर्कर लॉग प्रदान करता है।", style = MaterialTheme.typography.bodySmall)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(enabled = !busy, onClick = { update = null; picker.launch(arrayOf("*/*")) }, modifier = Modifier.defaultMinSize(minHeight = 48.dp).testTag("install_zip_button")) { Text("Install ZIP") }
             OutlinedButton(enabled = !busy, onClick = { runOperation { manager.refreshExtensions(); AutonomousSkillLoader.scanLocalAndAssets(context); null } }, modifier = Modifier.defaultMinSize(minHeight = 48.dp).testTag("refresh_plugins_button")) { Text("Refresh") }
@@ -254,9 +272,13 @@ fun WebViewExtensionsScreen(onChanged: () -> Unit) {
                         PluginIcon(extension.iconPath)
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(extension.folderName, style = MaterialTheme.typography.titleMedium)
-                            Text("${extension.name} · ${PluginVersions.label(extension.version)} · ${extension.toolCount} MCP tools" + (if (extension.skillCount > 0) " · ${extension.skillCount} skills" else ""), style = MaterialTheme.typography.bodySmall)
-                            extension.source?.let { Text("From ${it.repo}" + (if (it.ref.isNotBlank()) "@${it.ref}" else ""), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                            Text(extension.name.ifBlank { extension.folderName }, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            Text("${extension.id} · ${PluginVersions.label(extension.version)} · ${extension.toolCount} MCP tools" + (if (extension.skillCount > 0) " · ${extension.skillCount} skills" else ""), style = MaterialTheme.typography.bodySmall)
+                            val sourceLine = buildList {
+                                if (extension.author.isNotBlank()) add("By ${extension.author}")
+                                extension.source?.let { add("From ${it.repo}" + (if (it.ref.isNotBlank()) "@${it.ref}" else "")) }
+                            }.joinToString(" · ")
+                            if (sourceLine.isNotBlank()) Text(sourceLine, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         if (exporting == extension.id) Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp) }
                         else IconButton(enabled = exporting == null, onClick = {
@@ -290,7 +312,7 @@ fun WebViewExtensionsScreen(onChanged: () -> Unit) {
                 }
             }
         }
-        Text("Add an enabled plugin to your model in MCP settings → Custom AntiGem Plugin MCP; its skills come with it as get_skills / get_skill tools. In chat, type /plu: to point the model at a plugin or one of its skills. Updating or reloading restarts that plugin's worker; its MCP connection and stored data are kept.", style = MaterialTheme.typography.bodySmall)
+        Text("किसी भी सक्रिय प्लगइन को MCP सेटिंग्स → CineCode-AI Plugin MCP में जोड़ें; इसके कौशल get_skills / get_skill टूल के रूप में उपलब्ध रहते हैं। चैट में /plu: टाइप करके मॉडल को किसी प्लगइन या कौशल की ओर इंगित करें।", style = MaterialTheme.typography.bodySmall)
     }
     conflict?.takeIf { zip != null }?.let { existing -> AlertDialog(
         onDismissRequest = { zip = null; conflict = null },
@@ -357,18 +379,18 @@ fun WebViewExtensionsScreen(onChanged: () -> Unit) {
 fun WebViewExtensionMcpPicker(onDismiss: () -> Unit, onSelect: (BrowserExtension) -> Unit) {
     val manager = remember { BrowserExtensionManager.instance }
     LaunchedEffect(Unit) { manager.loadExtensions() }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text("Custom AntiGem Plugin MCP") },
+    AlertDialog(onDismissRequest = onDismiss, title = { Text("CineCode-AI Plugin MCP") },
         text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             val available = manager.extensions.filter { it.isEnabled && (it.toolCount > 0 || it.skillCount > 0) }
-            if (available.isEmpty()) Text("Enable or install a plugin in Settings → Custom AntiGem Plugins first.")
+            if (available.isEmpty()) Text("पहले Settings → CineCode-AI Plugins 🛠️ में कोई प्लगइन सक्रिय या इंस्टॉल करें।")
             available.forEach { extension ->
                 OutlinedButton(onClick = { onSelect(extension) }, modifier = Modifier.fillMaxWidth()) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         PluginIcon(extension.iconPath, 28.dp)
                         Spacer(Modifier.width(10.dp))
                         Column(Modifier.weight(1f)) {
-                        Text(extension.folderName)
-                        Text("${extension.name} · ${extension.toolCount} tools" + (if (extension.skillCount > 0) " · ${extension.skillCount} skills" else ""), style = MaterialTheme.typography.bodySmall)
+                        Text(extension.name.ifBlank { extension.folderName }, fontWeight = FontWeight.Medium)
+                        Text("${extension.id} · ${extension.toolCount} tools" + (if (extension.skillCount > 0) " · ${extension.skillCount} skills" else ""), style = MaterialTheme.typography.bodySmall)
                         }
                     }
                 }

@@ -57,8 +57,18 @@ object AutonomousSkillLoader {
         val appCtx = context.applicationContext
         val collected = LinkedHashMap<String, LoadedSkillItem>()
 
-        // 1. Ensure default skills directory and starter auto-skills.md exist if empty
+        // 1. Ensure default skills directory, bundled assets/skills/*.md, and starter auto-skills.md exist
         val localSkillsDir = File(appCtx.filesDir, "skills").apply { mkdirs() }
+        runCatching {
+            appCtx.assets.list("skills").orEmpty()
+                .filter { it.endsWith(".md", ignoreCase = true) }
+                .forEach { assetName ->
+                    val dest = File(localSkillsDir, assetName)
+                    appCtx.assets.open("skills/$assetName").use { input ->
+                        dest.outputStream().use { output -> input.copyTo(output) }
+                    }
+                }
+        }
         val autoSkillsFile = File(localSkillsDir, "auto-skills.md")
         if (!autoSkillsFile.exists()) {
             runCatching {
@@ -186,14 +196,15 @@ object AutonomousSkillLoader {
                 }
             }
 
-            // Refresh BrowserExtensionManager & local skills
+            // Refresh BrowserExtensionManager & local skills + register CineCodeSkillsMcp tools
             runCatching { BrowserExtensionManager.instance.loadExtensions() }
+            val mcpToolCount = com.shriram.cinecode.data.media.CineCodeSkillsMcp.tools().length()
             val allLoaded = scanLocalAndAssets(appCtx)
             _isActiveConnected.value = true
             _statusMessage.value = if (remoteSyncedCount > 0) {
-                "✅ कौशल फ़ाइलें सिंक / Active & Connected (${allLoaded.size} skills, +$remoteSyncedCount GitHub synced)"
+                "✅ कौशल फ़ाइलें सिंक / Active & Connected (${allLoaded.size} skills, $mcpToolCount MCP tools, +$remoteSyncedCount GitHub synced)"
             } else {
-                "✅ कौशल फ़ाइलें सिंक / Active & Connected (${allLoaded.size} skills loaded)"
+                "✅ कौशल फ़ाइलें सिंक / Active & Connected (${allLoaded.size} skills, $mcpToolCount MCP tools active)"
             }
             allLoaded
         } finally {

@@ -48,14 +48,18 @@ object PluginVersions {
 }
 
 /**
- * The user's plugin repositories and what each offers. Listing (from a repo's `antigem-plugins.json`, or its
- * top-level folders with a manifest.json) and installing a single folder are done by the IDE bridge.
+ * The user's plugin repositories and what each offers. Listing (from a repo's `antigem-plugins.json` or
+ * `cinecode-plugins.json`, or its top-level folders with a manifest.json) and installing a single folder
+ * are done by the IDE bridge or via GitHub API fallback.
  */
 object PluginRepositories {
     const val INDEX = "antigem-plugins.json"
+    const val CINECODE_INDEX = "cinecode-plugins.json"
     private const val PREFS = "plugin_repositories"
-    const val DEFAULT_REPO = "dipeshkrydv/antigem_plugins"
     const val CINECODE_REPO = "shriramnag/CineCode-AI"
+    const val DEFAULT_REPO = CINECODE_REPO
+    private const val LEGACY_DEFAULT_REPO = "dipeshkrydv/antigem_plugins"
+    private const val CINECODE_CREATOR_PLUGIN_ID = "com.shriramnag.cinecodeai.creator"
     private const val DEFAULT_REPO_ADDED = "default_repo_added"
     private const val CINECODE_REPO_ADDED = "cinecode_repo_added"
     private val NAME = "[A-Za-z0-9_.-]+"
@@ -83,6 +87,15 @@ object PluginRepositories {
 
     private var appContext: Context? = null
 
+    private fun builtInCreatorRepoPlugin() = RepoPlugin(
+        path = "cinecode-creator-studio",
+        id = CINECODE_CREATOR_PLUGIN_ID,
+        name = "🎬 CineCode 2050 Creator Studio",
+        version = "1.0.0",
+        description = "3D, 2D रियलिस्टिक, और भारतीय पौराणिक (Mythology) वीडियो व एआई स्किल्स का आपका अपना विशेष प्लगइन।",
+        iconUrl = ""
+    )
+
     fun init(context: Context) {
         if (appContext != null) return
         appContext = context.applicationContext
@@ -91,18 +104,25 @@ object PluginRepositories {
         prefs.getString("repos", null)?.let { stored ->
             runCatching { val array = JSONArray(stored); repos.addAll((0 until array.length()).map { parse(array.getString(it)) }) }
         }
-        // The official repository is added once, for new and existing users; if the user removes it, it stays removed
-        if (!prefs.getBoolean(DEFAULT_REPO_ADDED, false)) {
-            val official = parse(DEFAULT_REPO)
-            if (repos.none { it.label.equals(official.label, ignoreCase = true) }) repos.add(0, official)
-            prefs.edit().putBoolean(DEFAULT_REPO_ADDED, true).apply()
-            persist()
+        var changed = repos.removeAll { it.slug.equals(LEGACY_DEFAULT_REPO, ignoreCase = true) }
+        val cinecode = parse(CINECODE_REPO)
+        if (!prefs.getBoolean(CINECODE_REPO_ADDED, false) || repos.isEmpty()) {
+            if (repos.none { it.slug.equals(cinecode.slug, ignoreCase = true) }) {
+                repos.add(0, cinecode)
+                changed = true
+            }
+            prefs.edit()
+                .putBoolean(DEFAULT_REPO_ADDED, true)
+                .putBoolean(CINECODE_REPO_ADDED, true)
+                .apply()
         }
-        if (!prefs.getBoolean(CINECODE_REPO_ADDED, false)) {
-            val cinecode = parse(CINECODE_REPO)
-            if (repos.none { it.label.equals(cinecode.label, ignoreCase = true) }) repos.add(0, cinecode)
-            prefs.edit().putBoolean(CINECODE_REPO_ADDED, true).apply()
-            persist()
+        if (changed) persist()
+        if (repos.any { it.slug.equals(CINECODE_REPO, ignoreCase = true) } && !listings.containsKey(cinecode.label)) {
+            listings[cinecode.label] = RepoListing(
+                title = "${cinecode.label} (Creator Studio)",
+                plugins = listOf(builtInCreatorRepoPlugin()),
+                fromIndex = false
+            )
         }
     }
 
@@ -165,29 +185,35 @@ object PluginRepositories {
     private suspend fun fetchListingFromGitHub(repo: PluginRepo): RepoListing = withContext(Dispatchers.IO) {
         val branch = repo.ref.ifBlank { "main" }
         val refQuery = if (repo.ref.isNotBlank()) "?ref=${repo.ref}" else ""
+        val isCineCodeRepo = repo.slug.equals(CINECODE_REPO, ignoreCase = true)
 
-        // 1. Try direct antigem-plugins.json from raw.githubusercontent.com or GitHub Contents API
-        val rawIndexUrl = "https://raw.githubusercontent.com/${repo.slug}/$branch/$INDEX"
-        val rawText = httpGetText(rawIndexUrl)
-        if (rawText != null && rawText.trimStart().startsWith("{")) {
-            val json = org.json.JSONObject(rawText)
-            val pluginsArr = json.optJSONArray("plugins") ?: JSONArray()
-            val list = (0 until pluginsArr.length()).mapNotNull { i ->
-                val p = pluginsArr.optJSONObject(i) ?: return@mapNotNull null
-                RepoPlugin(
-                    path = p.optString("path"),
-                    id = p.optString("id"),
-                    name = p.optString("name", p.optString("path")),
-                    version = p.optString("version", "1.0.0"),
-                    description = p.optString("description"),
-                    iconUrl = p.optString("iconUrl")
+        // 1. Try direct antigem-plugins.json or cinecode-plugins.json from raw.githubusercontent.com
+        for (indexFile in listOf(INDEX, CINECODE_INDEX)) {
+            val rawIndexUrl = "https://raw.githubusercontent.com/${repo.slug}/$branch/$indexFile"
+            val rawText = httpGetText(rawIndexUrl)
+            if (rawText != null && rawText.trimStart().startsWith("{")) {
+                val json = org.json.JSONObject(rawText)
+                val pluginsArr = json.optJSONArray("plugins") ?: JSONArray()
+                val list = (0 until pluginsArr.length()).mapNotNull { i ->
+                    val p = pluginsArr.optJSONObject(i) ?: return@mapNotNull null
+                    RepoPlugin(
+                        path = p.optString("path"),
+                        id = p.optString("id"),
+                        name = p.optString("name", p.optString("path")),
+                        version = p.optString("version", "1.0.0"),
+                        description = p.optString("description"),
+                        iconUrl = p.optString("iconUrl")
+                    )
+                }.toMutableList()
+                if (isCineCodeRepo && list.none { it.id == CINECODE_CREATOR_PLUGIN_ID }) {
+                    list.add(0, builtInCreatorRepoPlugin())
+                }
+                return@withContext RepoListing(
+                    title = json.optString("title").ifBlank { repo.label },
+                    plugins = list,
+                    fromIndex = true
                 )
             }
-            return@withContext RepoListing(
-                title = json.optString("title").ifBlank { repo.label },
-                plugins = list,
-                fromIndex = true
-            )
         }
 
         // 2. Fallback: scan api.github.com/repos/{slug}/contents (and extensions/)
@@ -215,6 +241,14 @@ object PluginRepositories {
                     )
                 }
             }
+        }
+        if (isCineCodeRepo && discovered.none { it.id == CINECODE_CREATOR_PLUGIN_ID }) {
+            discovered.add(0, builtInCreatorRepoPlugin())
+            return@withContext RepoListing(
+                title = "${repo.label} (Creator Studio)",
+                plugins = discovered,
+                fromIndex = false
+            )
         }
         RepoListing(title = "${repo.label} (Cloud GitHub)", plugins = discovered, fromIndex = false)
     }
@@ -272,6 +306,12 @@ object PluginRepositories {
 
     private suspend fun installViaGitHubFallback(repo: PluginRepo, plugin: RepoPlugin, folder: String): BrowserExtension = withContext(Dispatchers.IO) {
         val ctx = appContext ?: error("PluginRepositories not initialized")
+        if (plugin.id == CINECODE_CREATOR_PLUGIN_ID) {
+            BrowserExtensionManager.instance.loadExtensions()
+            AutonomousSkillLoader.scanLocalAndAssets(ctx)
+            BrowserExtensionManager.instance.extensions.firstOrNull { it.id == CINECODE_CREATOR_PLUGIN_ID }
+                ?.let { return@withContext it }
+        }
         val targetDir = java.io.File(ctx.filesDir, "extensions/${folder.trim()}").apply { mkdirs() }
         withContext(Dispatchers.Main) {
             installProgress = RepoInstallProgress("downloading", 0, 0, 0, 1, "Syncing from GitHub API...")

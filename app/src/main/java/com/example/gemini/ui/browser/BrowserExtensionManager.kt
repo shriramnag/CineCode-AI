@@ -41,7 +41,8 @@ data class BrowserExtension(
     val source: PluginSource? = null,
     /** Where the folder lives: [Location.INSTALLED] (ZIP/repository installs), built into the app, or a user folder. */
     val location: Location = Location.INSTALLED,
-    val skills: List<ExtensionSkill> = emptyList()
+    val skills: List<ExtensionSkill> = emptyList(),
+    val author: String = ""
 ) {
     enum class Location { INSTALLED, BUNDLED, USER_FOLDER }
 
@@ -56,7 +57,8 @@ data class BrowserExtension(
             location = when (o.optString("location")) { "bundled" -> Location.BUNDLED; "user_folder" -> Location.USER_FOLDER; else -> Location.INSTALLED },
             skills = o.optJSONArray("skills")?.let { a ->
                 (0 until a.length()).map { i -> a.getJSONObject(i).let { ExtensionSkill(it.optString("name"), it.optString("title"), it.optString("description"), it.optString("path"), it.optString("detailDir").ifBlank { null }) } }
-            }.orEmpty()
+            }.orEmpty(),
+            author = o.optString("author")
         )
     }
 
@@ -138,10 +140,62 @@ class BrowserExtensionManager private constructor() {
         return LocalEnvironmentManager.isNodeAvailable(context)
     }
 
+    private fun ensureBuiltInCreatorPlugin(context: Context) {
+        runCatching {
+            val bundledDir = File(context.filesDir, "browser-extensions")
+            val creatorDir = File(bundledDir, "cinecode-creator-studio").apply { mkdirs() }
+            val manifestFile = File(creatorDir, "manifest.json")
+            val needsUpgrade = !manifestFile.isFile || !runCatching { manifestFile.readText() }.getOrDefault("").contains("execute_local_code")
+            if (needsUpgrade) {
+                val manifest = JSONObject().apply {
+                    put("id", "com.shriramnag.cinecodeai.creator")
+                    put("name", "🎬 CineCode 2050 Creator Studio")
+                    put("version", "1.1.0")
+                    put("author", "shriramnag")
+                    put(
+                        "description",
+                        "3D, 2D रियलिस्टिक, भारतीय पौराणिक (Mythology), In-App Code Sandbox, Shiv AI Emotion Voice और Google Research स्किल्स का आपका अपना विशेष प्लगइन।"
+                    )
+                    put("mcp_tools", com.shriram.cinecode.data.media.CineCodeSkillsMcp.tools().apply {
+                        put(JSONObject().put("name", "create_3d_scene").put("description", "3D cinematic scene builder"))
+                        put(JSONObject().put("name", "generate_2d_realistic").put("description", "2D realistic artwork synthesis"))
+                        put(JSONObject().put("name", "mythology_story_builder").put("description", "Indian Mythology story & video workflow"))
+                    })
+                }
+                manifestFile.writeText(manifest.toString(2))
+            }
+            val skillsDir = File(creatorDir, "skills").apply { mkdirs() }
+            val skillFile = File(skillsDir, "creator-studio.md")
+            if (!skillFile.isFile) {
+                skillFile.writeText(
+                    """
+                    ---
+                    name: cinecode_creator_studio
+                    description: 3D, 2D रियलिस्टिक, और भारतीय पौराणिक (Mythology) वीडियो व एआई स्किल्स
+                    ---
+                    # CineCode 2050 Creator Studio (shriramnag)
+                    3D, 2D रियलिस्टिक, और भारतीय पौराणिक (Mythology) वीडियो व एआई स्किल्स के लिए विशेष क्रिएटर स्टूडियो।
+                    """.trimIndent()
+                )
+            }
+            val videoStylesTarget = File(skillsDir, "video-styles.md")
+            runCatching {
+                context.assets.open("skills/video-styles.md").use { input ->
+                    videoStylesTarget.outputStream().use { output -> input.copyTo(output) }
+                }
+            }
+            val sourceFile = File(creatorDir, PluginSource.FILE)
+            if (!sourceFile.isFile) {
+                sourceFile.writeText(PluginSource("shriramnag/CineCode-AI", "main", "cinecode-creator-studio").toJson().toString())
+            }
+        }
+    }
+
     private fun ensurePackaged(context: Context) {
         if (!packaged) {
             copyAssets(context, "browser-runtime", runtimeFile(context).parentFile!!)
             copyAssets(context, "browser-extensions", File(context.filesDir, "browser-extensions"))
+            ensureBuiltInCreatorPlugin(context)
             removeLegacyRuntime(context)
             packaged = true
         }
@@ -368,6 +422,7 @@ class BrowserExtensionManager private constructor() {
      */
     private fun scanLocal(): List<BrowserExtension> {
         val ctx = appContext ?: return emptyList()
+        ensureBuiltInCreatorPlugin(ctx)
         val loaded = mutableListOf<BrowserExtension>()
         val seenIds = mutableSetOf<String>()
         for (baseDir in getExtensionsDirectories(ctx)) {
@@ -390,18 +445,31 @@ class BrowserExtensionManager private constructor() {
                             File(ctx.filesDir, "browser-extensions").absolutePath -> BrowserExtension.Location.BUNDLED
                             File(LocalEnvironmentManager.getHomeDir(ctx), "extensions").absolutePath, File(ctx.filesDir, "extensions").absolutePath -> BrowserExtension.Location.INSTALLED
                             else -> BrowserExtension.Location.USER_FOLDER
-                        }
+                        },
+                        author = manifest.optString("author")
                     )
                 }.onFailure { Log.w(TAG, "Failed to parse extension at ${sub.absolutePath}: ${it.message}") }
             }
         }
-        return loaded
+        return loaded.sortedByDescending { it.id == "com.shriramnag.cinecodeai.creator" }
     }
 
     /** Reads the plugin list from the IDE bridge (or [scanLocal] if it is not running) and publishes it to [extensions]. */
     suspend fun loadExtensions(): List<BrowserExtension> {
-        val list = runCatching { PluginBridge.list() }.getOrElse {
+        val bridgeList = runCatching { PluginBridge.list() }.getOrElse {
             Log.w(TAG, "IDE bridge plugin list unavailable, scanning locally: ${it.message}")
+            null
+        }
+        val list = if (bridgeList != null) {
+            if (bridgeList.any { it.id == "com.shriramnag.cinecodeai.creator" }) {
+                bridgeList
+            } else {
+                val localCreator = withContext(Dispatchers.IO) {
+                    scanLocal().firstOrNull { it.id == "com.shriramnag.cinecodeai.creator" }
+                }
+                if (localCreator != null) listOf(localCreator) + bridgeList else bridgeList
+            }
+        } else {
             withContext(Dispatchers.IO) { scanLocal() }
         }
         withContext(Dispatchers.Main) { extensions.clear(); extensions.addAll(list) }

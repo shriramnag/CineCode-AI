@@ -13,4 +13,7 @@
     <string name="share_transcript">Share Transcript</string>
     <string name="reset_terminal">Reset Terminal</string>
     <string name="no_urls_found">No URLs found in transcript</string>
+    <string name="cinecode_plugins_title">CineCode-AI Plugins 🛠️</string>
+    <string name="cinecode_plugins_subtitle">श्रीराम नाग का अपना क्रिएटर स्टूडियो (shriramnag)</string>
+    <string name="cinecode_plugins_description">CineCode-AI के लिए कस्टम प्लगइन और MCP कौशल इंस्टॉल व प्रबंधित करें</string>
 </resources>
