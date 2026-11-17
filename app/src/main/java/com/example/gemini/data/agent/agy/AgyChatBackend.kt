@@ -451,7 +451,7 @@ class AgyChatBackend(
                 )
                 agyBridgeService.updateAuthState(isAuth = false, isChecking = false)
                 _authFeedbackMessage.tryEmit("Logged out successfully.")
-                refreshQuotas(force = true)
+                resetQuotaState()
             } catch (e: Exception) {
                 _authFeedbackMessage.tryEmit("Logout error: ${e.message}")
             } finally {
@@ -563,10 +563,11 @@ class AgyChatBackend(
                         com.shriram.cinecode.data.remote.BridgeInfo.refreshVersionIfUnknown()
                         when (status.status) {
                             "online" -> {
+                                val wasOffline = _isServerOnline.value != true
                                 _isServerOnline.value = true
                                 _isBridgeOnline.value = true
                                 _conversationError.value = null
-                                syncAgyConversations(force = true)
+                                syncAgyConversations(force = wasOffline && syncJob?.isActive != true)
                                 val curConv = _currentConversation.value
                                 val curId = curConv?.id
                                 if (!curId.isNullOrBlank() && curId != "new" && curConv.title != "New Chat") {
@@ -575,7 +576,9 @@ class AgyChatBackend(
                                     startPersistentStream(curId)
                                 }
                                 checkAgyAuthStatus(userInitiated = false)
-                                refreshQuotas()
+                                if (_agyAuthInfo.value.isLoggedIn || agyBridgeService.systemConnectionState.value.isAuth) {
+                                    refreshQuotas(force = false)
+                                }
                                 onHubOnline()
                             }
                             "starting" -> {
@@ -790,10 +793,23 @@ class AgyChatBackend(
                         }
                     }
                 } catch (e: Exception) {
-                    if (e is kotlinx.coroutines.CancellationException) {
+                    if (e is kotlinx.coroutines.CancellationException || !currentCoroutineContext().isActive) {
                         break
                     }
-                    android.util.Log.e("ChatViewModel", "subscribeToSummaries failed: ${e.message}")
+                    val rawErr = e.message ?: "Connection failed"
+                    val isHttp200StreamEof = rawErr.contains("HTTP status=200", ignoreCase = true) &&
+                        rawErr.contains("grpc-status=null", ignoreCase = true)
+                    val isHubStillOnline = agyBridgeService.systemConnectionState.value.isHubOnline &&
+                        agyBridgeService.hubStatus.value.status == "online"
+
+                    if (isHttp200StreamEof && isHubStillOnline) {
+                        android.util.Log.w("ChatViewModel", "subscribeToSummaries stream ended without trailers ($rawErr); reconnecting...")
+                        _isConversationsLoading.value = false
+                        delay(2_000)
+                        continue
+                    }
+
+                    android.util.Log.w("ChatViewModel", "subscribeToSummaries failed: $rawErr")
                     _isServerOnline.value = false
                     if (_conversations.value.any { it.isRunning }) {
                         _conversations.value = _conversations.value.map { if (it.isRunning) it.copy(isRunning = false) else it }
@@ -801,14 +817,13 @@ class AgyChatBackend(
                     if (_currentConversation.value?.isRunning == true) {
                         _currentConversation.value = _currentConversation.value?.copy(isRunning = false)
                     }
-                    val rawErr = e.message ?: "Connection failed"
                     val helpfulMsg = if (rawErr.contains("Connect", ignoreCase = true) || rawErr.contains("Failed to connect", ignoreCase = true)) {
                         "Cannot connect to Antigravity Hub (${AuthPreferences.currentHubUrl}). Make sure 'agy --hub' is running."
                     } else {
                         "Antigravity Hub unreachable: $rawErr"
                     }
                     val isStarting = agyBridgeService.hubStatus.value.status == "starting"
-                    if (_conversations.value.isEmpty() && !isStarting) {
+                    if (_conversations.value.isEmpty() && !isStarting && !isHttp200StreamEof) {
                         _conversationError.value = helpfulMsg
                         _isConversationsLoading.value = false
                     } else if (isStarting || _conversations.value.isEmpty()) {
@@ -816,7 +831,7 @@ class AgyChatBackend(
                     } else {
                         _isConversationsLoading.value = false
                     }
-                    delay(20_000) // Auto-retry conversation sync every 20 seconds while offline
+                    delay(if (isHttp200StreamEof) 3_000 else 20_000)
                 }
             }
         }
@@ -2052,8 +2067,14 @@ class AgyChatBackend(
         _quotas.value = updatedQuotas
     }
 
+    private var refreshQuotasJob: Job? = null
+
     fun refreshQuotas(force: Boolean = true, showToastFeedback: Boolean = false) {
-        backendScope.launch {
+        if (!force && refreshQuotasJob?.isActive == true) return
+        if (force) {
+            refreshQuotasJob?.cancel()
+        }
+        refreshQuotasJob = backendScope.launch {
             if (!showToastFeedback && !agyBridgeService.systemConnectionState.value.isHubOnline) {
                 return@launch
             }
@@ -2061,11 +2082,16 @@ class AgyChatBackend(
             var failureError: String? = null
             try {
                 val hubUrl = AuthPreferences.currentHubUrl
+                val isAgyAuthed = _agyAuthInfo.value.isLoggedIn || agyBridgeService.systemConnectionState.value.isAuth
                 val modelsDeferred = async { agyHubClient.getAvailableModels(forceRefresh = force, hubUrl = hubUrl) }
-                val quotasDeferred = async { agyHubClient.retrieveUserQuotaSummary(forceRefresh = force, hubUrl = hubUrl) }
+                val quotasDeferred = if (isAgyAuthed) {
+                    async { agyHubClient.retrieveUserQuotaSummary(forceRefresh = force, hubUrl = hubUrl) }
+                } else {
+                    null
+                }
 
                 val modelsRes = modelsDeferred.await()
-                val quotasRes = quotasDeferred.await()
+                val quotasRes = quotasDeferred?.await()
 
                 if (modelsRes.isSuccess) {
                     val models = modelsRes.getOrThrow()
@@ -2109,10 +2135,17 @@ class AgyChatBackend(
                     failureError = modelsRes.exceptionOrNull()?.message
                 }
 
-                if (quotasRes.isSuccess) {
-                    applyQuotaSummary(quotasRes.getOrThrow())
-                } else if (failureError == null) {
-                    failureError = quotasRes.exceptionOrNull()?.message
+                if (quotasRes != null) {
+                    if (quotasRes.isSuccess) {
+                        applyQuotaSummary(quotasRes.getOrThrow())
+                    } else if (failureError == null) {
+                        val qErr = quotasRes.exceptionOrNull()
+                        if (qErr !is com.shriram.cinecode.data.remote.services.AgyRpcError.Unauthenticated) {
+                            failureError = qErr?.message
+                        }
+                    }
+                } else {
+                    resetQuotaState()
                 }
 
                 val userRes = agyHubClient.getLocalUserInfo(hubUrl)
@@ -2122,6 +2155,8 @@ class AgyChatBackend(
                         _userEmail.value = username
                     }
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 android.util.Log.e("GeminiApp", "Error refreshing models & quotas from hub: ${e.message}")
                 failureError = e.message
@@ -2137,7 +2172,12 @@ class AgyChatBackend(
                             }
                             android.widget.Toast.makeText(application, msg, android.widget.Toast.LENGTH_LONG).show()
                         } else {
-                            android.widget.Toast.makeText(application, "Quotas & models refreshed", android.widget.Toast.LENGTH_SHORT).show()
+                            val msg = if (_agyAuthInfo.value.isLoggedIn || agyBridgeService.systemConnectionState.value.isAuth) {
+                                "Quotas & models refreshed"
+                            } else {
+                                "Models refreshed (sign in to Antigravity for quotas)"
+                            }
+                            android.widget.Toast.makeText(application, msg, android.widget.Toast.LENGTH_SHORT).show()
                         }
                     }
                 }

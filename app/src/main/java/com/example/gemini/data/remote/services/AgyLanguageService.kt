@@ -81,15 +81,22 @@ suspend fun <Req : Any, Resp : Any> GrpcCall<Req, Resp>.executeSafely(
     android.util.Log.w("AGY_RPC", "⚠️ [AgyLanguageService.executeSafely] RPC Cancelled: ${e.message}")
     throw e
 } catch (e: GrpcException) {
-    android.util.Log.e("AGY_RPC", "❌ [AgyLanguageService.executeSafely] GrpcException: status=${e.grpcStatus}, msg=${e.grpcMessage}", e)
     val isCsrfError = e.grpcStatus == GrpcStatus.UNAUTHENTICATED || e.grpcMessage?.contains("CSRF", ignoreCase = true) == true
+    val isNotLoggedIn = e.grpcMessage?.contains("not logged into", ignoreCase = true) == true ||
+        e.grpcMessage?.contains("error getting token source", ignoreCase = true) == true
+    if (isNotLoggedIn) {
+        android.util.Log.w("AGY_RPC", "⚠️ [AgyLanguageService.executeSafely] Antigravity auth required: ${e.grpcMessage}")
+    } else {
+        android.util.Log.e("AGY_RPC", "❌ [AgyLanguageService.executeSafely] GrpcException: status=${e.grpcStatus}, msg=${e.grpcMessage}", e)
+    }
     if (isCsrfError) {
         val hubUrl = AuthPreferences.currentHubUrl
         android.util.Log.w("AGY_RPC", "🔄 [AgyLanguageService.executeSafely] CSRF error detected on RPC. Invalidating token...")
         AgyCsrfManager.instance.notifyCsrfExpired(hubUrl, "executeSafely", usedToken = tokenAtStart)
     }
     val err = when {
-        isCsrfError || e.grpcStatus == GrpcStatus.UNAUTHENTICATED -> AgyRpcError.Unauthenticated(e.grpcMessage ?: "Session unauthenticated or CSRF validation failed.")
+        isCsrfError || isNotLoggedIn || e.grpcStatus == GrpcStatus.UNAUTHENTICATED ->
+            AgyRpcError.Unauthenticated(e.grpcMessage ?: "Session unauthenticated or CSRF validation failed.")
         e.grpcStatus == GrpcStatus.UNAVAILABLE -> AgyRpcError.DaemonOffline("AGY Hub is offline or unreachable.", e)
         else -> AgyRpcError.ServerError(e.grpcStatus, e.grpcMessage ?: e.message ?: "gRPC error")
     }
@@ -132,16 +139,23 @@ fun <Req : Any, Resp : Any> GrpcStreamingCall<Req, Resp>.asFlowSafely(
         android.util.Log.d("CHAT_OPEN_DEBUG", "⚠️ [AgyLanguageService.asFlowSafely] Stream cancelled: ${e.message}")
         throw e
     } catch (e: GrpcException) {
-        android.util.Log.e("CHAT_OPEN_DEBUG", "❌ [AgyLanguageService.asFlowSafely] GrpcException: status=${e.grpcStatus}, msg=${e.grpcMessage}", e)
         val isCsrfError = e.grpcStatus == GrpcStatus.UNAUTHENTICATED || e.grpcMessage?.contains("CSRF", ignoreCase = true) == true
+        val isNotLoggedIn = e.grpcMessage?.contains("not logged into", ignoreCase = true) == true ||
+            e.grpcMessage?.contains("error getting token source", ignoreCase = true) == true
+        if (isNotLoggedIn) {
+            android.util.Log.w("CHAT_OPEN_DEBUG", "⚠️ [AgyLanguageService.asFlowSafely] Antigravity auth required: ${e.grpcMessage}")
+        } else {
+            android.util.Log.e("CHAT_OPEN_DEBUG", "❌ [AgyLanguageService.asFlowSafely] GrpcException: status=${e.grpcStatus}, msg=${e.grpcMessage}", e)
+        }
         if (isCsrfError) {
             val hubUrl = AuthPreferences.currentHubUrl
             android.util.Log.w("CHAT_OPEN_DEBUG", "🔄 [AgyLanguageService.asFlowSafely] CSRF error on stream. Invalidating CSRF cache for $hubUrl...")
             AgyCsrfManager.instance.notifyCsrfExpired(hubUrl, "asFlowSafely", usedToken = tokenAtStart)
         }
-        val err = when (e.grpcStatus) {
-            GrpcStatus.UNAUTHENTICATED -> AgyRpcError.Unauthenticated(e.grpcMessage ?: "Unauthenticated")
-            GrpcStatus.UNAVAILABLE -> AgyRpcError.DaemonOffline("AGY Hub is offline or unreachable.", e)
+        val err = when {
+            isCsrfError || isNotLoggedIn || e.grpcStatus == GrpcStatus.UNAUTHENTICATED ->
+                AgyRpcError.Unauthenticated(e.grpcMessage ?: "Unauthenticated")
+            e.grpcStatus == GrpcStatus.UNAVAILABLE -> AgyRpcError.DaemonOffline("AGY Hub is offline or unreachable.", e)
             else -> AgyRpcError.ServerError(e.grpcStatus, e.grpcMessage ?: e.message ?: "Stream error")
         }
         channel.close(err)
@@ -149,12 +163,21 @@ fun <Req : Any, Resp : Any> GrpcStreamingCall<Req, Resp>.asFlowSafely(
         val isOfflineRefused = e is java.net.ConnectException ||
             e.cause is java.net.ConnectException ||
             (e.message?.contains("Failed to connect", ignoreCase = true) == true)
-        if (isOfflineRefused) {
+        val isHttp200StreamEof = e.message?.contains("HTTP status=200", ignoreCase = true) == true &&
+            e.message?.contains("grpc-status=null", ignoreCase = true) == true
+        if (isClosedForSend) {
+            android.util.Log.d("CHAT_OPEN_DEBUG", "⚠️ [AgyLanguageService.asFlowSafely] Stream closed after cancellation: ${e.message}")
+            channel.close()
+        } else if (isOfflineRefused) {
             android.util.Log.w("CHAT_OPEN_DEBUG", "⚠️ [AgyLanguageService.asFlowSafely] AGY Hub offline (${e.message})")
+            channel.close(AgyRpcError.DaemonOffline("Stream connection broken: ${e.message}", e))
+        } else if (isHttp200StreamEof) {
+            android.util.Log.w("CHAT_OPEN_DEBUG", "⚠️ [AgyLanguageService.asFlowSafely] Stream ended without gRPC trailers (${e.message}); will reconnect.")
+            channel.close(AgyRpcError.DaemonOffline("Stream connection broken: ${e.message}", e))
         } else {
             android.util.Log.e("CHAT_OPEN_DEBUG", "❌ [AgyLanguageService.asFlowSafely] IOException: ${e.message}", e)
+            channel.close(AgyRpcError.DaemonOffline("Stream connection broken: ${e.message}", e))
         }
-        channel.close(AgyRpcError.DaemonOffline("Stream connection broken: ${e.message}", e))
     } catch (e: Throwable) {
         android.util.Log.e("CHAT_OPEN_DEBUG", "❌ [AgyLanguageService.asFlowSafely] Throwable: ${e.message}", e)
         channel.close(AgyRpcError.Unknown(e.message ?: "Stream error", e))
