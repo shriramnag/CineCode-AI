@@ -1,11 +1,12 @@
 {
+  "name": "CineCode-AI Plugins (shriramnag)",
   "title": "CineCode-AI Plugins (shriramnag)",
   "owner": "shriramnag",
   "repository": "shriramnag/CineCode-AI",
   "plugins": [
     {
       "path": "extensions/cinecode-creator-studio",
-      "id": "com.shriramnag.cinecodeai.creator",
+      "id": "cinecode-creator-studio",
       "name": "🎬 CineCode 2050 Creator Studio",
       "version": "1.1.0",
       "author": "shriramnag",

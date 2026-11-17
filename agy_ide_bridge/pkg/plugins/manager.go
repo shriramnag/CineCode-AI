@@ -26,7 +26,7 @@ const (
 )
 
 var (
-	idPattern     = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
+	idPattern     = regexp.MustCompile(`^[A-Za-z0-9._-]+$`)
 	folderPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$`)
 	iconTypes     = map[string]bool{"png": true, "jpg": true, "jpeg": true, "webp": true, "svg": true}
 )

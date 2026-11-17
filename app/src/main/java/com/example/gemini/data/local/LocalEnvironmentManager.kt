@@ -173,7 +173,8 @@ object LocalEnvironmentManager {
     fun getHomeDir(context: Context): File = File(context.filesDir, "home")
     fun getProjectsDir(context: Context): File = File(getHomeDir(context), "projects")
     fun getUbuntuRootDir(context: Context): File = File(context.filesDir, "ubuntu")
-    fun isTermuxPackage(context: Context): Boolean = context.packageName == "com.shriram.cinecode" || context.packageName == "com.shriramnag.cinecodeai"
+    fun isTermuxPackage(context: Context): Boolean =
+        context.packageName == "com.termux" || context.packageName == "com.shriram.cinecode" || context.packageName == "com.shriramnag.cinecodeai"
 
     fun ensureProotExtracted(context: Context): String {
         val binDir = File(context.filesDir, "bin")
@@ -2923,6 +2924,7 @@ All files created here persist inside the application.
         ).forEach { rel ->
             grantPerm(File(appCtx.filesDir, rel), 493)
             grantPerm(File("/data/data/$pkgName/files/$rel"), 493)
+            grantPerm(File("/data/data/com.termux/files/$rel"), 493)
         }
 
         listOf(usrBinDir, usrLibexecDir, appBinDir, homeBinDir, File(ubuntuDir, "usr/bin"), File(ubuntuDir, "bin")).forEach { dir ->

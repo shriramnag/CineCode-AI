@@ -1,9 +1,16 @@
 {
-  "id": "com.shriramnag.cinecodeai.creator",
+  "manifest_version": 3,
+  "id": "cinecode-creator-studio",
   "name": "🎬 CineCode 2050 Creator Studio",
   "version": "1.1.0",
   "author": "shriramnag",
   "description": "3D, 2D रियलिस्टिक, भारतीय पौराणिक (Mythology), In-App Code Sandbox, Shiv AI Emotion Voice और Google Research स्किल्स का आपका अपना विशेष प्लगइन।",
+  "permissions": [
+    "storage"
+  ],
+  "background": {
+    "service_worker": "service-worker.js"
+  },
   "mcp_tools": [
     {
       "name": "execute_local_code",
@@ -71,15 +78,33 @@
     },
     {
       "name": "create_3d_scene",
-      "description": "3D cinematic scene builder"
+      "description": "3D cinematic scene builder",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "prompt": { "type": "string", "description": "3D scene prompt" }
+        }
+      }
     },
     {
       "name": "generate_2d_realistic",
-      "description": "2D realistic artwork synthesis"
+      "description": "2D realistic artwork synthesis",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "prompt": { "type": "string", "description": "2D artwork prompt" }
+        }
+      }
     },
     {
       "name": "mythology_story_builder",
-      "description": "Indian Mythology story & video workflow"
+      "description": "Indian Mythology story & video workflow",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "topic": { "type": "string", "description": "Mythological story topic" }
+        }
+      }
     }
   ]
 }

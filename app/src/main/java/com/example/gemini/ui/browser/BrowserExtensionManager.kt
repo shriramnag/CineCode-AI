@@ -140,15 +140,25 @@ class BrowserExtensionManager private constructor() {
         return LocalEnvironmentManager.isNodeAvailable(context)
     }
 
+    private fun isCreatorPluginId(id: String): Boolean =
+        id == "cinecode-creator-studio" || id == "com.shriramnag.cinecodeai.creator"
+
     private fun ensureBuiltInCreatorPlugin(context: Context) {
         runCatching {
             val bundledDir = File(context.filesDir, "browser-extensions")
             val creatorDir = File(bundledDir, "cinecode-creator-studio").apply { mkdirs() }
             val manifestFile = File(creatorDir, "manifest.json")
-            val needsUpgrade = !manifestFile.isFile || !runCatching { manifestFile.readText() }.getOrDefault("").contains("execute_local_code")
+            val workerFile = File(creatorDir, "service-worker.js")
+            val currentManifest = runCatching { manifestFile.readText() }.getOrDefault("")
+            val needsUpgrade = !manifestFile.isFile ||
+                !workerFile.isFile ||
+                !currentManifest.contains("\"manifest_version\"") ||
+                !currentManifest.contains("\"cinecode-creator-studio\"") ||
+                !currentManifest.contains("execute_local_code")
             if (needsUpgrade) {
                 val manifest = JSONObject().apply {
-                    put("id", "com.shriramnag.cinecodeai.creator")
+                    put("manifest_version", 3)
+                    put("id", "cinecode-creator-studio")
                     put("name", "🎬 CineCode 2050 Creator Studio")
                     put("version", "1.1.0")
                     put("author", "shriramnag")
@@ -156,28 +166,34 @@ class BrowserExtensionManager private constructor() {
                         "description",
                         "3D, 2D रियलिस्टिक, भारतीय पौराणिक (Mythology), In-App Code Sandbox, Shiv AI Emotion Voice और Google Research स्किल्स का आपका अपना विशेष प्लगइन।"
                     )
+                    put("permissions", JSONArray().put("storage"))
+                    put("background", JSONObject().put("service_worker", "service-worker.js"))
                     put("mcp_tools", com.shriram.cinecode.data.media.CineCodeSkillsMcp.tools().apply {
-                        put(JSONObject().put("name", "create_3d_scene").put("description", "3D cinematic scene builder"))
-                        put(JSONObject().put("name", "generate_2d_realistic").put("description", "2D realistic artwork synthesis"))
-                        put(JSONObject().put("name", "mythology_story_builder").put("description", "Indian Mythology story & video workflow"))
+                        put(JSONObject().put("name", "create_3d_scene").put("description", "3D cinematic scene builder").put("inputSchema", JSONObject().put("type", "object").put("properties", JSONObject())))
+                        put(JSONObject().put("name", "generate_2d_realistic").put("description", "2D realistic artwork synthesis").put("inputSchema", JSONObject().put("type", "object").put("properties", JSONObject())))
+                        put(JSONObject().put("name", "mythology_story_builder").put("description", "Indian Mythology story & video workflow").put("inputSchema", JSONObject().put("type", "object").put("properties", JSONObject())))
                     })
                 }
                 manifestFile.writeText(manifest.toString(2))
             }
-            val skillsDir = File(creatorDir, "skills").apply { mkdirs() }
-            val skillFile = File(skillsDir, "creator-studio.md")
-            if (!skillFile.isFile) {
-                skillFile.writeText(
-                    """
-                    ---
-                    name: cinecode_creator_studio
-                    description: 3D, 2D रियलिस्टिक, और भारतीय पौराणिक (Mythology) वीडियो व एआई स्किल्स
-                    ---
-                    # CineCode 2050 Creator Studio (shriramnag)
-                    3D, 2D रियलिस्टिक, और भारतीय पौराणिक (Mythology) वीडियो व एआई स्किल्स के लिए विशेष क्रिएटर स्टूडियो।
-                    """.trimIndent()
-                )
+            if (!workerFile.isFile) {
+                runCatching {
+                    context.assets.open("browser-extensions/cinecode-creator-studio/service-worker.js").use { input ->
+                        workerFile.outputStream().use { output -> input.copyTo(output) }
+                    }
+                }.onFailure {
+                    workerFile.writeText(
+                        """
+                        chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+                          if (!message || message.type !== 'mcp_tool_call') return;
+                          sendResponse({ status: 'ok', tool: message.tool, extension: 'cinecode-creator-studio', arguments: message.args || {} });
+                          return true;
+                        });
+                        """.trimIndent()
+                    )
+                }
             }
+            val skillsDir = File(creatorDir, "skills").apply { mkdirs() }
             val videoStylesTarget = File(skillsDir, "video-styles.md")
             runCatching {
                 context.assets.open("skills/video-styles.md").use { input ->
@@ -185,9 +201,7 @@ class BrowserExtensionManager private constructor() {
                 }
             }
             val sourceFile = File(creatorDir, PluginSource.FILE)
-            if (!sourceFile.isFile) {
-                sourceFile.writeText(PluginSource("shriramnag/CineCode-AI", "main", "cinecode-creator-studio").toJson().toString())
-            }
+            sourceFile.writeText(PluginSource("shriramnag/CineCode-AI", "main", "extensions/cinecode-creator-studio").toJson().toString())
         }
     }
 
@@ -451,7 +465,7 @@ class BrowserExtensionManager private constructor() {
                 }.onFailure { Log.w(TAG, "Failed to parse extension at ${sub.absolutePath}: ${it.message}") }
             }
         }
-        return loaded.sortedByDescending { it.id == "com.shriramnag.cinecodeai.creator" }
+        return loaded.sortedByDescending { isCreatorPluginId(it.id) }
     }
 
     /** Reads the plugin list from the IDE bridge (or [scanLocal] if it is not running) and publishes it to [extensions]. */
@@ -461,11 +475,11 @@ class BrowserExtensionManager private constructor() {
             null
         }
         val list = if (bridgeList != null) {
-            if (bridgeList.any { it.id == "com.shriramnag.cinecodeai.creator" }) {
+            if (bridgeList.any { isCreatorPluginId(it.id) }) {
                 bridgeList
             } else {
                 val localCreator = withContext(Dispatchers.IO) {
-                    scanLocal().firstOrNull { it.id == "com.shriramnag.cinecodeai.creator" }
+                    scanLocal().firstOrNull { isCreatorPluginId(it.id) }
                 }
                 if (localCreator != null) listOf(localCreator) + bridgeList else bridgeList
             }

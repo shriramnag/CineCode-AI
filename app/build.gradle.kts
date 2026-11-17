@@ -33,7 +33,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.shriramnag.cinecodeai"
+        applicationId = "com.termux"
         minSdk = 26
         targetSdk = 36
         versionCode = appVersionCode

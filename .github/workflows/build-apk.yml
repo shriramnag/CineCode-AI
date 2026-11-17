@@ -162,8 +162,14 @@ jobs:
             echo "KEYSTORE_PASS=${{ secrets.RELEASE_KEYSTORE_PASS }}" >> $GITHUB_ENV
             echo "KEY_ALIAS=${{ secrets.RELEASE_KEY_ALIAS }}" >> $GITHUB_ENV
             echo "KEY_PASS=${{ secrets.RELEASE_KEY_PASS }}" >> $GITHUB_ENV
+          elif [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "Using KEYSTORE_BASE64 from GitHub Secrets"
+            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > cinecode-release.jks
+            echo "KEYSTORE_PASS=${{ secrets.KEYSTORE_PASS }}" >> $GITHUB_ENV
+            echo "KEY_ALIAS=${{ secrets.KEY_ALIAS }}" >> $GITHUB_ENV
+            echo "KEY_PASS=${{ secrets.KEY_PASS }}" >> $GITHUB_ENV
           elif [ -s "debug.keystore.base64" ]; then
-            echo "⚠️ Warning: RELEASE_KEYSTORE_BASE64 secret not set; falling back to repository debug.keystore.base64"
+            echo "⚠️ Warning: Keystore secret not set; falling back to repository debug.keystore.base64 for consistent signature"
             base64 -d debug.keystore.base64 > cinecode-release.jks
             echo "KEYSTORE_PASS=android" >> $GITHUB_ENV
             echo "KEY_ALIAS=androiddebugkey" >> $GITHUB_ENV
@@ -181,7 +187,7 @@ jobs:
               -alias androiddebugkey \
               -keyalg RSA -keysize 2048 -validity 10000 \
               -storepass android -keypass android \
-              -dname "CN=CineCode AI,OU=Mobile,O=ShriramNag,L=India,S=IN,C=IN" || true
+              -dname "CN=Android Debug,O=Android,C=US" || true
             echo "KEYSTORE_PASS=android" >> $GITHUB_ENV
             echo "KEY_ALIAS=androiddebugkey" >> $GITHUB_ENV
             echo "KEY_PASS=android" >> $GITHUB_ENV

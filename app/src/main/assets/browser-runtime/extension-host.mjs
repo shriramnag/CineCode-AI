@@ -64,8 +64,9 @@ export class ExtensionHost {
   permissions(ext, name) { const permissions = ext.manifest.permissions || []; if (!permissions.includes(name)) throw new Error(`Extension requires the ${name} permission`); }
   async loadExtension(directory) {
     const dir = fs.realpathSync(directory); const manifest = JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json'), 'utf8'));
-    const id = manifest.id || path.basename(dir); if (!/^[a-zA-Z0-9_-]+$/.test(id)) throw new Error('Invalid extension id');
+    const id = manifest.id || path.basename(dir); if (!/^[a-zA-Z0-9._-]+$/.test(id)) throw new Error('Invalid extension id');
     if (this.extensions.has(id)) { if (this.extensions.get(id).dir === dir) return this.extensions.get(id); throw new Error(`Duplicate extension id: ${id}`); }
+    if (manifest.manifest_version == null) manifest.manifest_version = 3;
     if (![2, 3].includes(manifest.manifest_version)) throw new Error('Only manifest versions 2 and 3 are supported');
     const state = this.readState({ id }); const ext = { id, dir, manifest, enabled: true, worldName: `antigem:${id}:${randomUUID()}`, binding: '__antigem_' + randomBytes(12).toString('hex'), resourceToken: randomBytes(24).toString('hex'), storage: { local: state.local || {}, sync: state.sync || {}, session: {} }, alarms: new Map(), scripts: [], registrations: new Map(), dynamicScripts: [], action: {}, sidePanel: {}, contexts: [] };
     if (manifest.default_locale) { try { manifest.__messages = JSON.parse(fs.readFileSync(safeFile(dir, `_locales/${manifest.default_locale}/messages.json`), 'utf8')); } catch {} }

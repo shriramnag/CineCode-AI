@@ -59,7 +59,7 @@ object PluginRepositories {
     const val CINECODE_REPO = "shriramnag/CineCode-AI"
     const val DEFAULT_REPO = CINECODE_REPO
     private const val LEGACY_DEFAULT_REPO = "dipeshkrydv/antigem_plugins"
-    private const val CINECODE_CREATOR_PLUGIN_ID = "com.shriramnag.cinecodeai.creator"
+    private const val CINECODE_CREATOR_PLUGIN_ID = "cinecode-creator-studio"
     private const val DEFAULT_REPO_ADDED = "default_repo_added"
     private const val CINECODE_REPO_ADDED = "cinecode_repo_added"
     private val NAME = "[A-Za-z0-9_.-]+"
@@ -88,11 +88,11 @@ object PluginRepositories {
     private var appContext: Context? = null
 
     private fun builtInCreatorRepoPlugin() = RepoPlugin(
-        path = "cinecode-creator-studio",
+        path = "extensions/cinecode-creator-studio",
         id = CINECODE_CREATOR_PLUGIN_ID,
         name = "🎬 CineCode 2050 Creator Studio",
-        version = "1.0.0",
-        description = "3D, 2D रियलिस्टिक, और भारतीय पौराणिक (Mythology) वीडियो व एआई स्किल्स का आपका अपना विशेष प्लगइन।",
+        version = "1.1.0",
+        description = "3D, 2D रियलिस्टिक, भारतीय पौराणिक (Mythology), In-App Code Sandbox, Shiv AI Emotion Voice और Google Research स्किल्स का आपका अपना विशेष प्लगइन।",
         iconUrl = ""
     )
 

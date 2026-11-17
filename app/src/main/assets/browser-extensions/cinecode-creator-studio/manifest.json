@@ -1,0 +1,110 @@
+{
+  "manifest_version": 3,
+  "id": "cinecode-creator-studio",
+  "name": "🎬 CineCode 2050 Creator Studio",
+  "version": "1.1.0",
+  "author": "shriramnag",
+  "description": "3D, 2D रियलिस्टिक, भारतीय पौराणिक (Mythology), In-App Code Sandbox, Shiv AI Emotion Voice और Google Research स्किल्स का आपका अपना विशेष प्लगइन।",
+  "permissions": [
+    "storage"
+  ],
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "mcp_tools": [
+    {
+      "name": "execute_local_code",
+      "description": "Execute Python, Node.js/JS, or HTML/JS code inside sandbox_workspace with live output and automatic Self-Healing.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "language": { "type": "string", "description": "python, nodejs, or html" },
+          "code": { "type": "string", "description": "Source code to run" },
+          "filename": { "type": "string", "description": "Optional filename" },
+          "auto_self_heal": { "type": "boolean", "description": "Enable self-healing retry on error" }
+        },
+        "required": ["language", "code"]
+      }
+    },
+    {
+      "name": "camera_director",
+      "description": "CineCameraDirector: 3D/Mythological camera movement (Pan, Zoom, Orbit, Crane), ambient lighting & depth prompts.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "scene_description": { "type": "string", "description": "Scene description" },
+          "style": { "type": "string", "description": "mythological_3d, 2d_realistic, or futuristic_2050" },
+          "movement": { "type": "string", "description": "Optional camera movement" },
+          "lighting": { "type": "string", "description": "Optional lighting mood" }
+        },
+        "required": ["scene_description"]
+      }
+    },
+    {
+      "name": "fetch_epic_multimedia",
+      "description": "Autonomous Google Research & Media Finder: royalty-free historical photos, ambient music, and archaeological facts.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "topic": { "type": "string", "description": "Research topic" },
+          "media_type": { "type": "string", "description": "all, images, music, or facts" }
+        },
+        "required": ["topic"]
+      }
+    },
+    {
+      "name": "find_background_assets",
+      "description": "Find copyright-free background images and music cues matching a scene prompt.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "scene_prompt": { "type": "string", "description": "Scene prompt" }
+        },
+        "required": ["scene_prompt"]
+      }
+    },
+    {
+      "name": "auto_git_push",
+      "description": "Commit and push verified workspace updates to Git.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "commit_message": { "type": "string", "description": "Commit message" },
+          "repo_dir": { "type": "string", "description": "Local git path" },
+          "branch": { "type": "string", "description": "Branch name" }
+        },
+        "required": ["commit_message"]
+      }
+    },
+    {
+      "name": "create_3d_scene",
+      "description": "3D cinematic scene builder",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "prompt": { "type": "string", "description": "3D scene prompt" }
+        }
+      }
+    },
+    {
+      "name": "generate_2d_realistic",
+      "description": "2D realistic artwork synthesis",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "prompt": { "type": "string", "description": "2D artwork prompt" }
+        }
+      }
+    },
+    {
+      "name": "mythology_story_builder",
+      "description": "Indian Mythology story & video workflow",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "topic": { "type": "string", "description": "Mythological story topic" }
+        }
+      }
+    }
+  ]
+}
