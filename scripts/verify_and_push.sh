@@ -17,9 +17,10 @@ cd "${ROOT_DIR}"
 
 # 1. Validate Build Status
 echo "🔨 Step 1: Validating Gradle build status..."
+chmod +x "${SCRIPT_DIR}"/*.sh 2>/dev/null || true
 if [[ -f "./gradlew" ]]; then
     chmod +x ./gradlew
-    ./gradlew :app:compileDebugKotlin --no-daemon
+    ./gradlew :app:compileDebugKotlin --no-daemon || ./gradlew :app:assembleDebug --no-daemon
 else
     echo "⚠️ gradlew not found, skipping gradle build check."
 fi

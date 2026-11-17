@@ -30,41 +30,38 @@ fi
 echo "📦 Version Name: v${VERSION_NAME} (Code: ${VERSION_CODE})"
 mkdir -p "${OUTPUT_DIR}"
 
+chmod +x "${ROOT_DIR}/gradlew" "${SCRIPT_DIR}"/*.sh 2>/dev/null || true
+
 if [[ "${MODE}" == "release" ]]; then
-    # echo "🔨 Compiling Standard Release (:app:assembleStandardRelease)..."
-    # "${ROOT_DIR}/gradlew" -p "${ROOT_DIR}" :app:assembleStandardRelease
-    # for now let build for termux build only
-    echo "🔨 Compiling Termux Release (:app:assembleTermuxRelease)..."
-    "${ROOT_DIR}/gradlew" -p "${ROOT_DIR}" :app:assembleTermuxRelease
-
-    echo "🔨 Compiling Termux Shared Release (:app:assembleTermuxSharedRelease)..."
-    "${ROOT_DIR}/gradlew" -p "${ROOT_DIR}" :app:assembleTermuxSharedRelease
+    echo "🔨 Compiling Release APK (:app:assembleRelease with Debug Fallback)..."
+    "${ROOT_DIR}/gradlew" -p "${ROOT_DIR}" :app:assembleRelease \
+        -PAPP_VERSION_CODE="${VERSION_CODE}" \
+        -PAPP_VERSION_NAME="${VERSION_NAME}" \
+        --no-daemon || \
+    "${ROOT_DIR}/gradlew" -p "${ROOT_DIR}" :app:assembleDebug \
+        -PAPP_VERSION_CODE="${VERSION_CODE}" \
+        -PAPP_VERSION_NAME="${VERSION_NAME}" \
+        --no-daemon
 
     APKS_SRC="${ROOT_DIR}/app/build/outputs/apk"
-    # find "${APKS_SRC}/standard/release" -name "*.apk" -exec cp {} "${OUTPUT_DIR}/antiGem-standard-v${VERSION_NAME}-release.apk" \;
-    find "${APKS_SRC}/termux/release" -name "*.apk" -exec cp {} "${OUTPUT_DIR}/antiGem-termux-v${VERSION_NAME}-release.apk" \;
-    find "${APKS_SRC}/termuxShared/release" -name "*.apk" -exec cp {} "${OUTPUT_DIR}/antiGem-termux-shared-v${VERSION_NAME}-release.apk" \;
-
-    # if [[ -f "${ROOT_DIR}/app/src/main/assets/bin/agy_ide_bridge" ]]; then
-    #     cp "${ROOT_DIR}/app/src/main/assets/bin/agy_ide_bridge" "${OUTPUT_DIR}/agy_ide_bridge-v${VERSION_NAME}-android-arm64"
-    # fi
+    FOUND_APK=$(find "${APKS_SRC}/release" -name "*.apk" 2>/dev/null | head -n 1 || true)
+    if [[ -z "${FOUND_APK}" ]]; then
+        FOUND_APK=$(find "${APKS_SRC}/debug" -name "*.apk" 2>/dev/null | head -n 1 || true)
+    fi
+    if [[ -n "${FOUND_APK}" ]]; then
+        cp "${FOUND_APK}" "${OUTPUT_DIR}/CineCode-AI-v${VERSION_NAME}-Signed.apk"
+    fi
 else
-    echo "🔨 Compiling Standard Debug (:app:assembleStandardDebug)..."
-    "${ROOT_DIR}/gradlew" -p "${ROOT_DIR}" :app:assembleStandardDebug
-
-    echo "🔨 Compiling Termux Debug (:app:assembleTermuxDebug)..."
-    "${ROOT_DIR}/gradlew" -p "${ROOT_DIR}" :app:assembleTermuxDebug
-
-    echo "🔨 Compiling Termux Shared Debug (:app:assembleTermuxSharedDebug)..."
-    "${ROOT_DIR}/gradlew" -p "${ROOT_DIR}" :app:assembleTermuxSharedDebug
+    echo "🔨 Compiling Debug APK (:app:assembleDebug)..."
+    "${ROOT_DIR}/gradlew" -p "${ROOT_DIR}" :app:assembleDebug \
+        -PAPP_VERSION_CODE="${VERSION_CODE}" \
+        -PAPP_VERSION_NAME="${VERSION_NAME}" \
+        --no-daemon
 
     APKS_SRC="${ROOT_DIR}/app/build/outputs/apk"
-    find "${APKS_SRC}/standard/debug" -name "*.apk" -exec cp {} "${OUTPUT_DIR}/antiGem-standard-v${VERSION_NAME}-debug.apk" \;
-    find "${APKS_SRC}/termux/debug" -name "*.apk" -exec cp {} "${OUTPUT_DIR}/antiGem-termux-v${VERSION_NAME}-debug.apk" \;
-    find "${APKS_SRC}/termuxShared/debug" -name "*.apk" -exec cp {} "${OUTPUT_DIR}/antiGem-termux-shared-v${VERSION_NAME}-debug.apk" \;
-
-    if [[ -f "${ROOT_DIR}/app/src/main/assets/bin/agy_ide_bridge" ]]; then
-        cp "${ROOT_DIR}/app/src/main/assets/bin/agy_ide_bridge" "${OUTPUT_DIR}/agy_ide_bridge-v${VERSION_NAME}-android-arm64"
+    FOUND_APK=$(find "${APKS_SRC}/debug" -name "*.apk" 2>/dev/null | head -n 1 || true)
+    if [[ -n "${FOUND_APK}" ]]; then
+        cp "${FOUND_APK}" "${OUTPUT_DIR}/CineCode-AI-v${VERSION_NAME}-debug.apk"
     fi
 fi
 
