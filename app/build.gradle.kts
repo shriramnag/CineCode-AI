@@ -34,8 +34,8 @@ android {
 
     defaultConfig {
         applicationId = "com.termux"
-        minSdk = 26
-        targetSdk = 36
+        minSdk = 24
+        targetSdk = 35
         versionCode = appVersionCode
         versionName = appVersionName
 
@@ -77,6 +77,12 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
     }
 }
 

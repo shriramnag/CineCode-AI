@@ -147,6 +147,13 @@ jobs:
           else
             echo "$FIXED_KEYSTORE_B64" | base64 -d > debug.keystore
           fi
+          if ! keytool -list -keystore debug.keystore -storepass android -alias androiddebugkey >/dev/null 2>&1; then
+            echo "Generating fallback debug.keystore with androiddebugkey..."
+            rm -f debug.keystore
+            keytool -genkeypair -v -keystore debug.keystore -storepass android \
+              -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 \
+              -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          fi
           cp debug.keystore cinecode-release.jks
 
       - name: Prepare Release Keystore
@@ -184,9 +191,18 @@ jobs:
 
       - name: Sign APK with v1/v2/v3 Signing (Consistent Keystore)
         run: |
-          BUILD_TOOLS_VERSION=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)
-          APKSIGNER="$ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION/apksigner"
-          ZIPALIGN="$ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION/zipalign"
+          SDK_ROOT="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
+          if [ -z "$SDK_ROOT" ] || [ ! -d "$SDK_ROOT/build-tools" ]; then
+            echo "Android SDK build-tools not found (ANDROID_HOME=$ANDROID_HOME, ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT)"
+            exit 1
+          fi
+          BUILD_TOOLS_VERSION=$(ls "$SDK_ROOT/build-tools" | sort -V | tail -n 1)
+          APKSIGNER="$SDK_ROOT/build-tools/$BUILD_TOOLS_VERSION/apksigner"
+          ZIPALIGN="$SDK_ROOT/build-tools/$BUILD_TOOLS_VERSION/zipalign"
+          if [ ! -x "$APKSIGNER" ] || [ ! -x "$ZIPALIGN" ]; then
+            echo "Missing zipalign or apksigner in $SDK_ROOT/build-tools/$BUILD_TOOLS_VERSION"
+            exit 1
+          fi
 
           TARGET_APK=$(find app/build/outputs/apk/release -type f -name "*.apk" 2>/dev/null | head -n 1)
           if [ -z "$TARGET_APK" ]; then
@@ -208,11 +224,8 @@ jobs:
 
           SIGNED_APK_PATH="app/build/outputs/apk/${{ env.APK_FILENAME }}"
           ALIGNED_APK="app/build/outputs/apk/aligned-temp.apk"
-          if [ -x "$ZIPALIGN" ]; then
-            "$ZIPALIGN" -p -f -v 4 "$TARGET_APK" "$ALIGNED_APK" >/dev/null 2>&1 || cp "$TARGET_APK" "$ALIGNED_APK"
-          else
-            cp "$TARGET_APK" "$ALIGNED_APK"
-          fi
+          "$ZIPALIGN" -p -f 4 "$TARGET_APK" "$ALIGNED_APK"
+          "$ZIPALIGN" -c -p 4 "$ALIGNED_APK"
 
           "$APKSIGNER" sign \
             --ks cinecode-release.jks \
@@ -226,7 +239,10 @@ jobs:
             "$ALIGNED_APK"
 
           rm -f "$ALIGNED_APK"
-          "$APKSIGNER" verify --verbose --print-certs "$SIGNED_APK_PATH"
+          VERIFY_OUT=$("$APKSIGNER" verify --verbose --print-certs "$SIGNED_APK_PATH")
+          echo "$VERIFY_OUT"
+          echo "$VERIFY_OUT" | grep -q "Verified using v1 scheme (JAR signing): true"
+          echo "$VERIFY_OUT" | grep -q "Verified using v2 scheme (APK Signature Scheme v2): true"
           ls -lh "$SIGNED_APK_PATH"
 
       - name: Commit & Sync version.json [skip ci]

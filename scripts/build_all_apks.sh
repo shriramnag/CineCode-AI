@@ -49,7 +49,39 @@ if [[ "${MODE}" == "release" ]]; then
         FOUND_APK=$(find "${APKS_SRC}/debug" -name "*.apk" 2>/dev/null | head -n 1 || true)
     fi
     if [[ -n "${FOUND_APK}" ]]; then
-        cp "${FOUND_APK}" "${OUTPUT_DIR}/CineCode-AI-v${VERSION_NAME}-Signed.apk"
+        FINAL_APK="${OUTPUT_DIR}/CineCode-AI-v${VERSION_NAME}-Signed.apk"
+        SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+        BUILD_TOOLS_DIR=""
+        if [[ -n "${SDK_ROOT}" && -d "${SDK_ROOT}/build-tools" ]]; then
+            BUILD_TOOLS_DIR="${SDK_ROOT}/build-tools/$(ls "${SDK_ROOT}/build-tools" | sort -V | tail -n 1)"
+        fi
+        KS_FILE="${ROOT_DIR}/cinecode-release.jks"
+        if [[ ! -f "${KS_FILE}" ]]; then
+            KS_FILE="${ROOT_DIR}/debug.keystore"
+        fi
+        if [[ ! -f "${KS_FILE}" ]]; then
+            keytool -genkeypair -v -keystore "${KS_FILE}" -storepass android \
+                -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 \
+                -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+        fi
+        if [[ -n "${BUILD_TOOLS_DIR}" && -x "${BUILD_TOOLS_DIR}/zipalign" && -x "${BUILD_TOOLS_DIR}/apksigner" ]]; then
+            ALIGNED_TEMP="${OUTPUT_DIR}/aligned-temp.apk"
+            "${BUILD_TOOLS_DIR}/zipalign" -p -f 4 "${FOUND_APK}" "${ALIGNED_TEMP}"
+            "${BUILD_TOOLS_DIR}/apksigner" sign \
+                --ks "${KS_FILE}" \
+                --ks-key-alias "${KEY_ALIAS:-androiddebugkey}" \
+                --ks-pass "pass:${KEYSTORE_PASS:-android}" \
+                --key-pass "pass:${KEY_PASS:-android}" \
+                --v1-signing-enabled true \
+                --v2-signing-enabled true \
+                --v3-signing-enabled true \
+                --out "${FINAL_APK}" \
+                "${ALIGNED_TEMP}"
+            rm -f "${ALIGNED_TEMP}"
+            "${BUILD_TOOLS_DIR}/apksigner" verify --verbose --print-certs "${FINAL_APK}"
+        else
+            cp "${FOUND_APK}" "${FINAL_APK}"
+        fi
     fi
 else
     echo "🔨 Compiling Debug APK (:app:assembleDebug)..."
