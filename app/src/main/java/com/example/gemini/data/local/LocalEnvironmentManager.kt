@@ -612,8 +612,10 @@ object LocalEnvironmentManager {
             val libexecDir = File(getPrefixDir(context), "libexec")
             if (!libexecDir.exists()) libexecDir.mkdirs()
             val dispatcherFile = File(libexecDir, "termux-api")
+            val pkgName = context.packageName
+            val prefixPath = getPrefixDir(context).absolutePath
             val scriptContent = """
-                #!/data/data/com.shriram.cinecode/files/usr/bin/bash
+                #!$prefixPath/bin/bash
                 METHOD="${'$'}1"
                 shift
 
@@ -625,13 +627,13 @@ object LocalEnvironmentManager {
                     fi
                 fi
 
-                TMP_DIR="${'$'}{TMPDIR:-/data/data/com.shriram.cinecode/files/usr/tmp}"
+                TMP_DIR="${'$'}{TMPDIR:-$prefixPath/tmp}"
                 mkdir -p "${'$'}TMP_DIR"
                 TMP_OUT="${'$'}TMP_DIR/api_out.${'$'}${'$'}"
 
                 am broadcast --user 0 \
                     -a "com.shriram.cinecode.api" \
-                    -n "com.shriram.cinecode/com.shriram.cinecode.data.receiver.TermuxApiReceiver" \
+                    -n "$pkgName/com.shriram.cinecode.data.receiver.TermuxApiReceiver" \
                     --es "api_method" "${'$'}METHOD" \
                     --es "socket_output" "${'$'}TMP_OUT" \
                     "${'$'}{EXTRA_ARGS[@]}" \
@@ -1756,11 +1758,20 @@ object LocalEnvironmentManager {
                 }
             } catch (_: Exception) {}
 
+            ensureExecutablesPermissions(appContext)
             log("Running verification test command in shell...")
-            val testRes = executeCommand(
+            var testRes = executeCommand(
                 command = "echo 'GEMINI_LOCAL_TOOLS_OK' && pwd && (which bash || which sh)",
                 context = appContext
             )
+            if (!testRes.output.contains("GEMINI_LOCAL_TOOLS_OK")) {
+                log("First verification failed (${testRes.output.trim()}); re-granting 0755 permissions & retrying...")
+                ensureExecutablesPermissions(appContext)
+                testRes = executeCommand(
+                    command = "echo 'GEMINI_LOCAL_TOOLS_OK' && pwd && (which bash || which sh)",
+                    context = appContext
+                )
+            }
             log("Verification output: ${testRes.output.trim()}")
 
             if (!testRes.output.contains("GEMINI_LOCAL_TOOLS_OK")) {
@@ -2409,6 +2420,10 @@ All files created here persist inside the application.
         val startTime = System.currentTimeMillis()
         val env = mutableMapOf<String, String>()
 
+        if (context != null) {
+            ensureExecutablesPermissions(context)
+        }
+
         if (context != null && !isTermuxPackage(context) && isUbuntuInstalled(context)) {
             val prootBin = getProotBinaryPath(context)
             val ubuntuDir = getUbuntuRootDir(context)
@@ -2714,11 +2729,12 @@ All files created here persist inside the application.
         }
         scriptFile.setExecutable(true, false)
 
+        ensureExecutablesPermissions(context)
         val bashPath = when {
             File(binDir, "bash").exists() -> File(binDir, "bash").absolutePath
             File(prefixDir, "bin/bash").exists() -> File(prefixDir, "bin/bash").absolutePath
             File(binDir, "sh").exists() -> File(binDir, "sh").absolutePath
-            File("/data/data/com.shriram.cinecode/files/usr/bin/bash").exists() -> "/data/data/com.shriram.cinecode/files/usr/bin/bash"
+            File("/data/data/${context.packageName}/files/usr/bin/bash").exists() -> "/data/data/${context.packageName}/files/usr/bin/bash"
             else -> "sh"
         }
 
@@ -2776,11 +2792,12 @@ All files created here persist inside the application.
         val homeDir = getHomeDir(context)
         val tmpDir = getTmpDir(context)
 
+        ensureExecutablesPermissions(context)
         val bashPath = when {
             File(binDir, "bash").exists() -> File(binDir, "bash").absolutePath
             File(prefixDir, "bin/bash").exists() -> File(prefixDir, "bin/bash").absolutePath
             File(binDir, "sh").exists() -> File(binDir, "sh").absolutePath
-            File("/data/data/com.shriram.cinecode/files/usr/bin/bash").exists() -> "/data/data/com.shriram.cinecode/files/usr/bin/bash"
+            File("/data/data/${context.packageName}/files/usr/bin/bash").exists() -> "/data/data/${context.packageName}/files/usr/bin/bash"
             else -> "sh"
         }
 
@@ -2837,6 +2854,145 @@ All files created here persist inside the application.
                     process.destroyForcibly()
                 } catch (_: Exception) {}
             }
+        }
+    }
+
+    fun ensureExecutablesPermissions(context: Context): Int {
+        val appCtx = context.applicationContext
+        var fixedCount = 0
+
+        fun grantPerm(file: File, mode: Int = 493) { // 0755 octal
+            if (!file.exists()) return
+            runCatching {
+                file.setReadable(true, false)
+                file.setExecutable(true, false)
+                Os.chmod(file.absolutePath, mode)
+                fixedCount++
+            }
+        }
+
+        val prefixDir = getPrefixDir(appCtx)
+        val usrBinDir = getBinDir(appCtx)
+        val usrLibDir = getLibDir(appCtx)
+        val usrLibexecDir = File(prefixDir, "libexec")
+        val appBinDir = File(appCtx.filesDir, "bin")
+        val appLibDir = File(appCtx.filesDir, "lib")
+        val homeBinDir = File(getHomeDir(appCtx), ".local/bin")
+        val ubuntuDir = getUbuntuRootDir(appCtx)
+
+        listOf(
+            appCtx.filesDir,
+            prefixDir,
+            usrBinDir,
+            usrLibDir,
+            usrLibexecDir,
+            appBinDir,
+            appLibDir,
+            homeBinDir,
+            ubuntuDir,
+            File(ubuntuDir, "usr"),
+            File(ubuntuDir, "usr/bin"),
+            File(ubuntuDir, "bin")
+        ).forEach { dir ->
+            if (dir.exists() && dir.isDirectory) {
+                grantPerm(dir, 493)
+            }
+        }
+
+        val pkgName = appCtx.packageName
+        listOf(
+            "usr/bin/login",
+            "usr/bin/bash",
+            "usr/bin/node",
+            "usr/bin/sh",
+            "usr/bin/dash",
+            "usr/bin/busybox",
+            "usr/bin/env",
+            "usr/bin/zsh",
+            "usr/bin/agy_ide_bridge",
+            "usr/bin/claude",
+            "usr/libexec/termux-api",
+            "bin/proot",
+            "bin/loader",
+            "ubuntu/usr/bin/login",
+            "ubuntu/usr/bin/bash",
+            "ubuntu/usr/bin/node",
+            "ubuntu/usr/bin/env",
+            "ubuntu/bin/bash",
+            "ubuntu/bin/sh"
+        ).forEach { rel ->
+            grantPerm(File(appCtx.filesDir, rel), 493)
+            grantPerm(File("/data/data/$pkgName/files/$rel"), 493)
+        }
+
+        listOf(usrBinDir, usrLibexecDir, appBinDir, homeBinDir, File(ubuntuDir, "usr/bin"), File(ubuntuDir, "bin")).forEach { dir ->
+            if (dir.exists() && dir.isDirectory) {
+                runCatching {
+                    dir.walkTopDown().maxDepth(3).forEach { entry ->
+                        if (entry.isDirectory || entry.isFile) {
+                            grantPerm(entry, 493)
+                        }
+                    }
+                }
+            }
+        }
+
+        listOf(usrLibDir, appLibDir).forEach { dir ->
+            if (dir.exists() && dir.isDirectory) {
+                runCatching {
+                    dir.walkTopDown().maxDepth(2).filter {
+                        it.isFile && (it.name.endsWith(".so") || it.name.contains(".so."))
+                    }.forEach { so ->
+                        grantPerm(so, 493)
+                    }
+                }
+            }
+        }
+
+        return fixedCount
+    }
+
+    fun retryVerificationOrReinstall(
+        context: Context,
+        authPreferences: AuthPreferences,
+        fallbackSource: BootstrapSource = BootstrapSource.Auto
+    ): Job {
+        val appCtx = context.applicationContext
+        return managerScope.launch {
+            _installerState.value = LocalInstallerState.Verifying(
+                testName = "Re-granting execution permissions (0755) & verifying shell..."
+            )
+            log("🔧 Applying chmod 0755 permissions on local binaries before retry...")
+            val fixed = ensureExecutablesPermissions(appCtx)
+            ensureProotExtracted(appCtx)
+            ensureGlibcEnvironment(appCtx)
+            ensureClaudeWrapper(appCtx)
+            ensureTermuxApiDispatcher(appCtx)
+            log("Granted 0755 permissions to $fixed binaries/dirs. Re-running shell exec() check...")
+
+            if (isInstalled(appCtx)) {
+                val testRes = executeCommand(
+                    command = "echo 'GEMINI_LOCAL_TOOLS_OK' && pwd && (which bash || which sh)",
+                    context = appCtx
+                )
+                log("Permission-fix verification output: ${testRes.output.trim()}")
+                if (testRes.exitCode == 0 && testRes.output.contains("GEMINI_LOCAL_TOOLS_OK")) {
+                    authPreferences.setLocalToolsInstalled(true, BOOTSTRAP_VERSION)
+                    authPreferences.setLocalToolsEnabled(true)
+                    authPreferences.setTerminalToolEnabled(true)
+                    _installerState.value = LocalInstallerState.Success(
+                        message = "Permissions auto-granted (0755) and Linux environment verified!",
+                        prefixPath = getInstallPath(appCtx),
+                        totalDiskUsageFormatted = getFormattedDiskSpace(appCtx)
+                    )
+                    updateInstallNotification(appCtx, "Installation Complete", "Linux environment verified and ready!", 100, ongoing = false, force = true)
+                    LocalTerminalManager.autoLaunchServerIfReady(appCtx)
+                    return@launch
+                }
+            }
+
+            log("Shell still needs fresh bootstrap setup — running installer...")
+            installLocalEnvironment(appCtx, authPreferences, fallbackSource)
         }
     }
 

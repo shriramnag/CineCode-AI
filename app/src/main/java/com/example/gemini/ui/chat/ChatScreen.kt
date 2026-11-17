@@ -1570,6 +1570,7 @@ fun ChatScreen(
                                     isLocalToolsInstalled = isLocalToolsInstalled,
                                     isInitialGracePeriod = isInitialGracePeriod,
                                     activeProjectName = activeChatProject?.name ?: "CineCode",
+                                    isCloudApiActive = isCloudApiActive,
                                     onStartOrRestartEngine = {
                                         com.shriram.cinecode.data.local.LocalServerManager.startServer(context, forceRestart = false)
                                     },
@@ -1612,6 +1613,7 @@ fun ChatScreen(
                                     isLocalToolsInstalled = isLocalToolsInstalled,
                                     isInitialGracePeriod = isInitialGracePeriod,
                                     activeProjectName = activeChatProject?.name ?: "CineCode",
+                                    isCloudApiActive = isCloudApiActive,
                                     onStartOrRestartEngine = restartLocalServer,
                                     onOpenServerLogs = { showLocalServerOutputDialog = true },
                                     onOpenIde = onNavigateToIde,
@@ -1736,6 +1738,7 @@ fun ChatScreen(
                                             isLocalToolsInstalled = isLocalToolsInstalled,
                                             isInitialGracePeriod = isInitialGracePeriod,
                                             activeProjectName = activeChatProject?.name ?: "CineCode",
+                                            isCloudApiActive = isCloudApiActive,
                                             onStartOrRestartEngine = restartLocalServer,
                                             onOpenServerLogs = { showLocalServerOutputDialog = true },
                                             onOpenIde = onNavigateToIde,

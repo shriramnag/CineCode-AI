@@ -170,6 +170,8 @@ object AutomaticApkDownloader {
                     throw IllegalStateException("डाउनलोड की गई APK फ़ाइल अधूरी या अमान्य है")
                 }
 
+                verifyApkArchiveForOverwrite(appContext, tempFile)
+
                 activeCall = null
                 activeTargetFile = tempFile
                 _state.value = ApkDownloadState.Completed(tempFile)
@@ -189,6 +191,26 @@ object AutomaticApkDownloader {
                 activeCall = null
             }
         }
+    }
+
+    private fun verifyApkArchiveForOverwrite(context: Context, apkFile: File) {
+        val pm = context.packageManager
+        val archiveInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            pm.getPackageArchiveInfo(
+                apkFile.absolutePath,
+                android.content.pm.PackageManager.PackageInfoFlags.of(0)
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            pm.getPackageArchiveInfo(apkFile.absolutePath, 0)
+        } ?: throw IllegalStateException("डाउनलोड की गई APK फ़ाइल करप्ट या अधूरी है (Archive parse failed)")
+
+        if (archiveInfo.packageName != context.packageName) {
+            throw IllegalStateException(
+                "पैकेज ID मेल नहीं खाता: प्राप्त '${archiveInfo.packageName}', आवश्यक '${context.packageName}'"
+            )
+        }
+        Log.i(TAG, "Verified APK for safe overwrite: pkg=${archiveInfo.packageName}, size=${apkFile.length()}")
     }
 
     private fun resolveDownloadUrl(versionName: String, preferredDownloadUrl: String): String {
@@ -255,29 +277,77 @@ object AutomaticApkDownloader {
     }
 
     fun triggerApkInstall(context: Context, apkFile: File): Boolean {
+        val appContext = context.applicationContext
         return try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !context.packageManager.canRequestPackageInstalls()) {
-                val manageIntent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
-                    data = Uri.parse("package:${context.packageName}")
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(manageIntent)
+            if (!apkFile.exists() || apkFile.length() < 100 * 1024L) {
+                _state.value = ApkDownloadState.Error("APK फ़ाइल मौजूद नहीं है या अधूरी है")
                 return false
             }
 
-            val authority = "${context.packageName}.fileprovider"
-            val apkUri = FileProvider.getUriForFile(context, authority, apkFile)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !appContext.packageManager.canRequestPackageInstalls()) {
+                val manageIntent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                    data = Uri.parse("package:${appContext.packageName}")
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                appContext.startActivity(manageIntent)
+                return false
+            }
+
+            val authority = "${appContext.packageName}.fileprovider"
+            val apkUri = FileProvider.getUriForFile(appContext, authority, apkFile)
 
             val installIntent = Intent(Intent.ACTION_VIEW).apply {
                 setDataAndType(apkUri, "application/vnd.android.package-archive")
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true)
+                putExtra(Intent.EXTRA_RETURN_RESULT, true)
             }
-            context.startActivity(installIntent)
+
+            val resInfoList = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                appContext.packageManager.queryIntentActivities(
+                    installIntent,
+                    android.content.pm.PackageManager.ResolveInfoFlags.of(android.content.pm.PackageManager.MATCH_DEFAULT_ONLY.toLong())
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                appContext.packageManager.queryIntentActivities(
+                    installIntent,
+                    android.content.pm.PackageManager.MATCH_DEFAULT_ONLY
+                )
+            }
+            for (resolveInfo in resInfoList) {
+                val packageName = resolveInfo.activityInfo?.packageName ?: continue
+                runCatching {
+                    appContext.grantUriPermission(
+                        packageName,
+                        apkUri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                }
+            }
+
+            appContext.startActivity(installIntent)
             true
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to launch APK installer: ${e.message}", e)
-            false
+            Log.e(TAG, "Primary ACTION_VIEW installer launch failed, trying fallback: ${e.message}", e)
+            return try {
+                @Suppress("DEPRECATION")
+                val fallbackIntent = Intent(Intent.ACTION_INSTALL_PACKAGE).apply {
+                    val authority = "${appContext.packageName}.fileprovider"
+                    data = FileProvider.getUriForFile(appContext, authority, apkFile)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true)
+                }
+                appContext.startActivity(fallbackIntent)
+                true
+            } catch (fallbackErr: Exception) {
+                Log.e(TAG, "Fallback APK installer also failed: ${fallbackErr.message}", fallbackErr)
+                _state.value = ApkDownloadState.Error("इंस्टॉलर खोलने में समस्या: ${fallbackErr.localizedMessage ?: fallbackErr.message}")
+                false
+            }
         }
     }
 }

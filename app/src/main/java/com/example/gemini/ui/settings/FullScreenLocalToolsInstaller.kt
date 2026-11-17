@@ -266,7 +266,14 @@ fun FullScreenLocalToolsInstaller(
                     is LocalInstallerState.Success -> PrimaryButton("Get started", Icons.Default.Check, onComplete)
 
                     is LocalInstallerState.Error -> {
-                        PrimaryButton("Try again", Icons.Default.Refresh) { installSelected(fallbackToAuto = true) }
+                        PrimaryButton("Try again", Icons.Default.Refresh) {
+                            val fallbackSource = when (selectedSourceType) {
+                                1 -> BootstrapSource.BaseMinimum
+                                2 -> selectedFileUri?.let { BootstrapSource.LocalZipUri(it) } ?: BootstrapSource.Auto
+                                else -> BootstrapSource.Auto
+                            }
+                            LocalEnvironmentManager.retryVerificationOrReinstall(context, authPreferences, fallbackSource)
+                        }
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             SecondaryButton("Change source", Modifier.weight(1f)) { LocalEnvironmentManager.resetState() }
                             SecondaryButton("Skip", Modifier.weight(1f), onSkip)

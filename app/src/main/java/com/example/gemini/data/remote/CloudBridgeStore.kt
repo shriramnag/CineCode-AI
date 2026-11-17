@@ -95,6 +95,9 @@ object CloudBridgeStore {
     private val _lastRecoveryNotice = MutableStateFlow<String?>(null)
     val lastRecoveryNoticeFlow: StateFlow<String?> = _lastRecoveryNotice.asStateFlow()
 
+    private val _cloudKeyVerified = MutableStateFlow<Boolean?>(null)
+    val cloudKeyVerifiedFlow: StateFlow<Boolean?> = _cloudKeyVerified.asStateFlow()
+
     fun ensureInitialized(context: Context) {
         if (initialized) return
         synchronized(this) {
@@ -104,10 +107,12 @@ object CloudBridgeStore {
             val savedKey = prefs.getString(KEY_API_KEY, "")?.trim().orEmpty()
             _apiKey.value = savedKey
             _isCloudActive.value = savedKey.isNotBlank()
+            _isRateLimitRecovering.value = false
+            _lastRecoveryNotice.value = null
             _searchGroundingEnabled.value = prefs.getBoolean(KEY_SEARCH_ENABLED, true)
             _liveVoiceEnabled.value = prefs.getBoolean(KEY_LIVE_VOICE_ENABLED, true)
             _selectedModel.value = prefs.getString(KEY_CLOUD_MODEL, MODEL_HYDROGEN) ?: MODEL_HYDROGEN
-            _activeEngineMode.value = if (savedKey.isNotBlank()) "Cloud Native 🟢" else "Local Bridge (:1235) 🔵"
+            _activeEngineMode.value = if (savedKey.isNotBlank()) "API Active 🟢 (Connected)" else "Local Bridge (:1235) 🔵"
             initialized = true
 
             // Also hydrate from DataStore if SharedPreferences was empty
@@ -120,17 +125,22 @@ object CloudBridgeStore {
                             prefs.edit().putString(KEY_API_KEY, dsKey).apply()
                             _apiKey.value = dsKey
                             _isCloudActive.value = true
-                            _activeEngineMode.value = "Cloud Native 🟢"
+                            _isRateLimitRecovering.value = false
+                            _lastRecoveryNotice.value = null
+                            _activeEngineMode.value = "API Active 🟢 (Connected)"
+                            verifyApiKeyLiveInternal(dsKey)
                         }
                     }
                 }
+            } else {
+                scope.launch { verifyApiKeyLiveInternal(savedKey) }
             }
         }
     }
 
     fun hasApiKey(context: Context): Boolean {
         ensureInitialized(context)
-        return _isCloudActive.value
+        return _apiKey.value.isNotBlank() && _isCloudActive.value
     }
 
     fun notifyRateLimit429(source: String = "Cloud API") {
@@ -142,7 +152,41 @@ object CloudBridgeStore {
     fun clearRecoveryState() {
         _isRateLimitRecovering.value = false
         _lastRecoveryNotice.value = null
-        _activeEngineMode.value = if (_isCloudActive.value) "Cloud Native 🟢" else "Local Bridge (:1235) 🔵"
+        val keyPresent = _apiKey.value.isNotBlank()
+        _isCloudActive.value = keyPresent
+        _activeEngineMode.value = if (keyPresent) "API Active 🟢 (Connected)" else "Local Bridge (:1235) 🔵"
+    }
+
+    private fun verifyApiKeyLiveInternal(apiKey: String) {
+        if (apiKey.isBlank()) {
+            _cloudKeyVerified.value = null
+            return
+        }
+        runCatching {
+            val probeUrl = "https://generativelanguage.googleapis.com/v1beta/models?key=$apiKey"
+            val req = Request.Builder().url(probeUrl).get().build()
+            httpClient.newCall(req).execute().use { resp ->
+                val code = resp.code
+                val errBody = if (!resp.isSuccessful) resp.body?.string().orEmpty() else ""
+                when {
+                    code in 200..299 -> {
+                        _cloudKeyVerified.value = true
+                        _isCloudActive.value = true
+                        _isRateLimitRecovering.value = false
+                        _lastRecoveryNotice.value = null
+                        _activeEngineMode.value = "API Active 🟢 (Connected)"
+                    }
+                    isRateLimitError(code, errBody) -> {
+                        // Key is valid even if quota is throttled; keep Cloud active & switch gracefully
+                        _cloudKeyVerified.value = true
+                        _isCloudActive.value = true
+                    }
+                    code == 400 || code == 401 || code == 403 -> {
+                        _cloudKeyVerified.value = false
+                    }
+                }
+            }
+        }
     }
 
     fun saveApiKey(context: Context, key: String) {
@@ -155,7 +199,12 @@ object CloudBridgeStore {
             .apply()
         _apiKey.value = trimmed
         _isCloudActive.value = trimmed.isNotBlank()
+        _cloudKeyVerified.value = if (trimmed.isNotBlank()) true else null
         clearRecoveryState()
+
+        if (trimmed.isNotBlank()) {
+            scope.launch { verifyApiKeyLiveInternal(trimmed) }
+        }
 
         scope.launch {
             runCatching {
@@ -321,17 +370,53 @@ object CloudBridgeStore {
         }.getOrDefault(false)
     }
 
+    private fun isBridgeHttpHealthy(): Boolean {
+        val bridgeUrl = com.shriram.cinecode.data.preferences.AuthPreferences.currentBridgeHttpUrl.trimEnd('/')
+        return runCatching {
+            val req = Request.Builder().url("$bridgeUrl/api/health").get().build()
+            httpClient.newBuilder()
+                .connectTimeout(2, TimeUnit.SECONDS)
+                .readTimeout(2, TimeUnit.SECONDS)
+                .build()
+                .newCall(req)
+                .execute()
+                .use { it.isSuccessful }
+        }.getOrDefault(false)
+    }
+
     suspend fun runEngineDiagnostics(context: Context): EngineDiagnosticsReport = withContext(Dispatchers.IO) {
-        ensureInitialized(context)
+        val appCtx = context.applicationContext
+        ensureInitialized(appCtx)
         val apiKey = _apiKey.value
-        val localHubOnline = isLocalPortOpen(BuildConfig.HUB_PORT)
-        val bridgePortOnline = isLocalPortOpen(BuildConfig.BRIDGE_PORT)
+
+        var localHubOnline = isLocalPortOpen(BuildConfig.HUB_PORT)
+        var bridgePortOnline = isLocalPortOpen(BuildConfig.BRIDGE_PORT) || isBridgeHttpHealthy()
+
+        // Attempt auto-start/reconnect for local bridge when local tools are already installed
+        if (!bridgePortOnline && com.shriram.cinecode.data.local.LocalEnvironmentManager.isInstalled(appCtx)) {
+            runCatching {
+                com.shriram.cinecode.data.local.LocalEnvironmentManager.ensureExecutablesPermissions(appCtx)
+                com.shriram.cinecode.data.local.LocalServerManager.startServer(appCtx, forceRestart = false)
+            }
+            kotlinx.coroutines.delay(500)
+            localHubOnline = isLocalPortOpen(BuildConfig.HUB_PORT)
+            bridgePortOnline = isLocalPortOpen(BuildConfig.BRIDGE_PORT) || isBridgeHttpHealthy()
+        }
+        if (bridgePortOnline && !AgyBridgeService.instance.systemConnectionState.value.isBridgeOnline) {
+            runCatching {
+                AgyBridgeService.instance.fetchServerStatus()?.let { status ->
+                    AgyBridgeService.instance.updateHubStatus(status)
+                }
+            }
+        }
 
         var cloudReachable = false
         var is429 = false
         val cloudLabel: String
 
         if (apiKey.isBlank()) {
+            _isCloudActive.value = false
+            _cloudKeyVerified.value = null
             cloudLabel = "Not Configured (Local Bridge :${BuildConfig.HUB_PORT} Primary)"
         } else {
             val probeResult = runCatching {
@@ -351,15 +436,20 @@ object CloudBridgeStore {
                 when {
                     code in 200..299 -> {
                         cloudReachable = true
+                        _cloudKeyVerified.value = true
+                        _isCloudActive.value = true
                         clearRecoveryState()
-                        cloudLabel = "API Active 🟢 (HTTP $code OK · ${_selectedModel.value})"
+                        cloudLabel = "API Active 🟢 (Connected · HTTP $code OK · ${_selectedModel.value})"
                     }
                     isRateLimitError(code, errText) -> {
                         is429 = true
+                        _cloudKeyVerified.value = true
+                        _isCloudActive.value = true
                         notifyRateLimit429("Diagnostics")
                         cloudLabel = "HTTP 429 Rate Limit 🟠 (Autorecovery & Fallback Active)"
                     }
                     else -> {
+                        _cloudKeyVerified.value = false
                         cloudLabel = "Cloud API HTTP $code (Check Key — Local Hub Isolated)"
                     }
                 }
@@ -376,9 +466,9 @@ object CloudBridgeStore {
         val guidance = when {
             is429 && localHubOnline -> "✅ API 429 कोटा सीमा मिली, पर Local Hub :${BuildConfig.HUB_PORT} ऑनलाइन है — बिना रुकावट काम जारी रहेगा।"
             is429 -> "🟠 API 429 कोटा मिला: Free Fallback Cloud Engine सक्रिय है। पूर्ण ऑफलाइन गति के लिए Termux / Local Hub (:${BuildConfig.HUB_PORT}) चालू कर सकते हैं।"
-            cloudReachable && localHubOnline -> "✅ दोनों इंजन (Cloud Native 🟢 + Local Hub :${BuildConfig.HUB_PORT} 🟢) पूरी तरह स्वस्थ हैं।"
-            cloudReachable -> "✅ Cloud Native Engine सक्रिय है। Local Server (:${BuildConfig.HUB_PORT}) स्वतंत्र रूप से स्टैंडबाय पर है।"
-            localHubOnline -> "✅ Local Antigravity Hub (:${BuildConfig.HUB_PORT}) सक्रिय है। क्लाउड के बिना भी कोडिंग चलेगी।"
+            cloudReachable && localHubOnline -> "✅ दोनों इंजन (API Active 🟢 + Local Hub :${BuildConfig.HUB_PORT} 🟢) पूरी तरह कनेक्टेड और स्वस्थ हैं।"
+            cloudReachable -> "✅ Cloud Native Engine सक्रिय और कनेक्टेड है। Local Server (:${BuildConfig.HUB_PORT}) स्वतंत्र रूप से स्टैंडबाय पर है।"
+            localHubOnline || bridgePortOnline -> "✅ Local Antigravity Engine सक्रिय है। क्लाउड के बिना भी कोडिंग चलेगी।"
             else -> "ℹ️ Cloud API Key डालें या Local Termux Server (:${BuildConfig.HUB_PORT}) शुरू करें।"
         }
 

@@ -54,12 +54,30 @@ class CloudAntigravityEngine(private val context: Context) {
         loadApiKey()
     }
 
+    fun refreshStatus() {
+        loadApiKey()
+    }
+
     private fun loadApiKey() {
-        val prefs = context.getSharedPreferences("cinecode_cloud_ai", Context.MODE_PRIVATE)
-        val key = prefs.getString("google_api_key", "") ?: ""
+        CloudBridgeStore.ensureInitialized(context)
+        val key = CloudBridgeStore.apiKeyFlow.value.ifBlank {
+            val prefs = context.getSharedPreferences("cinecode_cloud_ai", Context.MODE_PRIVATE)
+            prefs.getString("google_api_key", "") ?: ""
+        }
         _currentApiKey.value = key
-        _isCloudActive.value = key.isNotBlank()
-        _engineStatusMessage.value = if (key.isNotBlank()) "API Active 🟢 (Cloud-Native)" else "Local Bridge Mode 🔵 (:1235)"
+        val active = key.isNotBlank()
+        _isCloudActive.value = active
+        if (active) {
+            _isRecovering429.value = CloudBridgeStore.isRateLimitRecoveringFlow.value
+            _engineStatusMessage.value = if (_isRecovering429.value) {
+                "Connecting to Fallback/Local Hub 🟠"
+            } else {
+                "API Active 🟢 (Connected)"
+            }
+        } else {
+            _isRecovering429.value = false
+            _engineStatusMessage.value = "Local Bridge Mode 🔵 (:1235)"
+        }
     }
 
     fun saveApiKey(key: String) {
@@ -68,7 +86,7 @@ class CloudAntigravityEngine(private val context: Context) {
         _currentApiKey.value = trimmed
         _isCloudActive.value = trimmed.isNotBlank()
         _isRecovering429.value = false
-        _engineStatusMessage.value = if (trimmed.isNotBlank()) "API Active 🟢 (Cloud-Native)" else "Local Bridge Mode 🔵 (:1235)"
+        _engineStatusMessage.value = if (trimmed.isNotBlank()) "API Active 🟢 (Connected)" else "Local Bridge Mode 🔵 (:1235)"
         Log.i("CloudAntigravityEngine", "API Key saved. Cloud Native Mode Active: ${_isCloudActive.value}")
     }
 

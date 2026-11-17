@@ -89,7 +89,7 @@ object FileExplorerApi {
             .writeTimeout(10, TimeUnit.MINUTES)
             .addInterceptor { chain ->
                 val b = chain.request().newBuilder().header(AuthPreferences.currentFramedHeader, "true")
-                AuthPreferences.edgeHeader()?.let { (n, v) -> b.header(n, v) }
+                AuthPreferences.edgeHeaders().forEach { (n, v) -> b.header(n, v) }
                 chain.proceed(b.build())
             }
             .build()

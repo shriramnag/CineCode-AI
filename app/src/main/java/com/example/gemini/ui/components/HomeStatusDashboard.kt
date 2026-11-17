@@ -92,6 +92,7 @@ fun HomeStatusDashboard(
     isLocalToolsInstalled: Boolean,
     isInitialGracePeriod: Boolean,
     activeProjectName: String,
+    isCloudApiActive: Boolean = false,
     onStartOrRestartEngine: () -> Unit,
     onOpenServerLogs: () -> Unit,
     onOpenIde: () -> Unit,
@@ -101,18 +102,19 @@ fun HomeStatusDashboard(
     onInsertStarterPrompt: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val visualState by remember(systemConnectionState.status, serverStatus, isBridgeOnline, isInitialGracePeriod) {
+    val visualState by remember(systemConnectionState.status, serverStatus, isBridgeOnline, isInitialGracePeriod, isCloudApiActive) {
         derivedStateOf {
             when {
+                isCloudApiActive ||
+                    systemConnectionState.status == SystemStatus.READY ||
+                    (serverStatus is LocalServerStatus.Running && isBridgeOnline) -> DashboardVisualState.ONLINE
+
                 serverStatus is LocalServerStatus.Starting ||
                     serverStatus is LocalServerStatus.Stopping ||
                     systemConnectionState.status == SystemStatus.STARTING ||
                     systemConnectionState.status == SystemStatus.ACQUIRING_CSRF ||
                     systemConnectionState.status == SystemStatus.CHECKING_AUTH ||
                     (systemConnectionState.status == SystemStatus.OFFLINE && isInitialGracePeriod) -> DashboardVisualState.STARTING
-
-                systemConnectionState.status == SystemStatus.READY ||
-                    (serverStatus is LocalServerStatus.Running && isBridgeOnline) -> DashboardVisualState.ONLINE
 
                 else -> DashboardVisualState.OFFLINE
             }
@@ -126,19 +128,23 @@ fun HomeStatusDashboard(
     }
 
     val statusBadgeText = when (visualState) {
-        DashboardVisualState.ONLINE -> "ऑनलाइन · Online"
+        DashboardVisualState.ONLINE -> if (isCloudApiActive && systemConnectionState.status != SystemStatus.READY) "API Active 🟢" else "ऑनलाइन · Online"
         DashboardVisualState.STARTING -> "तैयार हो रहा है · Starting"
         DashboardVisualState.OFFLINE -> "ऑफलाइन · Offline"
     }
 
     val friendlyTitle = when (visualState) {
-        DashboardVisualState.ONLINE -> "CineCode Studio तैयार है"
+        DashboardVisualState.ONLINE -> if (isCloudApiActive && systemConnectionState.status != SystemStatus.READY) "CineCode Cloud AI सक्रिय है" else "CineCode Studio तैयार है"
         DashboardVisualState.STARTING -> "AI इंजन शुरू हो रहा है…"
         DashboardVisualState.OFFLINE -> "लोकल AI इंजन अभी बंद है"
     }
 
     val friendlySubtitle = when (visualState) {
-        DashboardVisualState.ONLINE -> "प्रोजेक्ट \"$activeProjectName\" के साथ कोडिंग, टर्मिनल या AI चैट शुरू करें।"
+        DashboardVisualState.ONLINE -> if (isCloudApiActive && systemConnectionState.status != SystemStatus.READY) {
+            "Google AI Studio (Connected) सक्रिय है — \"$activeProjectName\" में चैट, कोड व वॉइस तुरंत शुरू करें।"
+        } else {
+            "प्रोजेक्ट \"$activeProjectName\" के साथ कोडिंग, टर्मिनल या AI चैट शुरू करें।"
+        }
         DashboardVisualState.STARTING -> "Go Bridge और वर्कस्पेस कनेक्ट हो रहे हैं, कृपया कुछ सेकंड प्रतीक्षा करें।"
         DashboardVisualState.OFFLINE -> "कोडिंग और AI असिस्टेंट चलाने के लिए नीचे 'इंजन शुरू करें' बटन दबाएं।"
     }
@@ -285,8 +291,8 @@ fun HomeStatusDashboard(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         SubsystemStatusChip(
-                            title = "AI Hub",
-                            isReady = systemConnectionState.isHubOnline,
+                            title = if (isCloudApiActive) "Cloud AI" else "AI Hub",
+                            isReady = isCloudApiActive || systemConnectionState.isHubOnline,
                             isPending = visualState == DashboardVisualState.STARTING,
                             modifier = Modifier.weight(1f)
                         )

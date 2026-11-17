@@ -113,7 +113,7 @@ private fun describeNetworkError(e: Throwable): String = when (e) {
 private suspend fun probeHub(url: String, edge: Pair<String, String>? = null): Pair<Boolean, String> = withContext(Dispatchers.IO) {
     try {
         val conn = URL(url).openConnection() as HttpURLConnection
-        edge?.let { conn.setRequestProperty(it.first, it.second) }
+        AuthPreferences.edgeHeaders(edge).forEach { (k, v) -> conn.setRequestProperty(k, v) }
         conn.connectTimeout = 10_000
         conn.readTimeout = 10_000
         val code = try { conn.responseCode } finally { conn.disconnect() }
@@ -132,14 +132,21 @@ private suspend fun probeBridge(base: String, token: String, edge: Pair<String, 
     val client = OkHttpClient.Builder()
         .connectTimeout(10, TimeUnit.SECONDS).readTimeout(10, TimeUnit.SECONDS).callTimeout(15, TimeUnit.SECONDS)
         .build()
+    val extraHeaders = AuthPreferences.edgeHeaders(edge)
     try {
-        val health = client.newCall(Request.Builder().url("${base.trimEnd('/')}/api/health").apply { edge?.let { header(it.first, it.second) } }.build()).execute()
+        val health = client.newCall(
+            Request.Builder().url("${base.trimEnd('/')}/api/health").apply {
+                extraHeaders.forEach { (k, v) -> header(k, v) }
+            }.build()
+        ).execute()
         health.use {
             if (!it.isSuccessful) return@withContext false to "health check answered HTTP ${it.code}"
         }
         val header = AuthPreferences.buildFramedHeader(token)
         val info = client.newCall(
-            Request.Builder().url("${base.trimEnd('/')}/api/server/info").header(header, "true").apply { edge?.let { header(it.first, it.second) } }.build()
+            Request.Builder().url("${base.trimEnd('/')}/api/server/info").header(header, "true").apply {
+                extraHeaders.forEach { (k, v) -> header(k, v) }
+            }.build()
         ).execute()
         info.use {
             when (it.code) {
@@ -659,10 +666,14 @@ internal fun ServersSubScreen(
                 }
 
                 Spacer(Modifier.height(12.dp))
-                StatusLine(isServerOnline || hubTestStatus?.startsWith("✓") == true, "Hub", AuthPreferences.normalizeServerUrl(hubText, BuildConfig.HUB_PORT) ?: "invalid address")
+                val previewHub = if (!remote && hubText.isBlank()) AuthPreferences.DEFAULT_HUB_URL
+                    else AuthPreferences.normalizeServerUrl(hubText, BuildConfig.HUB_PORT) ?: AuthPreferences.DEFAULT_HUB_URL
+                val previewBridge = if (!remote && bridgeText.isBlank()) AuthPreferences.DEFAULT_BRIDGE_HTTP_URL
+                    else AuthPreferences.normalizeServerUrl(bridgeText, BuildConfig.BRIDGE_PORT) ?: AuthPreferences.DEFAULT_BRIDGE_HTTP_URL
+                StatusLine(isServerOnline || hubTestStatus?.startsWith("✓") == true, "Hub", previewHub)
                 hubTestStatus?.let { Text(it, fontSize = 11.5.sp, fontWeight = FontWeight.Medium, color = if (it.startsWith("✓")) QuotaGreen else Color.Red, modifier = Modifier.padding(top = 4.dp)) }
                 Spacer(Modifier.height(6.dp))
-                StatusLine(isBridgeOnline || bridgeTestStatus?.startsWith("✓") == true, "Bridge", AuthPreferences.normalizeServerUrl(bridgeText, BuildConfig.BRIDGE_PORT) ?: "invalid address")
+                StatusLine(isBridgeOnline || bridgeTestStatus?.startsWith("✓") == true, "Bridge", previewBridge)
                 bridgeTestStatus?.let { Text(it, fontSize = 11.5.sp, fontWeight = FontWeight.Medium, color = if (it.startsWith("✓")) QuotaGreen else Color.Red, modifier = Modifier.padding(top = 4.dp)) }
                 com.shriram.cinecode.ui.agents.BridgeVersionLine(Modifier.padding(top = 6.dp))
 
@@ -670,8 +681,14 @@ internal fun ServersSubScreen(
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(
                         onClick = {
-                            val url = AuthPreferences.normalizeServerUrl(hubText, BuildConfig.HUB_PORT)
-                            if (url == null) { hubTestStatus = "✗ Not a valid address"; return@OutlinedButton }
+                            val url = if (!remote && hubText.isBlank()) {
+                                hubText = AuthPreferences.DEFAULT_HUB_URL
+                                AuthPreferences.DEFAULT_HUB_URL
+                            } else {
+                                AuthPreferences.resolveOrDefaultServerUrl(hubText, BuildConfig.HUB_PORT, AuthPreferences.DEFAULT_HUB_URL).also {
+                                    if (hubText.isBlank()) hubText = it
+                                }
+                            }
                             isTestingHub = true
                             hubTestStatus = "Contacting $url…"
                             coroutineScope.launch {
@@ -687,8 +704,14 @@ internal fun ServersSubScreen(
                     }
                     OutlinedButton(
                         onClick = {
-                            val url = AuthPreferences.normalizeServerUrl(bridgeText, BuildConfig.BRIDGE_PORT)
-                            if (url == null) { bridgeTestStatus = "✗ Not a valid address"; return@OutlinedButton }
+                            val url = if (!remote && bridgeText.isBlank()) {
+                                bridgeText = AuthPreferences.DEFAULT_BRIDGE_HTTP_URL
+                                AuthPreferences.DEFAULT_BRIDGE_HTTP_URL
+                            } else {
+                                AuthPreferences.resolveOrDefaultServerUrl(bridgeText, BuildConfig.BRIDGE_PORT, AuthPreferences.DEFAULT_BRIDGE_HTTP_URL).also {
+                                    if (bridgeText.isBlank()) bridgeText = it
+                                }
+                            }
                             isTestingBridge = true
                             bridgeTestStatus = "Contacting $url…"
                             coroutineScope.launch {
@@ -1041,8 +1064,16 @@ internal fun ServersSubScreen(
 
         Button(
             onClick = {
-                val hub = AuthPreferences.normalizeServerUrl(hubText, BuildConfig.HUB_PORT)
-                val bridge = AuthPreferences.normalizeServerUrl(bridgeText, BuildConfig.BRIDGE_PORT)
+                val hub = if (!remote) {
+                    AuthPreferences.resolveOrDefaultServerUrl(hubText, BuildConfig.HUB_PORT, AuthPreferences.DEFAULT_HUB_URL)
+                } else {
+                    AuthPreferences.normalizeServerUrl(hubText, BuildConfig.HUB_PORT)
+                }
+                val bridge = if (!remote) {
+                    AuthPreferences.resolveOrDefaultServerUrl(bridgeText, BuildConfig.BRIDGE_PORT, AuthPreferences.DEFAULT_BRIDGE_HTTP_URL)
+                } else {
+                    AuthPreferences.normalizeServerUrl(bridgeText, BuildConfig.BRIDGE_PORT)
+                }
                 val problem = when {
                     bridge == null -> "The IDE Bridge address is not valid."
                     hub == null -> "The AGY Hub address is not valid."

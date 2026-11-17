@@ -9,6 +9,7 @@ import com.shriram.cinecode.data.adb.AdbConnectManager
 import com.shriram.cinecode.data.updater.PluginUpdateCheckWorker
 import com.shriram.cinecode.data.updater.UpdateCheckWorker
 import com.telemetrydeck.sdk.TelemetryDeck
+import kotlinx.coroutines.launch
 import java.security.MessageDigest
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 
@@ -26,7 +27,7 @@ class AntiGemApplication : Application(), coil.ImageLoaderFactory {
                 chain.proceed(
                     if (sameServer) req.newBuilder()
                         .header(com.shriram.cinecode.data.preferences.AuthPreferences.currentFramedHeader, "true")
-                        .apply { com.shriram.cinecode.data.preferences.AuthPreferences.edgeHeader()?.let { (n, v) -> header(n, v) } }
+                        .apply { com.shriram.cinecode.data.preferences.AuthPreferences.edgeHeaders().forEach { (n, v) -> header(n, v) } }
                         .build()
                     else req
                 )
@@ -46,6 +47,12 @@ class AntiGemApplication : Application(), coil.ImageLoaderFactory {
         // Reconnects adb when Wireless debugging turns back on (it gets a new port every time)
         AdbConnectManager.init(this)
         com.shriram.cinecode.data.ssh.SshSessionFactory.init(this)
+        // Ensure local binaries (login, bash, node, bridge) hold 0755 execution permissions on startup
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            runCatching {
+                com.shriram.cinecode.data.local.LocalEnvironmentManager.ensureExecutablesPermissions(this@AntiGemApplication)
+            }
+        }
         // Forks build with their own key, so only official release APKs report real usage.
         if (!BuildConfig.DEBUG && !isOfficialRelease()) {
             Toast.makeText(

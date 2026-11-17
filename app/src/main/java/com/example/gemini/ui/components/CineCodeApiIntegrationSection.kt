@@ -58,7 +58,7 @@ fun CineCodeConnectionStatusPill(
     val isRateLimitRecovering by CloudBridgeStore.isRateLimitRecoveringFlow.collectAsState()
     val statusText = when {
         isRateLimitRecovering -> "📡 Connecting to Fallback/Local Hub 🟠"
-        isCloudActive -> "📡 Connection: Cloud Native 🟢"
+        isCloudActive -> "📡 API Active 🟢 (Connected)"
         isLocalBridgeOnline -> "📡 Connection: Local Bridge 🔵 (:1235 Connected)"
         else -> "📡 Connection: Local Bridge 🔵 (Searching Computer on :1235)"
     }
@@ -215,7 +215,7 @@ fun CineCodeApiIntegrationSection(
                     Text(
                         text = when {
                             isRateLimitRecovering -> "Connecting to Fallback/Local Hub 🟠"
-                            isCloudActive -> "📡 Connection: Cloud Native 🟢"
+                            isCloudActive -> "📡 API Active 🟢 (Connected)"
                             isLocalBridgeOnline -> "📡 Connection: Local Bridge 🔵 (:1235 Connected)"
                             else -> "📡 Connection: Local Bridge 🔵 (Searching Computer on :1235)"
                         },
@@ -226,7 +226,7 @@ fun CineCodeApiIntegrationSection(
                     Text(
                         text = when {
                             isRateLimitRecovering -> recoveryNotice ?: "API 429 Autorecovery active — Local Hub :1235 isolated"
-                            isCloudActive -> "Direct Google AI Studio Mode Active ($selectedModel)"
+                            isCloudActive -> "Direct Google AI Studio Mode Connected ($selectedModel)"
                             else -> "Antigravity Local Server Fallback (127.0.0.1:1235)"
                         },
                         color = Color.White.copy(alpha = 0.78f),
@@ -601,7 +601,9 @@ fun CineCodeApiIntegrationSection(
                         onClick = {
                             isDiagnosing = true
                             scope.launch {
-                                diagnosticsReport = CloudBridgeStore.runEngineDiagnostics(context)
+                                val report = CloudBridgeStore.runEngineDiagnostics(context)
+                                diagnosticsReport = report
+                                feedbackText = report.guidance
                                 isDiagnosing = false
                             }
                         },

@@ -75,7 +75,7 @@ object AgyOkHttpClient {
                     .header("User-Agent", "antiGem-Android-Native")
                     .header("X-Grpc-Web", "1")
                     .header(AuthPreferences.currentFramedHeader, token.ifBlank { "true" })
-                AuthPreferences.edgeHeader()?.let { (n, v) -> requestBuilder.header(n, v) }
+                AuthPreferences.edgeHeaders().forEach { (n, v) -> requestBuilder.header(n, v) }
                 val request = requestBuilder.build()
 
                 val response = chain.proceed(request)

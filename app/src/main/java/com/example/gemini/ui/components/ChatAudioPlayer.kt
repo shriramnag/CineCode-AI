@@ -180,7 +180,7 @@ fun ChatAudioPlayer(
                                     context, android.net.Uri.parse(streamUrl),
                                     buildMap {
                                         put(AuthPreferences.currentFramedHeader, "true")
-                                        AuthPreferences.edgeHeader()?.let { (n, v) -> put(n, v) }
+                                        AuthPreferences.edgeHeaders().forEach { (n, v) -> put(n, v) }
                                     }
                                 )
                             } else {

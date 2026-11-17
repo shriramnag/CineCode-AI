@@ -111,7 +111,8 @@ class AuthPreferences(private val context: Context) {
         var currentSecurityToken: String = ""
 
         // ---- Server mode: an extra header the reverse proxy (nginx / Apache / Caddy) in front of the server checks ----
-        const val DEFAULT_EDGE_HEADER_NAME = "X-AntiGem-Key"
+        const val DEFAULT_EDGE_HEADER_NAME = "X-CineCode-Key"
+        const val LEGACY_EDGE_HEADER_NAME = "X-AntiGem-Key"
         const val EDGE_VALUE_LENGTH = 20
         private const val EDGE_CHARSET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 
@@ -132,9 +133,23 @@ class AuthPreferences(private val context: Context) {
 
         /** The extra proxy header to send to a server, or null when it is off (local mode, or no value set). */
         fun edgeHeader(): Pair<String, String>? {
-            val n = currentEdgeHeaderName.trim()
+            val n = currentEdgeHeaderName.trim().ifBlank { DEFAULT_EDGE_HEADER_NAME }
             val v = currentEdgeHeaderValue
             return if (currentRemoteMode && n.isNotEmpty() && v.isNotEmpty()) n to v else null
+        }
+
+        /** Sends both X-CineCode-Key and X-AntiGem-Key when proxy access value is set so both new & legacy proxies accept requests. */
+        fun edgeHeaders(explicitEdge: Pair<String, String>? = edgeHeader()): List<Pair<String, String>> {
+            val pair = explicitEdge ?: return emptyList()
+            val (name, value) = pair
+            if (name.isBlank() || value.isBlank()) return emptyList()
+            val list = mutableListOf(name to value)
+            if (name.equals(DEFAULT_EDGE_HEADER_NAME, ignoreCase = true)) {
+                list.add(LEGACY_EDGE_HEADER_NAME to value)
+            } else if (name.equals(LEGACY_EDGE_HEADER_NAME, ignoreCase = true)) {
+                list.add(DEFAULT_EDGE_HEADER_NAME to value)
+            }
+            return list
         }
 
         val currentFramedHeader: String
@@ -181,8 +196,11 @@ class AuthPreferences(private val context: Context) {
          * (reverse proxy under a sub path) and a trailing slash dropped. Returns null when it is not a usable address.
          */
         fun normalizeServerUrl(raw: String, defaultPort: Int): String? {
-            var text = raw.trim()
+            var text = raw.trim().replace(" ", "")
             if (text.isEmpty()) return null
+            if (text.startsWith(":")) {
+                text = "127.0.0.1$text"
+            }
             val hasScheme = text.startsWith("http://", ignoreCase = true) || text.startsWith("https://", ignoreCase = true)
             if (text.contains("://") && !hasScheme) return null
             if (!hasScheme) text = "http://$text"
@@ -198,6 +216,12 @@ class AuthPreferences(private val context: Context) {
             val hostPart = if (host.contains(":") && !host.startsWith("[")) "[$host]" else host
             val path = (uri.rawPath ?: "").trimEnd('/')
             return "$scheme://$hostPart$portPart$path"
+        }
+
+        fun resolveOrDefaultServerUrl(raw: String, defaultPort: Int, defaultUrl: String): String {
+            val trimmed = raw.trim()
+            if (trimmed.isEmpty()) return defaultUrl
+            return normalizeServerUrl(trimmed, defaultPort) ?: defaultUrl
         }
 
         /** Host part of a saved server URL (for the SSH default and for display). */
@@ -942,10 +966,10 @@ class AuthPreferences(private val context: Context) {
     }
 
     fun getDefaultBridgeBinaryPath(): String =
-        if (context.packageName == "com.shriram.cinecode") DEFAULT_BRIDGE_BINARY_PATH else DEFAULT_UBUNTU_BRIDGE_BINARY_PATH
+        if (com.shriram.cinecode.data.local.LocalEnvironmentManager.isTermuxPackage(context)) DEFAULT_BRIDGE_BINARY_PATH else DEFAULT_UBUNTU_BRIDGE_BINARY_PATH
 
     fun getDefaultAgyBinaryPath(): String =
-        if (context.packageName == "com.shriram.cinecode") DEFAULT_AGY_BINARY_PATH else DEFAULT_UBUNTU_AGY_BINARY_PATH
+        if (com.shriram.cinecode.data.local.LocalEnvironmentManager.isTermuxPackage(context)) DEFAULT_AGY_BINARY_PATH else DEFAULT_UBUNTU_AGY_BINARY_PATH
 
     val agyBridgeBinaryPath: Flow<String> = context.dataStore.data.map {
         it[AGY_BRIDGE_BINARY_PATH] ?: getAgyBridgeBinaryPathSync()
@@ -974,7 +998,7 @@ class AuthPreferences(private val context: Context) {
     }
 
     fun getDefaultClaudeBinaryPath(): String =
-        if (context.packageName == "com.shriram.cinecode") DEFAULT_CLAUDE_BINARY_PATH else DEFAULT_UBUNTU_CLAUDE_BINARY_PATH
+        if (com.shriram.cinecode.data.local.LocalEnvironmentManager.isTermuxPackage(context)) DEFAULT_CLAUDE_BINARY_PATH else DEFAULT_UBUNTU_CLAUDE_BINARY_PATH
 
     fun getClaudeBinaryPathSync(): String =
         syncPrefs.getString("claude_binary_path", getDefaultClaudeBinaryPath()) ?: getDefaultClaudeBinaryPath()

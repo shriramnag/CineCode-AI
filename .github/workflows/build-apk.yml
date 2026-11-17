@@ -155,19 +155,21 @@ jobs:
             echo "KEYSTORE_PASS=${{ secrets.RELEASE_KEYSTORE_PASS }}" >> $GITHUB_ENV
             echo "KEY_ALIAS=${{ secrets.RELEASE_KEY_ALIAS }}" >> $GITHUB_ENV
             echo "KEY_PASS=${{ secrets.RELEASE_KEY_PASS }}" >> $GITHUB_ENV
+          elif [ -f "debug.keystore.base64" ]; then
+            echo "Using repository debug.keystore.base64 for consistent signature across builds"
+            base64 -d debug.keystore.base64 > cinecode-release.jks
+            echo "KEYSTORE_PASS=android" >> $GITHUB_ENV
+            echo "KEY_ALIAS=androiddebugkey" >> $GITHUB_ENV
+            echo "KEY_PASS=android" >> $GITHUB_ENV
+          elif [ -f "debug.keystore" ]; then
+            echo "Using repository debug.keystore for consistent signature across builds"
+            cp debug.keystore cinecode-release.jks
+            echo "KEYSTORE_PASS=android" >> $GITHUB_ENV
+            echo "KEY_ALIAS=androiddebugkey" >> $GITHUB_ENV
+            echo "KEY_PASS=android" >> $GITHUB_ENV
           else
-            keytool -genkeypair -v \
-              -keystore cinecode-release.jks \
-              -alias cinecodeKey \
-              -keyalg RSA \
-              -keysize 2048 \
-              -validity 10000 \
-              -storepass "CineCodeKeyPass123" \
-              -keypass "CineCodeKeyPass123" \
-              -dname "CN=Shriram Nag, OU=Development, O=CineCode, L=Indore, ST=MP, C=IN"
-            echo "KEYSTORE_PASS=CineCodeKeyPass123" >> $GITHUB_ENV
-            echo "KEY_ALIAS=cinecodeKey" >> $GITHUB_ENV
-            echo "KEY_PASS=CineCodeKeyPass123" >> $GITHUB_ENV
+            echo "ERROR: No keystore available; refusing to generate an incompatible random key."
+            exit 1
           fi
 
       - name: Sign APK with v1/v2/v3 Signing
