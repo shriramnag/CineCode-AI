@@ -8,12 +8,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Lan
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Public
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Visibility
@@ -36,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import com.example.gemini.data.remote.GeminiLiveVoiceClient
 import com.example.gemini.data.remote.GeminiSearchGroundingClient
 import com.shriram.cinecode.data.remote.CloudBridgeStore
+import com.shriram.cinecode.data.remote.EngineDiagnosticsReport
 import kotlinx.coroutines.launch
 
 /**
@@ -52,13 +55,23 @@ fun CineCodeConnectionStatusPill(
     LaunchedEffect(Unit) { CloudBridgeStore.ensureInitialized(context) }
 
     val isCloudActive by CloudBridgeStore.isCloudActiveFlow.collectAsState()
+    val isRateLimitRecovering by CloudBridgeStore.isRateLimitRecoveringFlow.collectAsState()
     val statusText = when {
+        isRateLimitRecovering -> "📡 Connecting to Fallback/Local Hub 🟠"
         isCloudActive -> "📡 Connection: Cloud Native 🟢"
         isLocalBridgeOnline -> "📡 Connection: Local Bridge 🔵 (:1235 Connected)"
         else -> "📡 Connection: Local Bridge 🔵 (Searching Computer on :1235)"
     }
-    val accentColor = if (isCloudActive) Color(0xFF2E7D32) else Color(0xFF1565C0)
-    val bgColor = if (isCloudActive) Color(0xFF1B5E20).copy(alpha = 0.16f) else Color(0xFF0D47A1).copy(alpha = 0.14f)
+    val accentColor = when {
+        isRateLimitRecovering -> Color(0xFFF59E0B)
+        isCloudActive -> Color(0xFF2E7D32)
+        else -> Color(0xFF1565C0)
+    }
+    val bgColor = when {
+        isRateLimitRecovering -> Color(0xFFF59E0B).copy(alpha = 0.16f)
+        isCloudActive -> Color(0xFF1B5E20).copy(alpha = 0.16f)
+        else -> Color(0xFF0D47A1).copy(alpha = 0.14f)
+    }
 
     Surface(
         modifier = modifier
@@ -89,10 +102,18 @@ fun CineCodeConnectionStatusPill(
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = if (isCloudActive) "API Key ✓" else "Add Key →",
+                text = when {
+                    isRateLimitRecovering -> "Fallback 🟠"
+                    isCloudActive -> "API Key ✓"
+                    else -> "Add Key →"
+                },
                 fontSize = 11.5.sp,
                 fontWeight = FontWeight.Bold,
-                color = if (isCloudActive) Color(0xFF66BB6A) else Color(0xFF64B5F6)
+                color = when {
+                    isRateLimitRecovering -> Color(0xFFF59E0B)
+                    isCloudActive -> Color(0xFF66BB6A)
+                    else -> Color(0xFF64B5F6)
+                }
             )
         }
     }
@@ -114,6 +135,8 @@ fun CineCodeApiIntegrationSection(
 
     val savedApiKey by CloudBridgeStore.apiKeyFlow.collectAsState()
     val isCloudActive by CloudBridgeStore.isCloudActiveFlow.collectAsState()
+    val isRateLimitRecovering by CloudBridgeStore.isRateLimitRecoveringFlow.collectAsState()
+    val recoveryNotice by CloudBridgeStore.lastRecoveryNoticeFlow.collectAsState()
     val searchEnabled by CloudBridgeStore.searchGroundingEnabledFlow.collectAsState()
     val liveVoiceEnabled by CloudBridgeStore.liveVoiceEnabledFlow.collectAsState()
     val selectedModel by CloudBridgeStore.selectedModelFlow.collectAsState()
@@ -121,6 +144,8 @@ fun CineCodeApiIntegrationSection(
     var apiKeyInput by remember { mutableStateOf(savedApiKey) }
     var passwordVisible by remember { mutableStateOf(false) }
     var feedbackText by remember { mutableStateOf("") }
+    var isDiagnosing by remember { mutableStateOf(false) }
+    var diagnosticsReport by remember { mutableStateOf<EngineDiagnosticsReport?>(null) }
 
     // Keep text field synced if initialized asynchronously from DataStore
     LaunchedEffect(savedApiKey) {
@@ -145,12 +170,16 @@ fun CineCodeApiIntegrationSection(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         // 1. Top Connection Status Banner Card
-        val bannerBrush = if (isCloudActive) {
-            Brush.horizontalGradient(listOf(Color(0xFF10361A), Color(0xFF1A4D2A)))
-        } else {
-            Brush.horizontalGradient(listOf(Color(0xFF0E2542), Color(0xFF153860)))
+        val bannerBrush = when {
+            isRateLimitRecovering -> Brush.horizontalGradient(listOf(Color(0xFF4A2A0A), Color(0xFF6D3C11)))
+            isCloudActive -> Brush.horizontalGradient(listOf(Color(0xFF10361A), Color(0xFF1A4D2A)))
+            else -> Brush.horizontalGradient(listOf(Color(0xFF0E2542), Color(0xFF153860)))
         }
-        val bannerBorder = if (isCloudActive) Color(0xFF4CAF50) else Color(0xFF42A5F5)
+        val bannerBorder = when {
+            isRateLimitRecovering -> Color(0xFFF59E0B)
+            isCloudActive -> Color(0xFF4CAF50)
+            else -> Color(0xFF42A5F5)
+        }
 
         Surface(
             modifier = Modifier
@@ -184,22 +213,21 @@ fun CineCodeApiIntegrationSection(
                 Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = if (isCloudActive) {
-                            "📡 Connection: Cloud Native 🟢"
-                        } else if (isLocalBridgeOnline) {
-                            "📡 Connection: Local Bridge 🔵 (:1235 Connected)"
-                        } else {
-                            "📡 Connection: Local Bridge 🔵 (Searching Computer on :1235)"
+                        text = when {
+                            isRateLimitRecovering -> "Connecting to Fallback/Local Hub 🟠"
+                            isCloudActive -> "📡 Connection: Cloud Native 🟢"
+                            isLocalBridgeOnline -> "📡 Connection: Local Bridge 🔵 (:1235 Connected)"
+                            else -> "📡 Connection: Local Bridge 🔵 (Searching Computer on :1235)"
                         },
                         color = Color.White,
                         fontSize = 13.5.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = if (isCloudActive) {
-                            "Direct Google AI Studio Mode Active ($selectedModel)"
-                        } else {
-                            "Antigravity Local Server Fallback (127.0.0.1:1235)"
+                        text = when {
+                            isRateLimitRecovering -> recoveryNotice ?: "API 429 Autorecovery active — Local Hub :1235 isolated"
+                            isCloudActive -> "Direct Google AI Studio Mode Active ($selectedModel)"
+                            else -> "Antigravity Local Server Fallback (127.0.0.1:1235)"
                         },
                         color = Color.White.copy(alpha = 0.78f),
                         fontSize = 11.5.sp
@@ -555,10 +583,96 @@ fun CineCodeApiIntegrationSection(
                 }
 
                 Text(
-                    text = "AgyBridge Local Server Fallback (127.0.0.1:1235) is active when Key is empty",
+                    text = "AgyBridge Local Server Fallback (127.0.0.1:1235) is isolated from Cloud API 429 limits.",
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
                 )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
+
+                // Dual-Engine Self-Diagnostics Button & Isolated Report
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Button(
+                        enabled = !isDiagnosing,
+                        onClick = {
+                            isDiagnosing = true
+                            scope.launch {
+                                diagnosticsReport = CloudBridgeStore.runEngineDiagnostics(context)
+                                isDiagnosing = false
+                            }
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .defaultMinSize(minHeight = 48.dp)
+                            .testTag("diagnose_engine_button"),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    ) {
+                        if (isDiagnosing) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("जाँच हो रही है...", fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold)
+                        } else {
+                            Icon(imageVector = Icons.Default.Build, contentDescription = "Diagnose Engine", modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("⚡ Diagnose / Check Engine", fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    if (isRateLimitRecovering) {
+                        OutlinedButton(
+                            onClick = { CloudBridgeStore.clearRecoveryState() },
+                            modifier = Modifier
+                                .defaultMinSize(minHeight = 48.dp)
+                                .testTag("reset_429_recovery_button"),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(imageVector = Icons.Default.Refresh, contentDescription = "Reconnect", modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Reconnect", fontSize = 12.sp)
+                        }
+                    }
+                }
+
+                diagnosticsReport?.let { report ->
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                        modifier = Modifier.fillMaxWidth().testTag("engine_diagnostics_report")
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = "☁️ Cloud API: ${report.cloudStatusLabel}",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (report.isRateLimit429) Color(0xFFF59E0B) else MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "🖥️ Local Hub (:1235 / :1234): ${report.localStatusLabel}",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = report.guidance,
+                                fontSize = 11.5.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                lineHeight = 16.sp
+                            )
+                        }
+                    }
+                }
             }
         }
     }

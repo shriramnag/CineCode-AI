@@ -54,6 +54,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -296,6 +297,7 @@ fun ChatScreen(
     var isInitialGracePeriod by remember { mutableStateOf(true) }
 
     val isCloudApiActive by com.shriram.cinecode.data.remote.CloudBridgeStore.isCloudActiveFlow.collectAsState()
+    val isRateLimitRecovering by com.shriram.cinecode.data.remote.CloudBridgeStore.isRateLimitRecoveringFlow.collectAsState()
 
     LaunchedEffect(Unit) {
         com.shriram.cinecode.data.remote.CloudBridgeStore.ensureInitialized(context)
@@ -2157,19 +2159,24 @@ fun ChatScreen(
                     }
                 }
 
-                // Disconnection / Reconnecting Inline Banner (Compact, non-intrusive with Reconnect action)
+                // Non-blocking Fallback / Reconnecting Inline Banner (Orange recovery indicator with Reconnect action)
+                val showFallbackBanner = !isClaudeChat && messages.isNotEmpty() && (
+                    isRateLimitRecovering || (!isCloudApiActive && (isServerOnline == false || isReconnecting))
+                )
+                val fallbackOrange = Color(0xFFF59E0B)
                 AnimatedVisibility(
-                    visible = !isClaudeChat && (isServerOnline == false || isReconnecting) && messages.isNotEmpty(),
+                    visible = showFallbackBanner,
                     enter = expandVertically() + fadeIn(),
                     exit = shrinkVertically() + fadeOut()
                 ) {
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 3.dp),
+                            .padding(horizontal = 14.dp, vertical = 3.dp)
+                            .testTag("fallback_recovery_banner"),
                         shape = RoundedCornerShape(10.dp),
-                        color = if (isReconnecting) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f) else MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.88f),
-                        border = BorderStroke(1.dp, if (isReconnecting) MaterialTheme.colorScheme.outline.copy(alpha = 0.2f) else MaterialTheme.colorScheme.error.copy(alpha = 0.25f))
+                        color = fallbackOrange.copy(alpha = 0.14f),
+                        border = BorderStroke(1.dp, fallbackOrange.copy(alpha = 0.45f))
                     ) {
                         Row(
                             modifier = Modifier
@@ -2182,46 +2189,50 @@ fun ChatScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.weight(1f, fill = false)
                             ) {
-                                if (isReconnecting) {
+                                if (isReconnecting || isRateLimitRecovering) {
                                     CircularProgressIndicator(
                                         modifier = Modifier.size(12.dp),
                                         strokeWidth = 2.dp,
-                                        color = MaterialTheme.colorScheme.primary
+                                        color = fallbackOrange
                                     )
                                 } else {
                                     Box(
                                         modifier = Modifier
-                                            .size(7.dp)
-                                            .background(MaterialTheme.colorScheme.error, CircleShape)
+                                            .size(8.dp)
+                                            .background(fallbackOrange, CircleShape)
                                     )
                                 }
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = if (isReconnecting) "Connecting to Antigravity..." else "Antigravity Disconnected",
+                                    text = "Connecting to Fallback/Local Hub 🟠",
                                     style = MaterialTheme.typography.bodySmall,
                                     fontWeight = FontWeight.Medium,
-                                    color = if (isReconnecting) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onErrorContainer,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
                             }
                             if (!isReconnecting) {
                                 TextButton(
-                                    onClick = { viewModel.retryConnections() },
-                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                                    onClick = {
+                                        com.shriram.cinecode.data.remote.CloudBridgeStore.clearRecoveryState()
+                                        viewModel.retryConnections()
+                                    },
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                    modifier = Modifier.testTag("fallback_reconnect_button")
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Refresh,
-                                        contentDescription = null,
+                                        contentDescription = "Reconnect",
                                         modifier = Modifier.size(13.dp),
-                                        tint = MaterialTheme.colorScheme.error
+                                        tint = fallbackOrange
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
                                         text = "Reconnect",
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.error
+                                        color = fallbackOrange
                                     )
                                 }
                             }

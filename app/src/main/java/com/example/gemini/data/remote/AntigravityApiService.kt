@@ -348,7 +348,16 @@ class AntigravityApiService(
 
                 if (!response.isSuccessful) {
                     val errorMsg = response.body?.string() ?: "HTTP ${response.code}"
-                    Log.e(TAG, "[API] SSE error response from $endpoint: $errorMsg")
+                    Log.e(TAG, "[API] SSE error response from $endpoint (${response.code}): $errorMsg")
+                    if (CloudBridgeStore.isRateLimitError(response.code, errorMsg)) {
+                        CloudBridgeStore.notifyRateLimit429("AntigravityApiService (${response.code})")
+                        if (endpoint != endpoints.last()) {
+                            kotlinx.coroutines.delay(350)
+                            continue
+                        }
+                        emit(StreamEvent.Error("Connecting to Fallback/Local Hub 🟠 (HTTP ${response.code} Rate Limit)"))
+                        return@flow
+                    }
                     if (endpoint == endpoints.last()) {
                         emit(StreamEvent.Error(errorMsg))
                         return@flow

@@ -2536,7 +2536,23 @@ class AgyChatBackend(
                 modelName = selectedModel
             )
             val replyText = result.getOrElse { err ->
-                "⚠️ Cloud API Error: ${err.message ?: "Unable to connect to Google AI Studio."}"
+                val is429 = err is com.shriram.cinecode.data.remote.RateLimit429Exception ||
+                    (err.message?.contains("429") == true) ||
+                    (err.message?.contains("RESOURCE_EXHAUSTED", ignoreCase = true) == true)
+                if (is429) {
+                    com.shriram.cinecode.data.remote.CloudBridgeStore.notifyRateLimit429("Cloud Chat 429")
+                    val hubReachable = com.shriram.cinecode.data.remote.CloudBridgeStore.isLocalPortOpen(
+                        com.shriram.cinecode.BuildConfig.HUB_PORT
+                    )
+                    if (hubReachable) {
+                        retryConnections()
+                        "🟠 Connecting to Fallback/Local Hub (:1235) — API की कोटा सीमा (429) पूरी होने पर Local Antigravity Hub ऑटो-सक्रिय किया जा रहा है। कृपया कुछ सेकंड में पुनः प्रयास करें।"
+                    } else {
+                        "🟠 Connecting to Fallback/Local Hub — Cloud API 429 रेट लिमिट के कारण Free Fallback Cloud Engine / Local Hub (:1235) पर स्विच किया जा रहा है।"
+                    }
+                } else {
+                    "⚠️ Cloud API Error: ${err.message ?: "Unable to connect to Google AI Studio."}"
+                }
             }
             _messages.value = _messages.value.map { msg ->
                 if (msg.id == assistantMsgId) {
