@@ -45,6 +45,10 @@ android {
         buildConfigField("int", "HUB_PORT", "1235")
         buildConfigField("int", "BROWSER_MCP_PORT", "8765")
         buildConfigField("boolean", "IS_SHARED_USER_ID", "false")
+
+        ndk {
+            abiFilters += listOf("armeabi-v7a", "arm64-v8a")
+        }
     }
 
     signingConfigs {
@@ -82,6 +86,12 @@ android {
     packaging {
         jniLibs {
             useLegacyPackaging = true
+        }
+    }
+
+    splits {
+        abi {
+            isEnable = false
         }
     }
 }
