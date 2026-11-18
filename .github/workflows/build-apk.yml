@@ -76,7 +76,7 @@ jobs:
               next_version_name = f"{major}.{minor}.{patch:03d}{suffix}"
               tag_name = f"v{next_version_name}"
 
-          apk_filename = f"CineCode-AI-{tag_name}-Signed.apk"
+          apk_filename = f"CineCode-AI-{tag_name}.apk"
           repo = os.environ.get("GITHUB_REPOSITORY", "shriramnag/CineCode-AI")
 
           data["version_code"] = next_version_code
@@ -92,7 +92,7 @@ jobs:
               if isinstance(line, str) and not line.startswith("CineCode AI v")
           ]
           data["changelog"] = [
-              f"CineCode AI {tag_name} (Signed Beta APK) का नया ऑटो-बिल्ड अपडेट",
+              f"CineCode AI {tag_name} का नया ऑटो-बिल्ड अपडेट",
               *filtered_changelog[:4],
           ]
 
@@ -169,9 +169,8 @@ jobs:
               -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 \
               -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           fi
-          cp debug.keystore cinecode-release.jks
 
-      - name: Build & Sign Debug APK (Permanent Keystore)
+      - name: Build Standard Debug APK (Repo Debug Keystore)
         run: |
           ./gradlew :app:assembleDebug \
             -PAPP_VERSION_CODE="${{ env.VERSION_CODE }}" \
@@ -183,9 +182,9 @@ jobs:
             echo "No debug APK found in app/build/outputs/apk/"
             exit 1
           fi
-          SIGNED_APK_PATH="app/build/outputs/apk/${{ env.APK_FILENAME }}"
-          cp "$BUILT_APK" "$SIGNED_APK_PATH"
-          ls -lh "$SIGNED_APK_PATH"
+          RELEASE_APK_PATH="app/build/outputs/apk/${{ env.APK_FILENAME }}"
+          cp "$BUILT_APK" "$RELEASE_APK_PATH"
+          ls -lh "$RELEASE_APK_PATH"
 
       - name: Commit & Sync version.json [skip ci]
         if: "!startsWith(github.ref, 'refs/tags/')"

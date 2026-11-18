@@ -124,8 +124,9 @@ class AppUpdateManager(private val context: Context) {
                 currentPkg == "com.shriram.cinecode" -> "termux"
                 else -> "standard"
             }
+            val cleanVer = remoteVersionName.trim().removePrefix("v").removePrefix("V")
             val downloadUrl = json.optString("url").takeIf { it.isNotBlank() }
-                ?: "https://github.com/shriramnag/CineCode-AI/releases/download/v$remoteVersionName/CineCode-AI-Signed.apk"
+                ?: "https://github.com/shriramnag/CineCode-AI/releases/download/v$cleanVer/CineCode-AI-v$cleanVer.apk"
 
             if (remoteVersionCode > BuildConfig.VERSION_CODE && downloadUrl.isNotBlank()) {
                 // Verify that the APK asset is actually published and downloadable on GitHub
