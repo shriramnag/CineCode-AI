@@ -37,7 +37,7 @@ class AgentPreferences(context: Context) {
 
         private fun key(agent: AgentKind) = "enabled_" + agent.name.lowercase()
 
-        private fun default(agent: AgentKind) = agent == AgentKind.AGY
+        private fun default(agent: AgentKind) = agent != AgentKind.CLAUDE
 
         private fun read(prefs: android.content.SharedPreferences): Set<AgentKind> =
             AgentKind.entries.filter { prefs.getBoolean(key(it), default(it)) }.toSet().ifEmpty { setOf(AgentKind.AGY) }

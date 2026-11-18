@@ -143,7 +143,10 @@ fun ChatHistoryDrawer(
     val context = LocalContext.current
 
     var agentFilter by remember { mutableStateOf<com.shriram.cinecode.domain.model.AgentKind?>(null) }
-    val hasBothAgents = remember(conversations) { conversations.map { it.agent }.distinct().size > 1 }
+    val hasBothAgents = remember(conversations) {
+        conversations.map { it.agent }.distinct().size > 1 ||
+            conversations.any { it.agent != com.shriram.cinecode.domain.model.AgentKind.AGY }
+    }
     var jarvisFilter by remember { mutableStateOf(false) }
     if (!jarvisEnabled && jarvisFilter) jarvisFilter = false
     val filtered = remember(conversations, jarvisConversations, searchQuery, agentFilter, jarvisFilter) {
@@ -439,7 +442,7 @@ fun ChatHistoryDrawer(
             },
             title = {
                 Text(
-                    text = "Exit AntiGem?",
+                    text = "Exit CineCode-AI?",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -596,7 +599,7 @@ fun ChatHistoryDrawer(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "AntiGem",
+                    text = "CineCode-AI",
                     fontSize = 19.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = (-0.3).sp,
@@ -815,12 +818,15 @@ fun ChatHistoryDrawer(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
                         .padding(horizontal = 12.dp, vertical = 2.dp),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     listOf<Pair<com.shriram.cinecode.domain.model.AgentKind?, String>>(
                         null to "All",
                         com.shriram.cinecode.domain.model.AgentKind.AGY to "Antigravity",
+                        com.shriram.cinecode.domain.model.AgentKind.CODEX to "Codex",
+                        com.shriram.cinecode.domain.model.AgentKind.OPENCODE to "OpenCode",
                         com.shriram.cinecode.domain.model.AgentKind.CLAUDE to "Claude"
                     ).forEach { (agent, label) ->
                         val selected = !jarvisFilter && agentFilter == agent
@@ -948,7 +954,7 @@ fun ChatHistoryDrawer(
                                     val conv = item.conv
                                     val isSelected = conv.id == currentConversationId
                                     val activeInst = activeInstances.find { it.conversationId == conv.id }
-                                    val isActivelyRunning = conv.isRunning && (systemConnectionState.isHubOnline || conv.agent == com.shriram.cinecode.domain.model.AgentKind.CLAUDE)
+                                    val isActivelyRunning = conv.isRunning && (systemConnectionState.isHubOnline || conv.agent != com.shriram.cinecode.domain.model.AgentKind.AGY)
                                     val isScheduledOrBackground =
                                         systemConnectionState.isHubOnline && !isActivelyRunning && (conv.notFullyIdle || conv.hasActivity || activeInst != null)
 
@@ -1057,7 +1063,7 @@ fun ChatHistoryDrawer(
                                         val conv = item.conv
                                         val isSelected = conv.id == currentConversationId
                                         val activeInst = activeInstances.find { it.conversationId == conv.id }
-                                        val isActivelyRunning = conv.isRunning && (systemConnectionState.isHubOnline || conv.agent == com.shriram.cinecode.domain.model.AgentKind.CLAUDE)
+                                        val isActivelyRunning = conv.isRunning && (systemConnectionState.isHubOnline || conv.agent != com.shriram.cinecode.domain.model.AgentKind.AGY)
                                         val isScheduledOrBackground =
                                             systemConnectionState.isHubOnline && !isActivelyRunning && (conv.notFullyIdle || conv.hasActivity || activeInst != null)
 
@@ -1542,8 +1548,8 @@ private fun ChatHistoryItemRow(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                if (conv.agent == com.shriram.cinecode.domain.model.AgentKind.CLAUDE) {
-                    com.shriram.cinecode.ui.components.ClaudeBadge(modifier = Modifier.padding(start = 6.dp))
+                if (conv.agent != com.shriram.cinecode.domain.model.AgentKind.AGY) {
+                    com.shriram.cinecode.ui.components.ClaudeBadge(agent = conv.agent, modifier = Modifier.padding(start = 6.dp))
                 }
                 if (subagents.isNotEmpty()) {
                     Surface(

@@ -161,6 +161,23 @@ object JarvisTasks {
                 scope.launch { delay(2500); runCatching { vm.agyBackend.syncAgyConversations(force = true) } }
                 id
             }
+            AgentKind.CODEX -> {
+                val b = vm.codexBackend
+                b.startNewChat()
+                val id = b.currentConversation.value?.id ?: error("Could not create the Codex chat")
+                modelId?.takeIf { it.isNotBlank() }?.let { b.selectModel(it) }
+                b.sendMessage(PromptExpansion.expand(text))
+                id
+            }
+            AgentKind.OPENCODE -> {
+                val b = vm.openCodeBackend
+                b.ensureCatalogLoaded()
+                b.startNewChat()
+                val id = b.currentConversation.value?.id ?: error("Could not create the OpenCode chat")
+                modelId?.takeIf { it.isNotBlank() }?.let { b.selectModel(it) }
+                b.sendMessage(PromptExpansion.expand(text))
+                id
+            }
         }
         val task = Task(
             id = id, agent = agent,
@@ -214,6 +231,14 @@ object JarvisTasks {
                 val enum = AgyHubClient.resolveModelEnum(vm.agyBackend.modelOfChat(t.id))
                 hub.sendUserPrompt(t.id, PromptExpansion.expand(text), enum).getOrElse { return "Could not send: ${it.message}" }
             }
+            AgentKind.CODEX -> {
+                if (vm.codexBackend.currentConversation.value?.id != t.id) vm.codexBackend.selectConversation(t.id)
+                vm.codexBackend.sendMessage(PromptExpansion.expand(text))
+            }
+            AgentKind.OPENCODE -> {
+                if (vm.openCodeBackend.currentConversation.value?.id != t.id) vm.openCodeBackend.selectConversation(t.id)
+                vm.openCodeBackend.sendMessage(PromptExpansion.expand(text))
+            }
         }
         val now = System.currentTimeMillis()
         put(t.copy(state = State.STARTING, turnAt = now, updatedAt = now, progressAt = now, seenRunning = false,
@@ -230,6 +255,8 @@ object JarvisTasks {
                 else ensureBackend(t.id).stopStreaming()
             }
             AgentKind.AGY -> hub.cancelCascadeInvocation(t.id).onFailure { return "Could not stop: ${it.message}" }
+            AgentKind.CODEX -> vm.codexBackend.stopStreaming()
+            AgentKind.OPENCODE -> vm.openCodeBackend.stopStreaming()
         }
         if (!quiet) put(t.copy(state = State.STOPPED, updatedAt = System.currentTimeMillis(), note = "Stopped", reported = true))
         return "Stopped."
@@ -264,6 +291,10 @@ object JarvisTasks {
         val msgs = when (t.agent) {
             AgentKind.CLAUDE -> claudeBackends[t.id]?.messages?.value?.takeIf { it.isNotEmpty() } ?: runCatching { JarvisController.readChat(t.id) }.getOrDefault(emptyList())
             AgentKind.AGY -> runCatching { JarvisController.readChat(t.id) }.getOrDefault(emptyList())
+            AgentKind.CODEX -> vm.codexBackend.messages.value.takeIf { vm.codexBackend.currentConversation.value?.id == t.id && it.isNotEmpty() }
+                ?: runCatching { JarvisController.readChat(t.id) }.getOrDefault(emptyList())
+            AgentKind.OPENCODE -> vm.openCodeBackend.messages.value.takeIf { vm.openCodeBackend.currentConversation.value?.id == t.id && it.isNotEmpty() }
+                ?: runCatching { JarvisController.readChat(t.id) }.getOrDefault(emptyList())
         }
         val text = msgs.lastOrNull { it.role == MessageRole.ASSISTANT && it.content.isNotBlank() }?.content.orEmpty()
         return PromptExpansion.collapse(text).trim().let { if (it.length > max) "…" + it.takeLast(max) else it }
@@ -323,6 +354,8 @@ object JarvisTasks {
         AgentKind.CLAUDE -> claudeBackends[t.id]?.isCurrentChatActivelyRunning?.value == true ||
             (vm.currentConversation.value?.id == t.id && vm.claudeBackend.isCurrentChatActivelyRunning.value)
         AgentKind.AGY -> agyBusy(t.id)
+        AgentKind.CODEX -> vm.codexBackend.currentConversation.value?.id == t.id && vm.codexBackend.isStreaming.value
+        AgentKind.OPENCODE -> vm.openCodeBackend.currentConversation.value?.id == t.id && vm.openCodeBackend.isStreaming.value
     }
 
     private fun agyBusy(id: String): Boolean {
@@ -374,6 +407,18 @@ object JarvisTasks {
                 else if (!running) clearAgyPending(t.id)
                 needsApproval = running && agyPendingOf(t.id).isNotEmpty() ||
                     (vm.currentConversation.value?.id == t.id && vm.pendingApprovals.value.isNotEmpty())
+            }
+            AgentKind.CODEX -> {
+                running = vm.codexBackend.currentConversation.value?.id == t.id && vm.codexBackend.isStreaming.value
+                error = vm.codexBackend.conversationError.value
+                val msgs = vm.codexBackend.messages.value
+                sig = "${msgs.size}:${msgs.lastOrNull()?.content?.length}"
+            }
+            AgentKind.OPENCODE -> {
+                running = vm.openCodeBackend.currentConversation.value?.id == t.id && vm.openCodeBackend.isStreaming.value
+                error = vm.openCodeBackend.conversationError.value
+                val msgs = vm.openCodeBackend.messages.value
+                sig = "${msgs.size}:${msgs.lastOrNull()?.content?.length}"
             }
         }
         if (progressSig.put(t.id, sig) != sig) t = t.copy(progressAt = now)

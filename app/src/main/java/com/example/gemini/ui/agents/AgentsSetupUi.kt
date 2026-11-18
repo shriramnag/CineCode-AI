@@ -49,53 +49,61 @@ import androidx.compose.ui.window.DialogProperties
 import com.shriram.cinecode.domain.model.AgentKind
 import com.shriram.cinecode.ui.components.accent
 
-private data class AgentOption(val agents: Set<AgentKind>, val title: String, val description: String)
+private data class AgentCardInfo(val kind: AgentKind, val title: String, val description: String)
 
-private val AGENT_OPTIONS = listOf(
-    AgentOption(
-        setOf(AgentKind.AGY),
-        "Antigravity",
-        "Google's coding agent through the agy hub: Gemini and Claude models on your Google plan."
+private val ALL_AGENT_CARDS = listOf(
+    AgentCardInfo(
+        AgentKind.AGY,
+        "Antigravity (Gemini)",
+        "Google AI Studio API & Antigravity hub with Gemini models and local tools."
     ),
-    AgentOption(
-        setOf(AgentKind.CLAUDE),
+    AgentCardInfo(
+        AgentKind.CODEX,
+        "Codex (Free OpenAI-Compatible)",
+        "OpenRouter Free, Groq Free, Google AI Studio Free, and local Ollama — 100% paywall-free."
+    ),
+    AgentCardInfo(
+        AgentKind.OPENCODE,
+        "OpenCode (200+ Free Models)",
+        "200+ free open-source coding, reasoning, and 4GB-RAM quantized models."
+    ),
+    AgentCardInfo(
+        AgentKind.CLAUDE,
         "Claude Code",
-        "Anthropic's Claude Code CLI on this device: your Claude subscription or Anthropic Console account."
-    ),
-    AgentOption(
-        setOf(AgentKind.AGY, AgentKind.CLAUDE),
-        "Both",
-        "Pick the agent for each new chat. Both share the chat list, status and accounts."
+        "Anthropic's Claude Code CLI on this device with your account or custom endpoint."
     )
 )
 
-/** Three choices: Antigravity, Claude Code, or both. */
+/** Multi-select toggles for all 4 coding agents (at least 1 remains selected). */
 @Composable
 fun AgentSelector(selected: Set<AgentKind>, onSelect: (Set<AgentKind>) -> Unit, modifier: Modifier = Modifier) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        AGENT_OPTIONS.forEach { option ->
-            val isOn = option.agents == selected
-            val accent = if (option.agents.size == 1) option.agents.first().accent() else MaterialTheme.colorScheme.primary
+        ALL_AGENT_CARDS.forEach { card ->
+            val isOn = card.kind in selected
+            val accent = card.kind.accent()
             Surface(
-                onClick = { onSelect(option.agents) },
+                onClick = {
+                    val next = if (isOn) {
+                        if (selected.size > 1) selected - card.kind else selected
+                    } else {
+                        selected + card.kind
+                    }
+                    onSelect(next)
+                },
                 shape = RoundedCornerShape(16.dp),
                 color = if (isOn) accent.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surface,
-                border = BorderStroke(if (isOn) 1.5.dp else 1.dp, if (isOn) accent.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)),
+                border = BorderStroke(
+                    if (isOn) 1.5.dp else 1.dp,
+                    if (isOn) accent.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+                ),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                    if (option.agents.size == 1) {
-                        AgentMark(option.agents.first(), size = 40.dp)
-                    } else {
-                        Box(Modifier.size(width = 52.dp, height = 40.dp)) {
-                            AgentMark(AgentKind.AGY, size = 34.dp)
-                            AgentMark(AgentKind.CLAUDE, size = 34.dp, modifier = Modifier.offset(x = 18.dp, y = 6.dp))
-                        }
-                    }
+                    AgentMark(card.kind, size = 40.dp)
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(option.title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-                        Text(option.description, fontSize = 12.sp, lineHeight = 16.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f))
+                        Text(card.title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                        Text(card.description, fontSize = 12.sp, lineHeight = 16.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f))
                     }
                     Spacer(Modifier.width(10.dp))
                     Box(
@@ -113,10 +121,10 @@ fun AgentSelector(selected: Set<AgentKind>, onSelect: (Set<AgentKind>) -> Unit, 
     }
 }
 
-/** First launch: which agents the app should run (Antigravity preselected). */
+/** First launch: which agents the app should run (Antigravity + Codex + OpenCode preselected). */
 @Composable
 fun AgentChoiceDialog(onConfirm: (Set<AgentKind>) -> Unit) {
-    var selected by remember { mutableStateOf(setOf(AgentKind.AGY)) }
+    var selected by remember { mutableStateOf(setOf(AgentKind.AGY, AgentKind.CODEX, AgentKind.OPENCODE)) }
     Dialog(
         onDismissRequest = {},
         properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false, usePlatformDefaultWidth = false)

@@ -47,11 +47,6 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Gemini">
-        <!-- The SDK's auto-start provider has no namespace setting. The app starts TelemetryDeck itself. -->
-        <provider
-            android:name="com.telemetrydeck.sdk.TelemetryDeckInitProvider"
-            android:authorities="${applicationId}.TelemetryDeckInitProvider"
-            tools:node="remove" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -314,13 +309,19 @@
         <activity
             android:name="com.shriram.cinecode.ui.settings.ManageSpaceActivity"
             android:exported="true"
-            android:label="AntiGem Space Manager"
+            android:label="CineCode-AI Space Manager"
             android:theme="@style/Theme.Gemini">
             <intent-filter>
                 <action android:name="android.intent.action.MANAGE_SPACE" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name="com.shriram.cinecode.crash.CrashActivity"
+            android:exported="false"
+            android:process=":crash"
+            android:theme="@style/Theme.Gemini" />
 
         <!-- Device Admin Receiver for Accidental Uninstall Protection -->
         <receiver

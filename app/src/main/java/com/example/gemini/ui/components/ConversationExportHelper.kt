@@ -86,7 +86,7 @@ object ConversationExportHelper {
                 if (savedUri != null) {
                     if (snackbarHostState != null) {
                         val result = snackbarHostState.showSnackbar(
-                            message = "$savedFileName saved to Downloads/AntiGem/Exports",
+                            message = "$savedFileName saved to Downloads/CineCode-AI/Exports",
                             actionLabel = "Open",
                             duration = SnackbarDuration.Short
                         )
@@ -94,7 +94,7 @@ object ConversationExportHelper {
                             openFile(context, savedUri, mimeType)
                         }
                     } else {
-                        AppToastHelper.showToast("$savedFileName saved to Downloads/AntiGem/Exports", ChatToastType.SUCCESS)
+                        AppToastHelper.showToast("$savedFileName saved to Downloads/CineCode-AI/Exports", ChatToastType.SUCCESS)
                         openFile(context, savedUri, mimeType)
                     }
                 } else {
@@ -140,7 +140,7 @@ object ConversationExportHelper {
                 val contentValues = ContentValues().apply {
                     put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
                     put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
-                    put(MediaStore.MediaColumns.RELATIVE_PATH, "${Environment.DIRECTORY_DOWNLOADS}/AntiGem/Exports")
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, "${Environment.DIRECTORY_DOWNLOADS}/CineCode-AI/Exports")
                     put(MediaStore.MediaColumns.IS_PENDING, 1)
                 }
 
@@ -159,7 +159,7 @@ object ConversationExportHelper {
 
                 return Triple(itemUri, mimeType, fileName)
             } else {
-                val downloadsDir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "AntiGem/Exports")
+                val downloadsDir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "CineCode-AI/Exports")
                 if (!downloadsDir.exists()) downloadsDir.mkdirs()
                 val targetFile = File(downloadsDir, fileName)
                 targetFile.writeBytes(bytes)
@@ -172,7 +172,7 @@ object ConversationExportHelper {
                 return Triple(fileUri, mimeType, fileName)
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed saving to AntiGem/Exports: ${e.message}", e)
+            Log.e(TAG, "Failed saving to CineCode-AI/Exports: ${e.message}", e)
             return Triple(null, mimeType, fileName)
         }
     }

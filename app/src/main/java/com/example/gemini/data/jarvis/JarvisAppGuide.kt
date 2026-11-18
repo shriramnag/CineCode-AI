@@ -16,15 +16,15 @@ object JarvisAppGuide {
 
     private val entries: List<Entry> by lazy {
         listOf(
-            Entry("overview", listOf("what is", "antigem", "app", "features", "can you", "overview"), """
-AntiGem runs two coding agents on the phone: Antigravity (agy, Google) and Claude Code (Anthropic's claude CLI), each in normal chats.
-It also has a Linux terminal, a code editor (IDE) with Git, an in-app browser, notes and to-dos, built-in MCP servers, and custom
+            Entry("overview", listOf("what is", "cinecode", "antigem", "app", "features", "can you", "overview"), """
+CineCode-AI runs four coding agents on the phone: Antigravity (agy, Google), Claude Code (Anthropic's claude CLI), Codex, and OpenCode (200+ free models), each in normal chats.
+It also has a Linux terminal, a code editor (IDE) with Git, an in-app browser, notes and to-dos, built-in MCP servers, Mini Apps, Checkpoints, Agent Memory, and custom
 plugins. Screens: chat, ide, terminal, browser, notes (jarvis_open_screen). Settings: open the chat list (the side drawer of the
 chat screen) and tap Settings at its bottom left, or ask Jarvis to open a settings page (jarvis_open_settings).
 """.trim()),
             Entry("settings", listOf("settings", "where", "find", "page", "menu", "option", "configure"), "Settings pages:\n" + settingsPages()),
-            Entry("agents", listOf("agent", "antigravity", "claude", "both", "turn on", "enable", "switch agent", "new chat agent"), """
-Settings → Agents turns Antigravity, Claude Code or both on. A turned-off agent does not run and its chats are hidden.
+            Entry("agents", listOf("agent", "antigravity", "claude", "codex", "opencode", "both", "turn on", "enable", "switch agent", "new chat agent"), """
+Settings → Agents turns Antigravity, Claude Code, Codex, and OpenCode on or off. A turned-off agent does not run and its chats are hidden.
 Which agent new chats use is the new_chat_agent setting (also the agent chip on a new chat). Each chat keeps its own agent.
 """.trim()),
             Entry("claude", listOf("claude", "sign in", "login", "install claude", "provider", "openrouter", "kimi", "deepseek", "effort", "thinking", "permission mode", "claude.md", "memory"), """
@@ -47,7 +47,7 @@ Plugin Developer, Stitch, and Jarvis (this voice control). The Jarvis server mus
 Settings → Jarvis → Setup has a one-tap Add button.
 """.trim()),
             Entry("plugins", listOf("plugin", "extension", "skill", "install plugin", "/plu"), """
-Custom AntiGem plugins (Settings → Custom AntiGem Plugins) add MCP tools and skills. Install from a ZIP or a GitHub repository;
+Custom CineCode-AI plugins (Settings → CineCode-AI Plugins) add MCP tools and skills. Install from a ZIP or a GitHub repository;
 enable, disable, reload and update without restarting. In a chat, type /plu: to use a plugin or one of its skills.
 Your own slash commands that expand into full prompts are in Settings → Slash Commands.
 """.trim()),
@@ -72,7 +72,7 @@ Notes and to-do lists are on the notes screen and in the floating bubble. Agents
             Entry("appearance", listOf("theme", "dark", "light", "font", "size", "appearance", "look", "bubble", "switcher", "floating"), """
 Settings → Appearance & Theme: the mode (Light, Dark or Auto), a gallery to pick one light theme and one dark theme (light:
 Porcelain (default), Lavender, Sky (these three recommended), Sakura, Mint, Linen, Paper, Solarized Light; dark: Midnight Aurora (default),
-Obsidian, Graphite (these three recommended), Midnight, High Contrast, Amber Night (AntiGem's original dark look), Mocha, Neon City,
+Obsidian, Graphite (these three recommended), Midnight, High Contrast, Amber Night (CineCode-AI's original dark look), Mocha, Neon City,
 Aurora, Nord, Dracula, Velvet, Deep Ocean, Ember, Forest, Sunset, Solarized Dark, plus custom ones; the chat, the IDE editor, the terminal and the code blocks all follow it), chat font size, grouping chats by workspace, the floating switcher (always on: its layout, items and their order) and the floating bubble.
 Jarvis switches with jarvis_set_setting key=theme (or theme_mode) when the user allowed app settings. New themes are made by any chat
 with the Theme MCP (Theme preset in Settings → Antigravity → MCP Servers or Claude Code → MCP): "create a neon cyberpunk dark theme".
@@ -84,7 +84,7 @@ Protection has an uninstall shield and a guard against Clear data. App updates a
             Entry("server_mode", listOf("server", "vps", "remote", "ssh server", "server mode"), """
 Server mode (Settings → Servers): the bridge, the Antigravity hub, Claude Code, projects and the shell run on your own Linux server,
 the phone only shows the UI. Turn on Remote server (SSH), enter the bridge and hub addresses, SSH host, user and key, Save, Reopen.
-The full guide is docs/remote-server.md in the AntiGem repository.
+The full guide is docs/remote-server.md in the CineCode-AI repository.
 """.trim()),
             Entry("jarvis", listOf("jarvis", "voice", "hands-free", "hands free", "wake", "trigger", "orb", "listen", "send", "quiet", "headset", "tile"), """
 Jarvis (Settings → Jarvis): talk to the app hands-free. Triggers: tap the orb, the notification's Talk button, the Quick Settings

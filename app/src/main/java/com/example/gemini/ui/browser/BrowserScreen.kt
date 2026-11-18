@@ -127,6 +127,7 @@ fun BrowserScreen(
     var shouldSelectAllOnNextValueChange by remember { mutableStateOf(false) }
     var showTabOverview by remember { mutableStateOf(false) }
     var showMoreMenu by remember { mutableStateOf(false) }
+    var showBrowserMcpDialog by remember { mutableStateOf(false) }
     var showClearDataConfirm by remember { mutableStateOf(false) }
     var isControlsVisible by remember { mutableStateOf(true) }
     val density = androidx.compose.ui.platform.LocalDensity.current
@@ -688,6 +689,14 @@ fun BrowserScreen(
                                 }
                             )
                             DropdownMenuItem(
+                                text = { Text("Browser MCP & CDP") },
+                                leadingIcon = { Icon(Icons.Outlined.BugReport, contentDescription = null) },
+                                onClick = {
+                                    showMoreMenu = false
+                                    showBrowserMcpDialog = true
+                                }
+                            )
+                            DropdownMenuItem(
                                 text = { Text("Clear Tab Cache") },
                                 leadingIcon = { Icon(Icons.Outlined.DeleteOutline, contentDescription = null) },
                                 onClick = {
@@ -916,6 +925,12 @@ fun BrowserScreen(
         }
     }
 
+    if (showBrowserMcpDialog) {
+        com.shriram.cinecode.ui.browser.mcp.BrowserMcpPanelDialog(
+            tabId = activeTab?.id,
+            onDismiss = { showBrowserMcpDialog = false }
+        )
+    }
 }
 
 @Composable

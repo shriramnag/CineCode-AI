@@ -77,7 +77,12 @@ fun JarvisSettingsScreen(cardBg: Color, cardBorder: BorderStroke, onOpen: (Jarvi
             com.shriram.cinecode.ui.settings.SettingsRowItem(icon, tint, title, value) { onOpen(page) }
         listOf(
             listOfNotNull(
-                row(JarvisSettingsPage.AGENT, I.SmartToy, c.info, "Agent", if (agentName == AgentKind.AGY.name) "Antigravity" else "Claude Code"),
+                row(JarvisSettingsPage.AGENT, I.SmartToy, c.info, "Agent", when (agentName) {
+                    AgentKind.AGY.name -> "Antigravity"
+                    AgentKind.CODEX.name -> "Codex"
+                    AgentKind.OPENCODE.name -> "OpenCode"
+                    else -> "Claude Code"
+                }),
                 row(JarvisSettingsPage.PERSONALITY, I.Face, c.accentPink, "Personality & you"),
                 // the setup checklist is only for a Jarvis that is turned on
                 if (enabled) row(JarvisSettingsPage.SETUP, I.Checklist, c.success, "Setup") else null
@@ -130,10 +135,20 @@ fun JarvisSettingsSectionPage(page: JarvisSettingsPage, cardBg: Color, cardBorde
             JarvisSettingsPage.AGENT -> {
                 JCard(cardBg, cardBorder, "") {
                     JChips(
-                        listOf(AgentKind.CLAUDE.name to "Claude Code", AgentKind.AGY.name to "Antigravity"),
+                        listOf(
+                            AgentKind.CLAUDE.name to "Claude Code",
+                            AgentKind.AGY.name to "Antigravity",
+                            AgentKind.CODEX.name to "Codex",
+                            AgentKind.OPENCODE.name to "OpenCode"
+                        ),
                         agentName
                     ) { P.agent.set(it); P.modelId.set("") }
-                    val models by (if (agent == AgentKind.CLAUDE) vm.claudeBackend.availableModels else vm.agyBackend.enabledModels).collectAsState()
+                    val models by when (agent) {
+                        AgentKind.CLAUDE -> vm.claudeBackend.availableModels
+                        AgentKind.CODEX -> vm.codexBackend.availableModels
+                        AgentKind.OPENCODE -> vm.openCodeBackend.availableModels
+                        AgentKind.AGY -> vm.agyBackend.enabledModels
+                    }.collectAsState()
                     val modelId by P.modelId.state.collectAsState()
                     var menu by remember { mutableStateOf(false) }
                     Box {
@@ -163,7 +178,7 @@ fun JarvisSettingsSectionPage(page: JarvisSettingsPage, cardBg: Color, cardBorde
                     OutlinedTextField(
                         value = about, onValueChange = { P.aboutUser.set(it.take(2000)) },
                         label = { Text("About you and extra instructions") },
-                        placeholder = { Text("e.g. Call me Santosh. Reply in Hinglish. I mostly work on the antigem project.", fontSize = 12.sp) },
+                        placeholder = { Text("e.g. Call me Shriram. Reply in Hindi/Hinglish. I mostly work on CineCode-AI.", fontSize = 12.sp) },
                         modifier = Modifier.fillMaxWidth(), minLines = 3, maxLines = 8
                     )
                     JHint("Sent with the first message of every new Jarvis chat. When you change it (or the persona), the open chat is told with your next message. " +
@@ -174,7 +189,13 @@ fun JarvisSettingsSectionPage(page: JarvisSettingsPage, cardBg: Color, cardBorde
                 if (!enabled) {
                     JHint("Turn on Jarvis first (Settings → Jarvis).")
                 } else {
-                    JCard(cardBg, cardBorder, "Setup for ${if (agent == AgentKind.CLAUDE) "Claude Code" else "Antigravity"}") {
+                    val agentDisplay = when (agent) {
+                        AgentKind.CLAUDE -> "Claude Code"
+                        AgentKind.CODEX -> "Codex"
+                        AgentKind.OPENCODE -> "OpenCode"
+                        AgentKind.AGY -> "Antigravity"
+                    }
+                    JCard(cardBg, cardBorder, "Setup for $agentDisplay") {
                         val deviceId = remember(context) {
                             runCatching { android.provider.Settings.Secure.getString(context.contentResolver, android.provider.Settings.Secure.ANDROID_ID) ?: "" }.getOrDefault("")
                         }
@@ -184,7 +205,7 @@ fun JarvisSettingsSectionPage(page: JarvisSettingsPage, cardBg: Color, cardBorde
                         val mcpProblem by JarvisController.mcpProblem.collectAsState()
                         if (mcpProblem) {
                             Text(
-                                "Jarvis reported that its app tools are missing in ${if (agent == AgentKind.CLAUDE) "Claude Code" else "Antigravity"}. Add the Jarvis MCP server below (then start a fresh Jarvis chat).",
+                                "Jarvis reported that its app tools are missing in $agentDisplay. Add the Jarvis MCP server below (then start a fresh Jarvis chat).",
                                 fontSize = 12.5.sp, color = Color(0xFFF59E0B)
                             )
                         }

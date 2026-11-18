@@ -111,17 +111,17 @@ private suspend fun saveToDownloads(context: Context, fileName: String, mime: St
                 val values = ContentValues().apply {
                     put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
                     put(MediaStore.MediaColumns.MIME_TYPE, mime)
-                    put(MediaStore.MediaColumns.RELATIVE_PATH, "${Environment.DIRECTORY_DOWNLOADS}/AntiGem")
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, "${Environment.DIRECTORY_DOWNLOADS}/CineCode-AI")
                 }
                 val uri = resolver.insert(MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), values) ?: error("Cannot create file")
                 resolver.openOutputStream(uri)?.use(write) ?: error("Cannot write file")
             } else {
-                val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "AntiGem").apply { mkdirs() }
+                val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "CineCode-AI").apply { mkdirs() }
                 File(dir, fileName).outputStream().use(write)
             }
         }
     }
-    Toast.makeText(context, if (saved.isSuccess) "$fileName saved to Downloads/AntiGem" else "Could not save $fileName: ${saved.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
+    Toast.makeText(context, if (saved.isSuccess) "$fileName saved to Downloads/CineCode-AI" else "Could not save $fileName: ${saved.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
 }
 
 /** Full-screen view of a Markdown document with a download button. */

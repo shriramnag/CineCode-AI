@@ -17,6 +17,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -162,7 +163,11 @@ fun ChatScreen(
     val jarvisEnabled by com.shriram.cinecode.data.jarvis.JarvisPreferences.enabled.state.collectAsState()
     val currentConv by viewModel.currentConversation.collectAsState()
     val newChatAgent by viewModel.newChatAgent.collectAsState()
-    val isClaudeChat = currentConv?.agent == com.shriram.cinecode.domain.model.AgentKind.CLAUDE
+    val currentAgent = currentConv?.agent ?: newChatAgent
+    val isClaudeChat = currentAgent == com.shriram.cinecode.domain.model.AgentKind.CLAUDE
+    val isCodexChat = currentAgent == com.shriram.cinecode.domain.model.AgentKind.CODEX
+    val isOpenCodeChat = currentAgent == com.shriram.cinecode.domain.model.AgentKind.OPENCODE
+    val isAgyChat = currentAgent == com.shriram.cinecode.domain.model.AgentKind.AGY
     val isFreshNewChat = currentConv == null || currentConv?.title == "New Chat"
     val claudeBackend = viewModel.claudeBackend
     val claudePending by claudeBackend.pendingPermissions.collectAsState()
@@ -289,6 +294,10 @@ fun ChatScreen(
     var showRawPayloadDialog by remember { mutableStateOf<String?>(null) }
     var showChatTelemetryDialog by remember { mutableStateOf(false) }
     var showSettingsDialog by remember { mutableStateOf(false) }
+    var showMiniAppsDialog by remember { mutableStateOf(false) }
+    var showMemorySheet by remember { mutableStateOf(false) }
+    var showCheckpointsSheet by remember { mutableStateOf(false) }
+    var showStudioToolsDialog by remember { mutableStateOf(false) }
     var showAttachmentSelector by remember { mutableStateOf(false) }
     var showProjectPickerDialog by remember { mutableStateOf(false) }
     var showGitCloneDialog by remember { mutableStateOf(false) }
@@ -402,6 +411,21 @@ fun ChatScreen(
             onRestartServer = restartLocalServer
         )
     } else null
+    val codexEntry = if (com.shriram.cinecode.domain.model.AgentKind.CODEX in enabledAgents) {
+        com.shriram.cinecode.ui.agents.codexStatusEntry(
+            provider = "Free OpenAI-Compatible",
+            onConfigure = {
+                requestedSettingsSection = com.shriram.cinecode.ui.settings.SettingsSection.CODEX_OPENCODE
+                showSettingsDialog = true
+            }
+        )
+    } else null
+    val openCodeEntry = if (com.shriram.cinecode.domain.model.AgentKind.OPENCODE in enabledAgents) {
+        com.shriram.cinecode.ui.agents.openCodeStatusEntry(
+            modelCount = com.shriram.cinecode.data.agent.opencode.OpenCodeModelsCatalog.models.size,
+            onBrowseModels = { showModelSelector = true }
+        )
+    } else null
     val claudeEntry = if (com.shriram.cinecode.domain.model.AgentKind.CLAUDE in enabledAgents) {
         com.shriram.cinecode.ui.agents.claudeStatusEntry(
             state = claudeState,
@@ -414,7 +438,7 @@ fun ChatScreen(
             onRetry = recheckClaude
         )
     } else null
-    val agentEntries = listOfNotNull(agyEntry, claudeEntry)
+    val agentEntries = listOfNotNull(agyEntry, codexEntry, openCodeEntry, claudeEntry)
 
     // Slash commands Claude's CLI only shows in a terminal: the app opens its own screen instead
     val handleClaudeCommand: (com.shriram.cinecode.data.agent.claude.ClaudeAppCommand) -> Unit = { cmd ->
@@ -1525,6 +1549,31 @@ fun ChatScreen(
                         com.shriram.cinecode.ui.components.AgentTeamRole.VALIDATOR -> 1.0f
                     }
                 )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    com.shriram.cinecode.ui.components.MemoryChip(onClick = { showMemorySheet = true })
+                    AssistChip(
+                        onClick = { showMiniAppsDialog = true },
+                        leadingIcon = { Icon(Icons.Outlined.Widgets, contentDescription = null, modifier = Modifier.size(15.dp)) },
+                        label = { Text("Mini Apps", fontSize = 11.sp) }
+                    )
+                    AssistChip(
+                        onClick = { showCheckpointsSheet = true },
+                        leadingIcon = { Icon(Icons.Outlined.History, contentDescription = null, modifier = Modifier.size(15.dp)) },
+                        label = { Text("Checkpoints", fontSize = 11.sp) }
+                    )
+                    AssistChip(
+                        onClick = { showStudioToolsDialog = true },
+                        leadingIcon = { Icon(Icons.Outlined.Build, contentDescription = null, modifier = Modifier.size(15.dp)) },
+                        label = { Text("Studio Tools", fontSize = 11.sp) }
+                    )
+                }
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -1540,7 +1589,7 @@ fun ChatScreen(
                     val isExistingChat = messages.isEmpty() && isExistingConversation && isLoadingConversation
                     Log.d("CHAT_OPEN_DEBUG", "🖥️ [ChatScreen Render] convId=${currentConv?.id}, title='${currentConv?.title}', isLoading=$isLoadingConversation, isExisting=$isExistingChat, msgCount=${messages.size}, error=$conversationError, isServerStopped=$isServerStopped")
 
-                    if (!isClaudeChat && isServerStopped && messages.isEmpty()) {
+                    if (isAgyChat && isServerStopped && messages.isEmpty()) {
                         BoxWithConstraints(
                             modifier = Modifier.fillMaxSize()
                         ) {
@@ -1583,7 +1632,7 @@ fun ChatScreen(
                                 )
                             }
                         }
-                    } else if (!isClaudeChat && isServerInitializing && messages.isEmpty()) {
+                    } else if (isAgyChat && isServerInitializing && messages.isEmpty()) {
                         BoxWithConstraints(
                             modifier = Modifier.fillMaxSize()
                         ) {
@@ -1719,7 +1768,7 @@ fun ChatScreen(
                                         onServerLogs = { showLocalServerOutputDialog = true },
                                         serverStarting = serverRestarting
                                     )
-                                } else when (if (isClaudeChat) null else systemConnectionState.status) {
+                                } else when (if (isClaudeChat || isCodexChat || isOpenCodeChat) null else systemConnectionState.status) {
                                     com.shriram.cinecode.data.remote.SystemStatus.CHECKING_AUTH -> {
                                         com.shriram.cinecode.ui.components.NewChatCheckingAuthPromptCard()
                                     }
@@ -2322,8 +2371,16 @@ fun ChatScreen(
 
                 // Chat Input Bar with Bottom Model & Thinking Selector Pills (Claude Android Style)
                 ChatInputBar(
-                    isOnline = if (isClaudeChat) !claudeState.isBlocking else (systemConnectionState.canSend || isCloudApiActive),
-                    isAuth = if (isClaudeChat) claudeChatState != com.shriram.cinecode.data.agent.claude.ClaudeStatus.SIGNED_OUT && claudeChatState != com.shriram.cinecode.data.agent.claude.ClaudeStatus.SIGNING_IN else (systemConnectionState.isAuth || isCloudApiActive),
+                    isOnline = when {
+                        isClaudeChat -> !claudeState.isBlocking
+                        isCodexChat || isOpenCodeChat -> true
+                        else -> systemConnectionState.canSend || isCloudApiActive
+                    },
+                    isAuth = when {
+                        isClaudeChat -> claudeChatState != com.shriram.cinecode.data.agent.claude.ClaudeStatus.SIGNED_OUT && claudeChatState != com.shriram.cinecode.data.agent.claude.ClaudeStatus.SIGNING_IN
+                        isCodexChat || isOpenCodeChat -> true
+                        else -> systemConnectionState.isAuth || isCloudApiActive
+                    },
                     offlineMessage = if (isClaudeChat) when (claudeState) {
                         com.shriram.cinecode.data.agent.claude.ClaudeStatus.NOT_INSTALLED -> "Claude Code is not installed. Set it up in Settings."
                         com.shriram.cinecode.data.agent.claude.ClaudeStatus.BRIDGE_OUTDATED -> "Restart the local server to use Claude Code."
@@ -2393,6 +2450,22 @@ fun ChatScreen(
     if (isClaudeChat) com.shriram.cinecode.ui.claude.ClaudeProviderSwitchDialog(claudeBackend)
     if (showModelSelector && isClaudeChat) {
         com.shriram.cinecode.ui.claude.ClaudeModelSheet(claudeBackend, viewModel.claudeAccount) { showModelSelector = false }
+    } else if (showModelSelector && isCodexChat) {
+        com.shriram.cinecode.ui.codex.OpenCodeAndCodexModelSheet(
+            title = "Codex Free Models",
+            selectedModelId = selectedModelId,
+            models = enabledModels,
+            onSelectModel = { modelId -> viewModel.selectModel(modelId) },
+            onDismiss = { showModelSelector = false }
+        )
+    } else if (showModelSelector && isOpenCodeChat) {
+        com.shriram.cinecode.ui.codex.OpenCodeAndCodexModelSheet(
+            title = "OpenCode Free Models",
+            selectedModelId = selectedModelId,
+            models = com.shriram.cinecode.data.agent.opencode.OpenCodeModelsCatalog.models,
+            onSelectModel = { modelId -> viewModel.selectModel(modelId) },
+            onDismiss = { showModelSelector = false }
+        )
     } else if (showModelSelector) {
         ModelSelectorBottomSheet(
             selectedModelId = selectedModelId,
@@ -2403,6 +2476,29 @@ fun ChatScreen(
             onRefresh = { viewModel.refreshQuotas(force = true, showToastFeedback = true) },
             onSelectModel = { modelId -> viewModel.selectModel(modelId) },
             onDismiss = { showModelSelector = false }
+        )
+    }
+
+    if (showMemorySheet) {
+        com.shriram.cinecode.ui.components.AgentMemorySheet(onDismiss = { showMemorySheet = false })
+    }
+    if (showMiniAppsDialog) {
+        com.shriram.cinecode.ui.miniapps.MiniAppsDialog(onDismiss = { showMiniAppsDialog = false })
+    }
+    if (showCheckpointsSheet) {
+        com.shriram.cinecode.ui.checkpoint.CheckpointRestoreSheet(
+            projectPath = activeChatProject?.path.orEmpty(),
+            projectName = activeChatProject?.name.orEmpty(),
+            onDismiss = { showCheckpointsSheet = false }
+        )
+    }
+    if (showStudioToolsDialog) {
+        com.shriram.cinecode.ui.cloud.CloudPreviewDialog(
+            initialTab = 0,
+            activeProjectPath = activeChatProject?.path.orEmpty(),
+            onOpenInBrowser = onNavigateToBrowser,
+            onOpenTerminal = onNavigateToTerminal,
+            onDismiss = { showStudioToolsDialog = false }
         )
     }
 
@@ -2578,6 +2674,8 @@ fun ChatScreen(
             enabledAgents = enabledAgents,
             isApplyingAgents = isApplyingAgents,
             onApplyAgents = { viewModel.applyAgents(it) },
+            codexPrefs = viewModel.codexPrefs,
+            openCodePrefs = viewModel.openCodePrefs,
             onDismiss = {
                 showSettingsDialog = false
                 claudeSettingsPage = null

@@ -30,7 +30,7 @@ import java.util.TimeZone
  */
 object JarvisMcp {
 
-    const val INSTRUCTIONS = "Jarvis controls the AntiGem app for a user who is talking hands-free. The first message of a Jarvis chat " +
+    const val INSTRUCTIONS = "Jarvis controls the CineCode-AI app for a user who is talking hands-free. The first message of a Jarvis chat " +
         "has the full guide and tool list; jarvis_help repeats it. Call these tools directly by name (no searching, no config reading). " +
         "Everything the user should hear goes through jarvis_speak (short, plain sentences, no markdown); jarvis_ask asks and returns the " +
         "spoken answer. Big jobs go to jarvis_task_start (its own watched chat); the phone reports back with [Phone event] messages. " +
@@ -139,7 +139,7 @@ object JarvisMcp {
             "Where the user is and what is going on: the screen, the IDE project and open files, the chat on screen, tasks, running chats, " +
                 "approvals waiting, and Jarvis' own mode. The context note of each message already has most of this."))
         put(tool("jarvis_app_guide",
-            "How to use AntiGem: where a setting is, how to add an MCP server, sign in, use the terminal, IDE, git, browser, notes, plugins, " +
+            "How to use CineCode-AI: where a setting is, how to add an MCP server, sign in, use the terminal, IDE, git, browser, notes, plugins, " +
                 "server mode, Jarvis' own features, troubleshooting. Give a topic or the user's words.",
             listOf("topic"), "topic" to prop("string", "A topic (overview, settings, agents, claude, antigravity, mcp, plugins, terminal, ide, browser, notes, appearance, backups, server_mode, jarvis, tasks, troubleshooting) or words")))
         put(tool("jarvis_get_config",
@@ -968,8 +968,12 @@ object JarvisMcp {
 
     // ---------------- models
 
-    private fun modelsFor(agent: AgentKind): List<AiModel> =
-        if (agent == AgentKind.CLAUDE) vm.claudeBackend.availableModels.value else vm.agyBackend.enabledModels.value
+    private fun modelsFor(agent: AgentKind): List<AiModel> = when (agent) {
+        AgentKind.CLAUDE -> vm.claudeBackend.availableModels.value
+        AgentKind.CODEX -> vm.codexBackend.availableModels.value
+        AgentKind.OPENCODE -> vm.openCodeBackend.availableModels.value
+        AgentKind.AGY -> vm.agyBackend.enabledModels.value
+    }
 
     private fun findModel(text: String, models: List<AiModel>): AiModel? {
         val t = text.lowercase().trim()
@@ -988,6 +992,8 @@ object JarvisMcp {
             }
             if (which == "all" || which == "claude") section("claude", AgentKind.CLAUDE, vm.claudeBackend.selectedModelId.value)
             if (which == "all" || which == "agy") section("antigravity", AgentKind.AGY, vm.agyBackend.selectedModelId.value)
+            if (which == "all" || which == "codex") section("codex", AgentKind.CODEX, vm.codexBackend.selectedModelId.value)
+            if (which == "all" || which == "opencode") section("opencode", AgentKind.OPENCODE, vm.openCodeBackend.selectedModelId.value)
             put("jarvis_chat_model", JarvisPreferences.modelId.value.ifBlank { "default" })
         })
     }
@@ -1076,10 +1082,16 @@ object JarvisMcp {
             bool("group_chats_by_workspace", "Group the chat list by project", false, { vm.groupChatsByWorkspace.value }, { vm.setGroupChatsByWorkspace(it) }),
             bool("floating_bubble", "Floating chat bubble over other apps", false, { vm.isFloatingBubbleEnabled.value }, { vm.setFloatingBubbleEnabled(it) }),
             bool("vibrate_when_chat_done", "A light buzz when a chat finishes", false, { ChatCompletionMonitor.vibrate.value }, { ChatCompletionMonitor.setVibrate(it) }),
-            Setting("new_chat_agent", "Agent of new chats", "claude|agy", false, get = { vm.newChatAgent.value.name.lowercase() }, set = { v ->
-                val a = when (v.trim().lowercase()) { "claude" -> AgentKind.CLAUDE; "agy", "antigravity" -> AgentKind.AGY; else -> null }
+            Setting("new_chat_agent", "Agent of new chats", "claude|agy|codex|opencode", false, get = { vm.newChatAgent.value.name.lowercase() }, set = { v ->
+                val a = when (v.trim().lowercase()) {
+                    "claude" -> AgentKind.CLAUDE
+                    "agy", "antigravity" -> AgentKind.AGY
+                    "codex" -> AgentKind.CODEX
+                    "opencode" -> AgentKind.OPENCODE
+                    else -> null
+                }
                 when {
-                    a == null -> "Use claude or agy."
+                    a == null -> "Use claude, agy, codex or opencode."
                     a !in vm.enabledAgents.value -> "That agent is turned off (Settings → Agents)."
                     else -> { vm.setNewChatAgent(a); null }
                 }

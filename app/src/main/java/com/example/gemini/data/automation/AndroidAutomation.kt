@@ -63,8 +63,8 @@ object AndroidAutomation {
     fun notReadyMessage(context: Context): String? = when {
         isServiceRunning() -> null
         isServiceEnabledInSettings(context) -> "Android Automation's accessibility service is turned on but not running. " +
-            "Ask the user to turn \"AntiGem Android Automation\" off and on again in Android Settings → Accessibility, then reconnect this MCP server."
-        else -> "Android Automation is not set up. Ask the user to open AntiGem → Settings → Android Automation and grant the permissions there " +
+            "Ask the user to turn \"CineCode-AI Android Automation\" off and on again in Android Settings → Accessibility, then reconnect this MCP server."
+        else -> "Android Automation is not set up. Ask the user to open CineCode-AI → Settings → Android Automation and grant the permissions there " +
             "(the Accessibility service; on Android 13+ they may first need App info → ⋮ → Allow restricted settings). Then reconnect this MCP server."
     }
 

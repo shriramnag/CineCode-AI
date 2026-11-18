@@ -27,6 +27,7 @@ import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.automirrored.filled.WrapText
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -102,6 +103,8 @@ fun IdeScreen(
     var isWordWrap by remember { mutableStateOf(false) }
     var showNewProjectDialog by remember { mutableStateOf(false) }
     var showFileManager by remember { mutableStateOf(false) }
+    var showCheckpointsSheet by remember { mutableStateOf(false) }
+    var showStudioToolsDialog by remember { mutableStateOf(false) }
     var saveAsDialogTab by remember { mutableStateOf<OpenTab?>(null) }
     var tabToClose by remember { mutableStateOf<OpenTab?>(null) }
     var conflictDialogTab by remember { mutableStateOf<OpenTab?>(null) }
@@ -452,7 +455,7 @@ fun IdeScreen(
                     },
                     title = {
                         Text(
-                            text = activeProject?.name ?: "antiGem IDE",
+                            text = activeProject?.name ?: "CineCode-AI IDE",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
@@ -622,6 +625,27 @@ fun IdeScreen(
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
+                        }
+
+                        IconButton(
+                            onClick = { showCheckpointsSheet = true },
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.History,
+                                contentDescription = "Project Checkpoints",
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        IconButton(
+                            onClick = { showStudioToolsDialog = true },
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Build,
+                                contentDescription = "Android Builder, Preview & GitHub",
+                                modifier = Modifier.size(20.dp)
+                            )
                         }
 
                         // Run Action Split Button & Dropdown Menu
@@ -1790,6 +1814,23 @@ fun IdeScreen(
                 }
             }
         }
+    }
+    if (showCheckpointsSheet) {
+        com.shriram.cinecode.ui.checkpoint.CheckpointRestoreSheet(
+            projectPath = activeProject?.path.orEmpty(),
+            projectName = activeProject?.name.orEmpty(),
+            onRestored = { refreshProjectsAndTree() },
+            onDismiss = { showCheckpointsSheet = false }
+        )
+    }
+    if (showStudioToolsDialog) {
+        com.shriram.cinecode.ui.cloud.CloudPreviewDialog(
+            initialTab = 1,
+            activeProjectPath = activeProject?.path.orEmpty(),
+            onOpenInBrowser = onNavigateToBrowser,
+            onOpenTerminal = onNavigateToTerminal,
+            onDismiss = { showStudioToolsDialog = false }
+        )
     }
 }
 }

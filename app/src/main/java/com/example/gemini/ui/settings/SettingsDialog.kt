@@ -84,7 +84,7 @@ import com.shriram.cinecode.data.daemon.TermuxDaemonManager
 import com.shriram.cinecode.data.daemon.IdeApiClient
 
 enum class SettingsSection(val title: String, val subtitle: String) {
-    MAIN("Settings & Preferences", "Configure your AntiGem experience"),
+    MAIN("Settings & Preferences", "Configure your CineCode-AI experience"),
     APPEARANCE("Appearance & Theme", "Theme, dark mode, and chat font scaling"),
     SERVERS("Servers & Connectivity", "Configure AGY Hub and IDE Bridge endpoints"),
     WEBVIEW_EXTENSIONS("CineCode-AI Plugins 🛠️", "श्रीराम नाग का अपना क्रिएटर स्टूडियो (shriramnag)"),
@@ -97,10 +97,15 @@ enum class SettingsSection(val title: String, val subtitle: String) {
     COMMANDS("Commands & Permissions", "Auto-run policy, sandbox mode, and tool approvals"),
     ANTIGRAVITY("Antigravity", "CLI, MCP servers, skills & plugins, commands & permissions"),
     AGY_CLI("Antigravity CLI", "agy version and install, on this device or the server"),
+    CODEX_OPENCODE("Codex & OpenCode", "200+ free open-source models & OpenAI-compatible presets"),
     CLAUDE("Claude Code", "Account, models, permissions, MCP, plugins & memory"),
     /** One Claude Code page (which one: the dialog's claudePage); not a page of its own for Jarvis. */
     CLAUDE_PAGE("Claude Code", "Account, models, permissions, MCP, plugins & memory"),
-    AGENTS("Agents", "Run Antigravity, Claude Code or both"),
+    AGENTS("Agents", "Choose which of the 4 coding agents to run"),
+    MINI_APPS("Mini Apps Store", "Run Notes, Gallery & Dev Toolbox inside CineCode-AI"),
+    AGENT_MEMORY("Agent Memory", "Persistent instructions & global context for all agents"),
+    CHECKPOINTS("Project Checkpoints", "Instant snapshot & 1-tap restore for your workspace"),
+    STUDIO_TOOLS("Studio Tools & Cloud", "Cloud Preview, Android Builder, REA APK, GitHub & PC Connect"),
     JARVIS("Jarvis", "Hands-free voice control of the whole app"),
     JARVIS_AGENT("Jarvis · Agent", "Which agent and model Jarvis talks to"),
     JARVIS_PERSONALITY("Jarvis · Personality & you", "How Jarvis speaks, and what it should know about you"),
@@ -274,13 +279,37 @@ fun SettingsDialog(
     enabledAgents: Set<com.shriram.cinecode.domain.model.AgentKind> = setOf(com.shriram.cinecode.domain.model.AgentKind.AGY),
     isApplyingAgents: Boolean = false,
     onApplyAgents: (Set<com.shriram.cinecode.domain.model.AgentKind>) -> Unit = {},
+    codexPrefs: com.shriram.cinecode.data.agent.codex.CodexPreferences? = null,
+    openCodePrefs: com.shriram.cinecode.data.agent.opencode.OpenCodePreferences? = null,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    var currentSection by remember { mutableStateOf(initialSection ?: if (initialClaudePage != null && claude != null) SettingsSection.CLAUDE_PAGE else SettingsSection.MAIN) }
+    var currentSection by remember { mutableStateOf(
+        when (initialSection) {
+            SettingsSection.MINI_APPS,
+            SettingsSection.AGENT_MEMORY,
+            SettingsSection.CHECKPOINTS,
+            SettingsSection.STUDIO_TOOLS -> SettingsSection.MAIN
+            null -> if (initialClaudePage != null && claude != null) SettingsSection.CLAUDE_PAGE else SettingsSection.MAIN
+            else -> initialSection
+        }
+    ) }
     var claudePage by remember { mutableStateOf(initialClaudePage ?: com.shriram.cinecode.ui.claude.ClaudeSettingsPage.ACCOUNT) }
-    LaunchedEffect(initialSection) { if (initialSection != null) currentSection = initialSection }
+    var showMiniAppsDialog by remember { mutableStateOf(initialSection == SettingsSection.MINI_APPS) }
+    var showMemorySheet by remember { mutableStateOf(initialSection == SettingsSection.AGENT_MEMORY) }
+    var showCheckpointsSheet by remember { mutableStateOf(initialSection == SettingsSection.CHECKPOINTS) }
+    var showStudioToolsDialog by remember { mutableStateOf(initialSection == SettingsSection.STUDIO_TOOLS) }
+    LaunchedEffect(initialSection) {
+        when (initialSection) {
+            SettingsSection.MINI_APPS -> showMiniAppsDialog = true
+            SettingsSection.AGENT_MEMORY -> showMemorySheet = true
+            SettingsSection.CHECKPOINTS -> showCheckpointsSheet = true
+            SettingsSection.STUDIO_TOOLS -> showStudioToolsDialog = true
+            null -> Unit
+            else -> currentSection = initialSection
+        }
+    }
     // Hoisted so the main list keeps its position while a sub-section is open
     val mainMenuScrollState = rememberScrollState()
 
@@ -400,7 +429,15 @@ fun SettingsDialog(
                         scrollState = mainMenuScrollState,
                         enabledAgents = enabledAgents,
                         claude = claude,
-                        onNavigate = { currentSection = it }
+                        onNavigate = { target ->
+                            when (target) {
+                                SettingsSection.MINI_APPS -> showMiniAppsDialog = true
+                                SettingsSection.AGENT_MEMORY -> showMemorySheet = true
+                                SettingsSection.CHECKPOINTS -> showCheckpointsSheet = true
+                                SettingsSection.STUDIO_TOOLS -> showStudioToolsDialog = true
+                                else -> currentSection = target
+                            }
+                        }
                     )
 
                     SettingsSection.APPEARANCE -> AppearanceSubScreen(
@@ -601,6 +638,20 @@ fun SettingsDialog(
                     SettingsSection.CLAUDE_PAGE -> if (claude != null) {
                         com.shriram.cinecode.ui.claude.ClaudeSettingsScreen(claude, claudePage) { currentSection = SettingsSection.CLAUDE }
                     }
+                    SettingsSection.CODEX_OPENCODE -> {
+                        val resolvedCodex = codexPrefs ?: remember(context) { com.shriram.cinecode.data.agent.codex.CodexPreferences(context) }
+                        val resolvedOpenCode = openCodePrefs ?: remember(context) { com.shriram.cinecode.data.agent.opencode.OpenCodePreferences(context) }
+                        com.shriram.cinecode.ui.codex.CodexAndOpenCodeSettingsScreen(
+                            codexPrefs = resolvedCodex,
+                            openCodePrefs = resolvedOpenCode,
+                            cardBg = cardBg,
+                            cardBorder = cardBorder
+                        )
+                    }
+                    SettingsSection.MINI_APPS,
+                    SettingsSection.AGENT_MEMORY,
+                    SettingsSection.CHECKPOINTS,
+                    SettingsSection.STUDIO_TOOLS -> { /* Rendered as clean modal overlays below */ }
                     SettingsSection.UTILITIES -> UtilitiesSubScreen(
                         cardBg = cardBg,
                         onNavigate = { currentSection = it }
@@ -621,6 +672,32 @@ fun SettingsDialog(
                 }
             }
         }
+    }
+    if (showMiniAppsDialog) {
+        com.shriram.cinecode.ui.miniapps.MiniAppsDialog(
+            onDismiss = { showMiniAppsDialog = false }
+        )
+    }
+    if (showMemorySheet) {
+        com.shriram.cinecode.ui.components.AgentMemorySheet(
+            onDismiss = { showMemorySheet = false }
+        )
+    }
+    if (showCheckpointsSheet) {
+        val activeProj by TermuxDaemonManager.activeProject.collectAsState()
+        com.shriram.cinecode.ui.checkpoint.CheckpointRestoreSheet(
+            projectPath = activeProj?.path.orEmpty(),
+            projectName = activeProj?.name.orEmpty(),
+            onDismiss = { showCheckpointsSheet = false }
+        )
+    }
+    if (showStudioToolsDialog) {
+        val activeProj by TermuxDaemonManager.activeProject.collectAsState()
+        com.shriram.cinecode.ui.cloud.CloudPreviewDialog(
+            activeProjectPath = activeProj?.path.orEmpty(),
+            onOpenTerminal = { showStudioToolsDialog = false; onOpenLocalTerminal(); onDismiss() },
+            onDismiss = { showStudioToolsDialog = false }
+        )
     }
     } // ProvideBouncyOverscroll
 }
@@ -689,16 +766,19 @@ private fun MainSettingsMenu(
                 row(SettingsSection.SERVERS, Icons.Outlined.Dns, c.info, serverValue, serverColor)
             ),
             listOfNotNull(
-                row(SettingsSection.AGENTS, Icons.Outlined.SmartToy, MaterialTheme.colorScheme.primary, when {
-                    agyOn && claudeOn -> "Both"
-                    claudeOn -> "Claude Code"
-                    else -> "Antigravity"
-                }),
+                row(SettingsSection.AGENTS, Icons.Outlined.SmartToy, MaterialTheme.colorScheme.primary, "${enabledAgents.size} enabled"),
+                row(SettingsSection.CODEX_OPENCODE, Icons.Outlined.Code, Color(0xFF10B981), "200+ Free"),
                 if (agyOn) row(SettingsSection.ANTIGRAVITY, Icons.Outlined.RocketLaunch, GeminiBlue,
                     if (activeMcp > 0) "$activeMcp MCP" else null) else null,
                 if (claude != null && claudeOn) row(SettingsSection.CLAUDE, Icons.Outlined.AutoAwesome, ClaudeAccent, claudeValue, claudeColor) else null,
                 row(SettingsSection.JARVIS, Icons.Outlined.RecordVoiceOver, c.accentTeal, if (jarvisOn) "On" else "Off",
                     if (jarvisOn) QuotaGreen else null)
+            ),
+            listOf(
+                row(SettingsSection.MINI_APPS, Icons.Outlined.Widgets, c.info, "Notes · Gallery · Dev"),
+                row(SettingsSection.AGENT_MEMORY, Icons.Outlined.Psychology, c.accentAlt, "Persistent Rules"),
+                row(SettingsSection.CHECKPOINTS, Icons.Outlined.History, c.warning, "1-Tap Restore"),
+                row(SettingsSection.STUDIO_TOOLS, Icons.Outlined.Build, QuotaGreen, "APK · Cloud · GitHub")
             ),
             listOf(
                 row(SettingsSection.WEBVIEW_EXTENSIONS, Icons.Outlined.Extension, c.accentAlt),
@@ -1049,7 +1129,7 @@ private fun AppearanceSubScreen(
                         color = ClaudeTerracotta.copy(alpha = 0.15f)
                     ) {
                         Text(
-                            text = "How does AntiGem connect to AGY Hub?",
+                            text = "How does CineCode-AI connect to AGY Hub?",
                             fontSize = (13 * chatFontScale).sp,
                             color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
@@ -1069,7 +1149,7 @@ private fun AppearanceSubScreen(
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             Text(
-                                text = "AntiGem connects via gRPC-Web to stream live agent steps and tool executions.",
+                                text = "CineCode-AI connects via gRPC-Web to stream live agent steps and tool executions.",
                                 fontSize = (13 * chatFontScale).sp,
                                 lineHeight = (18 * chatFontScale).sp,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -1515,7 +1595,7 @@ private fun AppearanceSubScreen(
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
-                                        text = "Modern AntiGem styled icon & name",
+                                        text = "Modern CineCode-AI styled icon & name",
                                         fontSize = 10.5.sp,
                                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                                     )
@@ -1951,7 +2031,7 @@ private fun McpSubScreen(
             val presets = listOf(
                 // No spec: opens the picker for an installed plugin's own MCP
                 McpPreset("Custom Plugin MCP", "Pick an installed plugin", Icons.Outlined.Extension, ClaudeTerracotta, null),
-                McpPreset("Plugin Developer", "Build & test AntiGem plugins", Icons.Outlined.DeveloperMode, GeminiPurple,
+                McpPreset("Plugin Developer", "Build & test CineCode-AI plugins", Icons.Outlined.DeveloperMode, GeminiPurple,
                     localSpec(bridge.DEVELOPER_MCP_NAME, "/extension_developer")),
                 McpPreset("Browser", "Control the in-app browser", Icons.Outlined.Language, GeminiBlue, localSpec("browser_mcp", "/browser")),
                 McpPreset("Terminal", "Run commands in the terminal", Icons.Outlined.Terminal, QuotaGreen, localSpec("terminal_mcp", "/terminal")),
@@ -3941,7 +4021,7 @@ private fun TerminalSubScreen(
                     )
 
                     Text(
-                        text = "AntiGem is wiping all local app data, rootfs, and settings.\n\nThe app will automatically close in $countdownSeconds seconds. Simply re-open AntiGem to start fresh.",
+                        text = "CineCode-AI is wiping all local app data, rootfs, and settings.\n\nThe app will automatically close in $countdownSeconds seconds. Simply re-open CineCode-AI to start fresh.",
                         fontSize = 13.5.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -6031,7 +6111,7 @@ private fun DataProtectionSubScreen(
 
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(
-                    text = "Why enable this? AntiGem hosts a full local Linux environment with your Node/Python packages, Git repos, and active coding projects. An accidental drag-to-uninstall from the home screen wipes all of it permanently.\n\nActivating Android Device Administrator greys out the 'Uninstall' button at the OS level across phone launchers. You can safely disable this anytime if you wish to uninstall.",
+                    text = "Why enable this? CineCode-AI hosts a full local Linux environment with your Node/Python packages, Git repos, and active coding projects. An accidental drag-to-uninstall from the home screen wipes all of it permanently.\n\nActivating Android Device Administrator greys out the 'Uninstall' button at the OS level across phone launchers. You can safely disable this anytime if you wish to uninstall.",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     lineHeight = 16.sp
@@ -6176,7 +6256,7 @@ private fun DataProtectionSubScreen(
 
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(
-                    text = "When enabled (default), tapping 'Clear Data' in Android's phone Settings > App Info opens AntiGem's Safe Space Manager instead of wiping everything instantly with one click. This prevents accidental wipes and allows safe cache-only cleanup.\n\nYou can toggle this off anytime if you prefer the standard raw Android 'Clear Data' button.",
+                    text = "When enabled (default), tapping 'Clear Data' in Android's phone Settings > App Info opens CineCode-AI's Safe Space Manager instead of wiping everything instantly with one click. This prevents accidental wipes and allows safe cache-only cleanup.\n\nYou can toggle this off anytime if you prefer the standard raw Android 'Clear Data' button.",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     lineHeight = 16.sp
@@ -6209,7 +6289,7 @@ private fun DataProtectionSubScreen(
             title = { Text("Disable Uninstall Protection?") },
             text = {
                 Text(
-                    "This will remove AntiGem's Device Admin status. The app will become vulnerable to accidental home-screen uninstallation.",
+                    "This will remove CineCode-AI's Device Admin status. The app will become vulnerable to accidental home-screen uninstallation.",
                     fontSize = 13.sp
                 )
             },
@@ -8111,13 +8191,13 @@ private fun AboutSubScreen(
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = "AntiGem",
+                    text = "CineCode-AI",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = "Antigravity Mobile Hub & AI Pair Programmer",
+                    text = "CineCode-AI Mobile Studio & Multi-Agent Pair Programmer",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -8351,8 +8431,8 @@ private fun AboutSubScreen(
                                         updateCheckResultText = null
                                     } else {
                                         isUpdateCheckError = false
-                                        updateCheckResultText = "AntiGem is up to date (v${BuildConfig.VERSION_NAME})."
-                                        Toast.makeText(context, "AntiGem is up to date!", Toast.LENGTH_SHORT).show()
+                                        updateCheckResultText = "CineCode-AI is up to date (v${BuildConfig.VERSION_NAME})."
+                                        Toast.makeText(context, "CineCode-AI is up to date!", Toast.LENGTH_SHORT).show()
                                     }
                                 }.onFailure { err ->
                                     isUpdateCheckError = true

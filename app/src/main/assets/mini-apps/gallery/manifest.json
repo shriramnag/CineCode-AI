@@ -1,0 +1,10 @@
+{
+  "id": "cinecode-gallery",
+  "name": "Asset Gallery",
+  "version": "1.0.0",
+  "description": "Lightweight storyboard & prompt asset organizer for CineCode-AI creators",
+  "category": "Media",
+  "icon": "🖼️",
+  "entry": "index.html",
+  "accentColor": "#3B82F6"
+}

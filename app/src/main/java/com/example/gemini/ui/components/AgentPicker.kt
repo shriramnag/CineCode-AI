@@ -3,6 +3,7 @@ package com.shriram.cinecode.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -28,15 +30,21 @@ val ClaudeAccent = Color(0xFFD97757)
 
 /** Antigravity's color across the app (same blue as its settings group). */
 val AgyAccent = Color(0xFF3B82F6)
+val CodexAccent = Color(0xFF10B981)
+val OpenCodeAccent = Color(0xFF8B5CF6)
 
 fun AgentKind.label(): String = when (this) {
     AgentKind.AGY -> "Antigravity"
     AgentKind.CLAUDE -> "Claude Code"
+    AgentKind.CODEX -> "Codex"
+    AgentKind.OPENCODE -> "OpenCode"
 }
 
 fun AgentKind.accent(): Color = when (this) {
     AgentKind.AGY -> AgyAccent
     AgentKind.CLAUDE -> ClaudeAccent
+    AgentKind.CODEX -> CodexAccent
+    AgentKind.OPENCODE -> OpenCodeAccent
 }
 
 /**
@@ -57,6 +65,7 @@ fun AgentPicker(
         modifier = modifier
             .clip(shape)
             .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), shape)
+            .horizontalScroll(rememberScrollState())
             .padding(3.dp),
         horizontalArrangement = Arrangement.spacedBy(3.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -69,16 +78,16 @@ fun AgentPicker(
                     .clip(RoundedCornerShape(17.dp))
                     .background(if (isSelected) accent.copy(alpha = 0.16f) else Color.Transparent)
                     .clickable { onSelect(agent) }
-                    .padding(horizontal = 14.dp, vertical = 7.dp),
+                    .padding(horizontal = 12.dp, vertical = 7.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 statusColors[agent]?.let { dot ->
                     Box(Modifier.size(7.dp).clip(CircleShape).background(dot))
-                    Spacer(Modifier.width(7.dp))
+                    Spacer(Modifier.width(6.dp))
                 }
                 Text(
                     text = agent.label(),
-                    fontSize = 13.sp,
+                    fontSize = 12.5.sp,
                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                     color = if (isSelected) accent else MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -87,15 +96,25 @@ fun AgentPicker(
     }
 }
 
-/** Small badge marking a Claude Code conversation in lists. */
+/** Small badge marking a non-default coding agent conversation in lists. */
 @Composable
-fun ClaudeBadge(modifier: Modifier = Modifier) {
+fun ClaudeBadge(
+    agent: AgentKind = AgentKind.CLAUDE,
+    modifier: Modifier = Modifier
+) {
+    val accent = agent.accent()
+    val badgeText = when (agent) {
+        AgentKind.AGY -> "AGY"
+        AgentKind.CLAUDE -> "Claude"
+        AgentKind.CODEX -> "Codex"
+        AgentKind.OPENCODE -> "OpenCode"
+    }
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(4.dp))
-            .background(ClaudeAccent.copy(alpha = 0.16f))
+            .background(accent.copy(alpha = 0.16f))
             .padding(horizontal = 5.dp, vertical = 1.dp)
     ) {
-        Text(text = "Claude", fontSize = 9.5.sp, fontWeight = FontWeight.SemiBold, color = ClaudeAccent)
+        Text(text = badgeText, fontSize = 9.5.sp, fontWeight = FontWeight.SemiBold, color = accent)
     }
 }

@@ -1301,6 +1301,7 @@ object JarvisController {
             when (agent) {
                 AgentKind.CLAUDE -> sendClaude(prompt)
                 AgentKind.AGY -> sendAgy(prompt)
+                AgentKind.CODEX, AgentKind.OPENCODE -> sendClaude(prompt)
             }
         } catch (e: Exception) {
             // the saved Jarvis chat was deleted: start a new one and send this message there (once)
@@ -1409,6 +1410,8 @@ object JarvisController {
     suspend fun setChatModel(id: String, kind: AgentKind, modelId: String) {
         when (kind) {
             AgentKind.AGY -> vm.agyBackend.rememberChatModel(id, modelId)
+            AgentKind.CODEX -> vm.codexBackend.selectModel(modelId)
+            AgentKind.OPENCODE -> vm.openCodeBackend.selectModel(modelId)
             AgentKind.CLAUDE -> {
                 val task = JarvisTasks.backendOf(id)
                 when {
@@ -1441,12 +1444,16 @@ object JarvisController {
                 "Stopped."
             }
             AgentKind.AGY -> hub.cancelCascadeInvocation(id).fold({ "Stopped." }, { "Could not stop: ${it.message}" })
+            AgentKind.CODEX -> { vm.codexBackend.stopStreaming(); "Stopped." }
+            AgentKind.OPENCODE -> { vm.openCodeBackend.stopStreaming(); "Stopped." }
         }
     }
 
     /** Messages of any chat (Claude: from the transcript; Antigravity: from its trajectory). */
     suspend fun readChat(id: String): List<ChatMessage> = when (agentOfChat(id)) {
         AgentKind.CLAUDE -> vm.claudeBackend.loadMessages(id)
+        AgentKind.CODEX -> vm.codexBackend.loadMessages(id)
+        AgentKind.OPENCODE -> vm.openCodeBackend.loadMessages(id)
         AgentKind.AGY -> {
             val steps = hub.getCascadeTrajectorySteps(id).getOrNull().orEmpty()
             com.shriram.cinecode.domain.chat.TrajectoryEngine().ingestStepsDirect(steps, id)

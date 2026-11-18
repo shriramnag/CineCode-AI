@@ -163,6 +163,26 @@ fun claudePlanLabel(raw: String): String = when (raw.lowercase()) {
     else -> raw.replaceFirstChar { it.uppercase() }
 }
 
+fun codexStatusEntry(provider: String, onConfigure: () -> Unit): AgentStatusEntry =
+    AgentStatusEntry(
+        agent = AgentKind.CODEX,
+        label = "Ready",
+        color = AgentKind.CODEX.accent(),
+        detail = "$provider • 100% Free Coding Agent",
+        action = AgentStatusAction("Configure", onConfigure),
+        isReady = true
+    )
+
+fun openCodeStatusEntry(modelCount: Int, onBrowseModels: () -> Unit): AgentStatusEntry =
+    AgentStatusEntry(
+        agent = AgentKind.OPENCODE,
+        label = "Ready",
+        color = AgentKind.OPENCODE.accent(),
+        detail = "$modelCount Free Open-Source Models",
+        action = AgentStatusAction("Models", onBrowseModels),
+        isReady = true
+    )
+
 /**
  * Connection dot for one or two agents. With two different states the upper half is [top] (Antigravity) and the
  * lower half [bottom] (Claude Code); the same state (or one agent) draws one solid dot.
@@ -195,6 +215,8 @@ fun AgentMark(agent: AgentKind, modifier: Modifier = Modifier, size: Dp = 32.dp,
             when (agent) {
                 AgentKind.AGY -> Icon(Icons.Outlined.RocketLaunch, null, tint = accent, modifier = Modifier.size(size * 0.52f))
                 AgentKind.CLAUDE -> Text("✻", color = accent, fontWeight = FontWeight.Bold, fontSize = (size.value * 0.5f).sp)
+                AgentKind.CODEX -> Text("⚡", color = accent, fontWeight = FontWeight.Bold, fontSize = (size.value * 0.46f).sp)
+                AgentKind.OPENCODE -> Text("∞", color = accent, fontWeight = FontWeight.Bold, fontSize = (size.value * 0.52f).sp)
             }
         }
         if (statusColor != null) {

@@ -536,11 +536,11 @@ object LocalEnvironmentManager {
                 |    done
                 |fi
                 |if [ -z "${'$'}TARGET" ]; then
-                |    echo "Claude Code is not installed. Install it in AntiGem: Settings > Claude Code > Account & CLI." >&2
+                |    echo "Claude Code is not installed. Install it in CineCode-AI: Settings > Claude Code > Account & CLI." >&2
                 |    exit 127
                 |fi
                 |if [ ! -x "${'$'}LOADER" ]; then
-                |    echo "The glibc runtime is missing (${'$'}LOADER). Reopen AntiGem to restore it." >&2
+                |    echo "The glibc runtime is missing (${'$'}LOADER). Reopen CineCode-AI to restore it." >&2
                 |    exit 127
                 |fi
                 |# termux-exec is a bionic library: it must not be preloaded into the glibc process
@@ -917,7 +917,7 @@ object LocalEnvironmentManager {
                     val targetUrl = if (isTermux) HARDCODED_ROOTFS_URL else UBUNTU_ROOTFS_URL
                     val targetAsset = if (isTermux) HARDCODED_ROOTFS_ASSET else UBUNTU_ROOTFS_ASSET
                     val targetSizeBytes = if (isTermux) HARDCODED_ROOTFS_SIZE_BYTES else UBUNTU_ROOTFS_SIZE_BYTES
-                    val titlePrefix = if (isTermux) "AntiGem Rootfs" else "Ubuntu Rootfs"
+                    val titlePrefix = if (isTermux) "CineCode-AI Rootfs" else "Ubuntu Rootfs"
 
                     _installerState.value = LocalInstallerState.Downloading(
                         bytesDownloaded = 0L,
