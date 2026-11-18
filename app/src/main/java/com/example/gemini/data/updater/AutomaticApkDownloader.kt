@@ -104,8 +104,12 @@ object AutomaticApkDownloader {
                 if (!targetDir.exists()) {
                     targetDir.mkdirs()
                 }
-                val safeVer = versionName.replace(Regex("[^A-Za-z0-9._-]"), "_")
-                tempFile = File(targetDir, "CineCode-AI-v${safeVer}-Signed.apk")
+                val cleanVer = versionName.trim()
+                    .removePrefix("v")
+                    .removePrefix("V")
+                    .replace(Regex("[^A-Za-z0-9._-]"), "_")
+                val apkFileName = "CineCode-AI-v${cleanVer}-Signed.apk"
+                tempFile = File(targetDir, apkFileName)
                 if (tempFile.exists()) {
                     tempFile.delete()
                 }
@@ -114,6 +118,7 @@ object AutomaticApkDownloader {
                 val request = Request.Builder()
                     .url(resolvedUrl)
                     .header("User-Agent", "CineCode-AI-Updater/${BuildConfig.VERSION_NAME}")
+                    .header("Accept", "application/vnd.android.package-archive, application/octet-stream, */*")
                     .build()
 
                 val call = httpClient.newCall(request)
@@ -122,6 +127,10 @@ object AutomaticApkDownloader {
                 call.execute().use { response ->
                     if (!response.isSuccessful) {
                         throw IllegalStateException("डाउनलोड विफल (HTTP ${response.code})")
+                    }
+                    val contentType = response.header("Content-Type").orEmpty()
+                    if (contentType.contains("text/html", ignoreCase = true)) {
+                        throw IllegalStateException("सर्वर से .apk के बजाय HTML पेज प्राप्त हुआ")
                     }
                     val body = response.body ?: throw IllegalStateException("खाली रिस्पॉन्स प्राप्त हुआ")
                     val totalBytes = body.contentLength()
@@ -194,6 +203,14 @@ object AutomaticApkDownloader {
     }
 
     private fun verifyApkArchiveForOverwrite(context: Context, apkFile: File) {
+        if (!apkFile.name.endsWith(".apk", ignoreCase = true)) {
+            throw IllegalStateException("डाउनलोड की गई फ़ाइल का एक्सटेंशन .apk नहीं है")
+        }
+        val magic = ByteArray(2)
+        apkFile.inputStream().use { it.read(magic) }
+        if (magic[0] != 'P'.code.toByte() || magic[1] != 'K'.code.toByte()) {
+            throw IllegalStateException("डाउनलोड की गई फ़ाइल वैध APK (ZIP) पैकेज नहीं है")
+        }
         val pm = context.packageManager
         val archiveInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             pm.getPackageArchiveInfo(
@@ -215,7 +232,8 @@ object AutomaticApkDownloader {
 
     private fun resolveDownloadUrl(versionName: String, preferredDownloadUrl: String): String {
         val candidate = preferredDownloadUrl.trim()
-        val taggedUrl = "https://github.com/shriramnag/CineCode-AI/releases/download/v$versionName/CineCode-AI-v$versionName-Signed.apk"
+        val cleanVer = versionName.trim().removePrefix("v").removePrefix("V")
+        val taggedUrl = "https://github.com/shriramnag/CineCode-AI/releases/download/v$cleanVer/CineCode-AI-v$cleanVer-Signed.apk"
 
         // Query latest GitHub release asset when possible, falling back cleanly to preferred URL
         val apiUrl = runCatching {
@@ -336,7 +354,8 @@ object AutomaticApkDownloader {
                 @Suppress("DEPRECATION")
                 val fallbackIntent = Intent(Intent.ACTION_INSTALL_PACKAGE).apply {
                     val authority = "${appContext.packageName}.fileprovider"
-                    data = FileProvider.getUriForFile(appContext, authority, apkFile)
+                    val apkUri = FileProvider.getUriForFile(appContext, authority, apkFile)
+                    setDataAndType(apkUri, "application/vnd.android.package-archive")
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true)

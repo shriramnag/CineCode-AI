@@ -67,9 +67,13 @@ jobs:
               if patch >= 1000:
                   minor += 1
                   patch = 0
+              if minor >= 1000:
+                  major += 1
+                  minor = 0
 
+              suffix = "-beta" if "-beta" in raw_name.lower() else ""
               next_version_code = current_code + 1
-              next_version_name = f"{major}.{minor}.{patch:03d}-beta"
+              next_version_name = f"{major}.{minor}.{patch:03d}{suffix}"
               tag_name = f"v{next_version_name}"
 
           apk_filename = f"CineCode-AI-{tag_name}-Signed.apk"
@@ -220,9 +224,7 @@ jobs:
             - **APK Asset:** `${{ env.APK_FILENAME }}`
 
             ${{ steps.version.outputs.changelog }}
-          files: |
-            app/build/outputs/apk/${{ env.APK_FILENAME }}
-            app/build/outputs/apk/**/debug/*.apk
+          files: app/build/outputs/apk/${{ env.APK_FILENAME }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
