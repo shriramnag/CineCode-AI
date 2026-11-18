@@ -3,6 +3,7 @@ name: Build and Sign CineCode Beta APK
 on:
   push:
     branches: [ "main", "master" ]
+    tags: [ "*" ]
   workflow_dispatch:
 
 permissions:
@@ -10,7 +11,7 @@ permissions:
 
 jobs:
   build:
-    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    if: "startsWith(github.ref, 'refs/tags/') || !contains(github.event.head_commit.message, '[skip ci]')"
     runs-on: ubuntu-latest
 
     env:
@@ -53,14 +54,24 @@ jobs:
           else:
               major, minor, patch = 0, 227, 542
 
-          patch += 1
-          if patch >= 1000:
-              minor += 1
-              patch = 0
+          ref = os.environ.get("GITHUB_REF", "")
+          ref_name = os.environ.get("GITHUB_REF_NAME", "")
+          is_tag_push = ref.startswith("refs/tags/")
 
-          next_version_code = current_code + 1
-          next_version_name = f"{major}.{minor}.{patch:03d}-beta"
-          tag_name = f"v{next_version_name}"
+          if is_tag_push and ref_name:
+              tag_name = ref_name
+              next_version_code = current_code
+              next_version_name = tag_name[1:] if tag_name.startswith("v") else tag_name
+          else:
+              patch += 1
+              if patch >= 1000:
+                  minor += 1
+                  patch = 0
+
+              next_version_code = current_code + 1
+              next_version_name = f"{major}.{minor}.{patch:03d}-beta"
+              tag_name = f"v{next_version_name}"
+
           apk_filename = f"CineCode-AI-{tag_name}-Signed.apk"
           repo = os.environ.get("GITHUB_REPOSITORY", "shriramnag/CineCode-AI")
 
@@ -173,6 +184,7 @@ jobs:
           ls -lh "$SIGNED_APK_PATH"
 
       - name: Commit & Sync version.json [skip ci]
+        if: "!startsWith(github.ref, 'refs/tags/')"
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -193,7 +205,29 @@ jobs:
           path: app/build/outputs/apk/${{ env.APK_FILENAME }}
           retention-days: 30
 
+      - name: Create GitHub Release Draft (Tag Push)
+        if: "startsWith(github.ref, 'refs/tags/')"
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "CineCode-AI ${{ github.ref_name }}"
+          draft: true
+          generate_release_notes: true
+          body: |
+            ### CineCode-AI Release Draft (${{ github.ref_name }})
+            - **Version Code:** `${{ env.VERSION_CODE }}`
+            - **Version Name:** `${{ env.VERSION_NAME }}`
+            - **APK Asset:** `${{ env.APK_FILENAME }}`
+
+            ${{ steps.version.outputs.changelog }}
+          files: |
+            app/build/outputs/apk/${{ env.APK_FILENAME }}
+            app/build/outputs/apk/**/debug/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Publish GitHub Beta Pre-release
+        if: "!startsWith(github.ref, 'refs/tags/')"
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.TAG_NAME }}

@@ -1,79 +1,94 @@
-name: Build & Publish Release
+name: Release APK Draft
 
 on:
   push:
-    branches:
-      - master
-    paths:
-      - 'version.json'
+    tags:
+      - "v*"
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  build-and-release:
+  release:
     runs-on: ubuntu-latest
+
+    env:
+      GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx3072m -XX:MaxMetaspaceSize=1024m -XX:+UseG1GC -Dfile.encoding=UTF-8"
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Set up Java 21
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Set up Go
+      - name: Set up Go 1.22
         uses: actions/setup-go@v5
         with:
           go-version: '1.22'
 
+      - name: Build Go IDE Bridge (Android arm64-v8a)
+        run: |
+          mkdir -p app/src/main/assets/bin
+          if [ -f "version.json" ]; then
+            cp version.json agy_ide_bridge/pkg/buildinfo/version.json
+          fi
+          cd agy_ide_bridge
+          GOTOOLCHAIN=local CGO_ENABLED=0 GOOS=android GOARCH=arm64 go build -trimpath -ldflags="-s -w" -o ../app/src/main/assets/bin/agy_ide_bridge main.go
+          chmod +x ../app/src/main/assets/bin/agy_ide_bridge
+          ls -lh ../app/src/main/assets/bin/agy_ide_bridge
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Parse version.json
+      - name: Ensure Gradle Wrapper
+        run: |
+          if [ ! -f "gradlew" ]; then
+            gradle wrapper --gradle-version 9.3.1
+          fi
+          chmod +x gradlew
+          if [ -d "scripts" ]; then
+            chmod +x scripts/*.sh 2>/dev/null || true
+          fi
+
+      - name: Resolve Release Version Metadata
         id: version
         run: |
-          VERSION_NAME=$(python3 -c "import json; print(json.load(open('version.json')).get('version_name', '1.0.0'))")
-          VERSION_CODE=$(python3 -c "import json; print(json.load(open('version.json')).get('version_code', 1))")
-          CHANGELOG=$(python3 -c "import json; cl = json.load(open('version.json')).get('changelog', ''); print('\n'.join(cl) if isinstance(cl, list) else cl)")
-          echo "tag=v${VERSION_NAME}" >> $GITHUB_OUTPUT
-          echo "name=v${VERSION_NAME}" >> $GITHUB_OUTPUT
-          echo "changelog<<EOF" >> $GITHUB_OUTPUT
-          echo "$CHANGELOG" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Restore Keystore from Secret (With Permanent Keystore Fallback)
-        run: |
-          FIXED_KEYSTORE_B64="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"
-          if [ -s "debug.keystore.base64" ]; then
-            base64 -d debug.keystore.base64 > debug.keystore
-          elif [ -s "cinecode-release.jks.base64" ]; then
-            base64 -d cinecode-release.jks.base64 > debug.keystore
-          else
-            echo "$FIXED_KEYSTORE_B64" | base64 -d > debug.keystore
+          TAG_NAME="${GITHUB_REF_NAME}"
+          VERSION_NAME="${TAG_NAME#v}"
+          VERSION_CODE=1
+          if [ -f "version.json" ]; then
+            VERSION_CODE=$(python3 -c "import json; print(int(json.load(open('version.json')).get('version_code', 1)))" 2>/dev/null || echo 1)
+            if [ -z "$VERSION_NAME" ] || [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+              VERSION_NAME=$(python3 -c "import json; print(json.load(open('version.json')).get('version_name', '1.0.0'))" 2>/dev/null || echo "1.0.0")
+              TAG_NAME="v${VERSION_NAME}"
+            fi
           fi
-          if [ -n "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" ]; then
-            echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > app/release.jks
-          else
-            cp debug.keystore app/release.jks
-          fi
-          cp debug.keystore cinecode-release.jks
+          echo "VERSION_CODE=${VERSION_CODE}" >> "$GITHUB_ENV"
+          echo "VERSION_NAME=${VERSION_NAME}" >> "$GITHUB_ENV"
+          echo "TAG_NAME=${TAG_NAME}" >> "$GITHUB_ENV"
 
-      - name: Build Release APKs
+      - name: Build Release APK
         run: |
-          chmod +x gradlew scripts/*.sh 2>/dev/null || true
-          ./scripts/build_all_apks.sh --release
+          ./gradlew assembleRelease \
+            -PAPP_VERSION_CODE="${{ env.VERSION_CODE }}" \
+            -PAPP_VERSION_NAME="${{ env.VERSION_NAME }}" \
+            --no-daemon --max-workers=2 --stacktrace
+          ls -lh app/build/outputs/apk/release/*.apk
 
-      - name: Publish GitHub Release
+      - name: Create GitHub Release Draft
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.version.outputs.tag }}
-          name: ${{ steps.version.outputs.name }}
-          body: ${{ steps.version.outputs.changelog }}
+          tag_name: ${{ env.TAG_NAME }}
+          name: "CineCode-AI ${{ env.TAG_NAME }}"
+          draft: true
           generate_release_notes: true
-          files: output/*
+          files: app/build/outputs/apk/release/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
