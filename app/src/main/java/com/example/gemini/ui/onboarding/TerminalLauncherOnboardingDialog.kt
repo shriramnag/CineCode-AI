@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -57,6 +58,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -188,14 +190,14 @@ fun TerminalLauncherOnboardingDialog(
                                         .size(54.dp)
                                         .shadow(4.dp, RoundedCornerShape(14.dp))
                                         .clip(RoundedCornerShape(14.dp))
-                                        .background(Color.White)
-                                        .padding(6.dp),
+                                        .background(Color(0xFF0A0E17)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Image(
-                                        painter = painterResource(id = R.drawable.splash_logo),
+                                        painter = painterResource(id = R.drawable.ic_launcher_foreground_cinecode),
                                         contentDescription = "CineCode-AI",
-                                        modifier = Modifier.size(42.dp)
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
                                     )
                                 }
                                 Spacer(modifier = Modifier.height(6.dp))
@@ -236,29 +238,31 @@ fun TerminalLauncherOnboardingDialog(
                                             if (selectedStyle == TerminalLauncherManager.STYLE_TERMUX) {
                                                 Color.Black
                                             } else {
-                                                Color.White
+                                                Color(0xFF0A0E17)
                                             }
-                                        )
-                                        .padding(6.dp),
+                                        ),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     if (selectedStyle == TerminalLauncherManager.STYLE_TERMUX) {
                                         Image(
                                             painter = painterResource(id = R.drawable.ic_termux_foreground),
                                             contentDescription = "Termux",
-                                            modifier = Modifier.size(38.dp)
+                                            modifier = Modifier
+                                                .padding(6.dp)
+                                                .size(38.dp)
                                         )
                                     } else {
                                         Image(
-                                            painter = painterResource(id = R.drawable.splash_logo),
-                                            contentDescription = "AntiTerm",
-                                            modifier = Modifier.size(42.dp)
+                                            painter = painterResource(id = R.drawable.ic_launcher_foreground_cinecode),
+                                            contentDescription = "CineCode Term",
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier.fillMaxSize()
                                         )
                                     }
                                 }
                                 Spacer(modifier = Modifier.height(6.dp))
                                 Text(
-                                    text = if (!isEnabled) "Hidden" else if (selectedStyle == TerminalLauncherManager.STYLE_TERMUX) "Termux" else "AntiTerm",
+                                    text = if (!isEnabled) "Hidden" else if (selectedStyle == TerminalLauncherManager.STYLE_TERMUX) "Termux" else "CineCode Term",
                                     fontSize = 11.5.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = if (!isEnabled) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
@@ -359,14 +363,14 @@ fun TerminalLauncherOnboardingDialog(
                                     modifier = Modifier
                                         .size(38.dp)
                                         .clip(RoundedCornerShape(10.dp))
-                                        .background(Color.White)
-                                        .padding(4.dp),
+                                        .background(Color(0xFF0A0E17)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Image(
-                                        painter = painterResource(id = R.drawable.splash_logo),
-                                        contentDescription = "AntiTerm",
-                                        modifier = Modifier.size(30.dp)
+                                        painter = painterResource(id = R.drawable.ic_launcher_foreground_cinecode),
+                                        contentDescription = "CineCode Term",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
                                     )
                                 }
 
@@ -374,13 +378,13 @@ fun TerminalLauncherOnboardingDialog(
 
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = "AntiTerm",
+                                        text = "CineCode Term",
                                         fontSize = 13.5.sp,
                                         fontWeight = FontWeight.SemiBold,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
-                                        text = "Modern unified icon matching CineCode-AI",
+                                        text = "Modern unified 2050 icon matching CineCode-AI",
                                         fontSize = 11.sp,
                                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                                     )

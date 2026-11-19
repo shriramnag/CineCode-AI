@@ -155,11 +155,31 @@ jobs:
             chmod +x scripts/*.sh 2>/dev/null || true
           fi
 
-      - name: Build Standard Debug APK (assembleDebug)
+      - name: Ensure Debug Keystore Exists
         run: |
-          if [ ! -f "debug.keystore" ] && [ -f "debug.keystore.base64" ]; then
+          if [ ! -s "debug.keystore" ] && [ -s "debug.keystore.base64" ]; then
             base64 -d debug.keystore.base64 > debug.keystore
           fi
+          if [ ! -s "debug.keystore" ]; then
+            echo "debug.keystore missing; generating standard Android debug keystore via keytool..."
+            keytool -genkeypair -v \
+              -keystore debug.keystore \
+              -storepass android \
+              -alias androiddebugkey \
+              -keypass android \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -dname "CN=Android Debug,O=Android,C=US"
+          fi
+          mkdir -p app
+          if [ ! -s "app/debug.keystore" ]; then
+            cp debug.keystore app/debug.keystore
+          fi
+          ls -lh debug.keystore app/debug.keystore
+
+      - name: Build Standard Debug APK (assembleDebug)
+        run: |
           rm -rf app/build/outputs/apk
           ./gradlew :app:assembleDebug \
             -PAPP_VERSION_CODE="${{ env.VERSION_CODE }}" \

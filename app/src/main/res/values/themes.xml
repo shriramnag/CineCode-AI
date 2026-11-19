@@ -5,7 +5,7 @@
     <style name="Theme.Gemini" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@drawable/splash_background</item>
         <item name="android:windowSplashScreenBackground" tools:targetApi="s">@color/splash_bg</item>
-        <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="s">@drawable/splash_logo</item>
+        <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="s">@drawable/ic_launcher_foreground_cinecode</item>
         <item name="android:statusBarColor">@color/splash_bg</item>
         <item name="android:windowLightStatusBar">@bool/splash_light_bars</item>
     </style>

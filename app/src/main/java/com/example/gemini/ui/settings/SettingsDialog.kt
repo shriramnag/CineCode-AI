@@ -1574,14 +1574,14 @@ private fun AppearanceSubScreen(
                                     modifier = Modifier
                                         .size(32.dp)
                                         .clip(RoundedCornerShape(8.dp))
-                                        .background(Color.White)
-                                        .padding(3.dp),
+                                        .background(Color(0xFF0A0E17)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     androidx.compose.foundation.Image(
-                                        painter = androidx.compose.ui.res.painterResource(id = com.shriram.cinecode.R.drawable.splash_logo),
-                                        contentDescription = "AntiTerm",
-                                        modifier = Modifier.size(26.dp)
+                                        painter = androidx.compose.ui.res.painterResource(id = com.shriram.cinecode.R.drawable.ic_launcher_foreground_cinecode),
+                                        contentDescription = "CineCode Term",
+                                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
                                     )
                                 }
 
@@ -1589,13 +1589,13 @@ private fun AppearanceSubScreen(
 
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = "AntiTerm",
+                                        text = "CineCode Term",
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.SemiBold,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
-                                        text = "Modern CineCode-AI styled icon & name",
+                                        text = "Modern CineCode-AI 2050 icon & name",
                                         fontSize = 10.5.sp,
                                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                                     )
