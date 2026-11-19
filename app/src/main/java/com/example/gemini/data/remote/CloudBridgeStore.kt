@@ -278,10 +278,23 @@ object CloudBridgeStore {
         var hitRateLimit429 = false
         var lastErrorMsg = "Cloud API error"
 
+        val globalSystemContext = runCatching {
+            com.shriram.cinecode.data.context.GlobalContext.buildAgentSystemContext()
+        }.getOrDefault("")
+
         for ((index, candidateModel) in modelsToTry.withIndex()) {
             try {
                 val url = "https://generativelanguage.googleapis.com/v1beta/models/$candidateModel:generateContent?key=$apiKey"
                 val body = JSONObject().apply {
+                    if (globalSystemContext.isNotBlank()) {
+                        put(
+                            "systemInstruction",
+                            JSONObject().put(
+                                "parts",
+                                JSONArray().put(JSONObject().put("text", globalSystemContext))
+                            )
+                        )
+                    }
                     put(
                         "contents",
                         JSONArray().put(

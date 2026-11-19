@@ -1,4 +1,4 @@
-# ProGuard & R8 optimization rules for AntiGem
+# ProGuard & R8 optimization rules for CineCode-AI
 
 # Kotlin Coroutines
 -keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {}
@@ -21,10 +21,6 @@
     @kotlinx.serialization.SerialName <fields>;
     @kotlinx.serialization.Serializable <fields>;
 }
-
-# TelemetryDeck Kotlin SDK (release minify)
--keep class com.telemetrydeck.sdk.** { *; }
--dontwarn com.telemetrydeck.sdk.**
 
 # OkHttp & Okio
 -dontwarn okhttp3.**

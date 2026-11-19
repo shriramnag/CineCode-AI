@@ -242,7 +242,7 @@ object ImageDownloadHelper {
                     com.shriram.cinecode.data.remote.AgyBridgeService.instance.client else OkHttpClient()
                 val req = Request.Builder()
                     .url(fixedSource)
-                    .header("User-Agent", "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36 AntiGem/1.0")
+                    .header("User-Agent", "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36 CineCode-AI/1.0")
                     .get()
                     .build()
                 client.newCall(req).execute().use { resp ->

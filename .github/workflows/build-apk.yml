@@ -145,7 +145,7 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Ensure Gradle Wrapper & Generate Dynamic Per-Build Keystore
+      - name: Ensure Gradle Wrapper
         run: |
           if [ ! -f "gradlew" ]; then
             gradle wrapper --gradle-version 9.3.1
@@ -155,81 +155,20 @@ jobs:
             chmod +x scripts/*.sh 2>/dev/null || true
           fi
 
-          RUN_NUM="${{ github.run_number }}"
-          DYNAMIC_KS="dynamic-build-${RUN_NUM}.jks"
-          DYNAMIC_ALIAS="cinecode_key_${RUN_NUM}"
-          rm -f "$DYNAMIC_KS" debug.keystore
-          keytool -genkeypair -v \
-            -keystore "$DYNAMIC_KS" \
-            -storepass android \
-            -alias "$DYNAMIC_ALIAS" \
-            -keypass android \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -dname "CN=CineCode AI Build ${RUN_NUM}, O=CineCode, C=IN"
-
-          # Provide runner-local debug.keystore generated dynamically for any debug fallback task
-          keytool -genkeypair -v \
-            -keystore debug.keystore \
-            -storepass android \
-            -alias androiddebugkey \
-            -keypass android \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -dname "CN=Android Debug Build ${RUN_NUM}, O=Android, C=US"
-
-          echo "DYNAMIC_KS=${DYNAMIC_KS}" >> "$GITHUB_ENV"
-          echo "DYNAMIC_ALIAS=${DYNAMIC_ALIAS}" >> "$GITHUB_ENV"
-
-      - name: Build & Sign APK with Fresh Dynamic Keystore (V1 + V2)
+      - name: Build Debug APK (Standard assembleDebug)
         run: |
-          ./gradlew :app:assembleRelease \
-            -PAPP_VERSION_CODE="${{ env.VERSION_CODE }}" \
-            -PAPP_VERSION_NAME="${{ env.VERSION_NAME }}" \
-            --no-daemon --max-workers=2 --stacktrace || \
           ./gradlew :app:assembleDebug \
             -PAPP_VERSION_CODE="${{ env.VERSION_CODE }}" \
             -PAPP_VERSION_NAME="${{ env.VERSION_NAME }}" \
             --no-daemon --max-workers=2 --stacktrace
 
-          TARGET_APK=$(find app/build/outputs/apk/release -type f -name "*.apk" 2>/dev/null | head -n 1)
-          if [ -z "$TARGET_APK" ]; then
-            TARGET_APK=$(find app/build/outputs/apk/debug -type f -name "*.apk" 2>/dev/null | head -n 1)
-          fi
-          if [ -z "$TARGET_APK" ]; then
-            echo "No APK found in app/build/outputs/apk/"
+          BUILT_APK=$(find app/build/outputs/apk/debug -type f -name "*.apk" 2>/dev/null | head -n 1)
+          if [ -z "$BUILT_APK" ]; then
+            echo "No debug APK found in app/build/outputs/apk/debug/"
             exit 1
           fi
-          echo "Built APK: $TARGET_APK"
-
-          SDK_ROOT="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
-          BUILD_TOOLS_VERSION=$(ls "$SDK_ROOT/build-tools" | sort -V | tail -n 1)
-          ZIPALIGN="$SDK_ROOT/build-tools/$BUILD_TOOLS_VERSION/zipalign"
-          APKSIGNER="$SDK_ROOT/build-tools/$BUILD_TOOLS_VERSION/apksigner"
-
-          ALIGNED_APK="app/build/outputs/apk/aligned-temp.apk"
           RELEASE_APK_PATH="app/build/outputs/apk/${{ env.APK_FILENAME }}"
-
-          if [ -x "$ZIPALIGN" ]; then
-            "$ZIPALIGN" -f -p 4 "$TARGET_APK" "$ALIGNED_APK" || cp "$TARGET_APK" "$ALIGNED_APK"
-          else
-            cp "$TARGET_APK" "$ALIGNED_APK"
-          fi
-
-          "$APKSIGNER" sign \
-            --ks "${{ env.DYNAMIC_KS }}" \
-            --ks-key-alias "${{ env.DYNAMIC_ALIAS }}" \
-            --ks-pass pass:android \
-            --key-pass pass:android \
-            --v1-signing-enabled true \
-            --v2-signing-enabled true \
-            --out "$RELEASE_APK_PATH" \
-            "$ALIGNED_APK"
-
-          rm -f "$ALIGNED_APK"
-          "$APKSIGNER" verify --verbose --print-certs "$RELEASE_APK_PATH"
+          cp "$BUILT_APK" "$RELEASE_APK_PATH"
           ls -lh "$RELEASE_APK_PATH"
 
       - name: Commit & Sync version.json [skip ci]

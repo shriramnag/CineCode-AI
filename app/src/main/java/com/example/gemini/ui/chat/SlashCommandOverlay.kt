@@ -125,7 +125,7 @@ private fun SlashRow(item: SlashCommandItem, group: SlashGroup, query: String, r
             Modifier.size(30.dp).clip(RoundedCornerShape(9.dp)).background(group.color.copy(alpha = 0.13f)),
             contentAlignment = Alignment.Center
         ) {
-            // Custom AntiGem plugins carry their icon file in path
+            // Custom CineCode-AI plugins carry their icon file in path
             if (item.type == "plugin" && item.path.isNotBlank()) com.shriram.cinecode.ui.settings.PluginIcon(item.path, 30.dp)
             else Icon(if (item.type == "skill" && item.pluginName == null) Icons.Outlined.AutoAwesome else group.icon, null, tint = group.color, modifier = Modifier.size(16.dp))
         }

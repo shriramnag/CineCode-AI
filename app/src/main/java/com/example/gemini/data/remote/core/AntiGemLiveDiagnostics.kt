@@ -26,28 +26,26 @@ object AntiGemLiveDiagnostics {
     private val _snapshot = MutableStateFlow(DiagnosticsSnapshot())
     val snapshot: StateFlow<DiagnosticsSnapshot> = _snapshot.asStateFlow()
 
-    private var monitorJob: Job? = null
+    private var refreshJob: Job? = null
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
     fun start() {
-        if (monitorJob?.isActive == true) return
-        monitorJob = scope.launch {
-            while (isActive) {
-                try {
-                    updateSnapshot()
-                } catch (_: Exception) {}
-                delay(500)
-            }
-        }
+        refreshOnce(includeStacks = false)
     }
 
     fun stop() {
-        monitorJob?.cancel()
-        monitorJob = null
+        refreshJob?.cancel()
+        refreshJob = null
     }
 
-    private suspend fun updateSnapshot() {
-        // Measure Dispatchers.IO responsiveness
+    fun refreshOnce(includeStacks: Boolean = false) {
+        if (refreshJob?.isActive == true) return
+        refreshJob = scope.launch {
+            runCatching { updateSnapshot(includeStacks) }
+        }
+    }
+
+    private suspend fun updateSnapshot(includeStacks: Boolean) {
         val startProbe = System.currentTimeMillis()
         var lag = 0L
         try {
@@ -58,27 +56,29 @@ object AntiGemLiveDiagnostics {
             lag = -1L
         }
 
-        val allThreads = Thread.getAllStackTraces()
-        val totalThreads = allThreads.size
-
-        val summary = allThreads.keys.groupBy { t ->
-            when {
-                t.name.startsWith("OkHttp") -> "OkHttp"
-                t.name.startsWith("DefaultDispatcher-worker") -> "Coroutines-IO"
-                t.name.startsWith("pool-") -> "Executors"
-                t.name.contains("Bridge") -> "Bridge"
-                else -> "Other"
-            }
-        }.map { (group, list) -> "$group: ${list.size}" }.joinToString(" | ")
-
-        // Identify any thread blocked or waiting in socket read
+        val activeThreads = Thread.activeCount()
+        var summary = "Active threads: $activeThreads"
         val blockedList = mutableListOf<String>()
-        allThreads.forEach { (t, stack) ->
-            if (t.name.startsWith("DefaultDispatcher") || t.name.startsWith("OkHttp")) {
-                val hasSocketRead = stack.any { it.methodName.contains("read", ignoreCase = true) || it.className.contains("Socket", ignoreCase = true) }
-                if (hasSocketRead) {
-                    val frame = stack.firstOrNull { !it.className.startsWith("java.") && !it.className.startsWith("kotlin.") }
-                    blockedList.add("${t.name} -> ${frame?.className?.substringAfterLast('.') ?: "Socket"}.${frame?.methodName ?: "read"}:${frame?.lineNumber ?: 0}")
+
+        if (includeStacks) {
+            val allThreads = Thread.getAllStackTraces()
+            summary = allThreads.keys.groupBy { t ->
+                when {
+                    t.name.startsWith("OkHttp") -> "OkHttp"
+                    t.name.startsWith("DefaultDispatcher-worker") -> "Coroutines-IO"
+                    t.name.startsWith("pool-") -> "Executors"
+                    t.name.contains("Bridge") -> "Bridge"
+                    else -> "Other"
+                }
+            }.map { (group, list) -> "$group: ${list.size}" }.joinToString(" | ")
+
+            allThreads.forEach { (t, stack) ->
+                if (t.name.startsWith("DefaultDispatcher") || t.name.startsWith("OkHttp")) {
+                    val hasSocketRead = stack.any { it.methodName.contains("read", ignoreCase = true) || it.className.contains("Socket", ignoreCase = true) }
+                    if (hasSocketRead) {
+                        val frame = stack.firstOrNull { !it.className.startsWith("java.") && !it.className.startsWith("kotlin.") }
+                        blockedList.add("${t.name} -> ${frame?.className?.substringAfterLast('.') ?: "Socket"}.${frame?.methodName ?: "read"}:${frame?.lineNumber ?: 0}")
+                    }
                 }
             }
         }
@@ -90,7 +90,7 @@ object AntiGemLiveDiagnostics {
         val idePool = IdeApiClient.okHttpClient.connectionPool
 
         _snapshot.value = DiagnosticsSnapshot(
-            activeJvmThreads = totalThreads,
+            activeJvmThreads = activeThreads,
             threadGroupSummary = summary,
             agyRunning = agyDisp.runningCallsCount(),
             agyQueued = agyDisp.queuedCallsCount(),

@@ -212,6 +212,12 @@ private fun LiveCloudPreviewTab(
                             webChromeClient = WebChromeClient()
                             loadUrl(activeUrl)
                         }
+                    },
+                    onRelease = { webView ->
+                        runCatching {
+                            webView.stopLoading()
+                            webView.destroy()
+                        }
                     }
                 )
             }

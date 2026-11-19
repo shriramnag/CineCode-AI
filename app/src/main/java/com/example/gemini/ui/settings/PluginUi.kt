@@ -92,14 +92,14 @@ fun bundledSdkZip(context: Context): ByteArray {
     return out.toByteArray()
 }
 
-/** Saves text to Downloads/AntiGem and toasts where it went. */
+/** Saves text to Downloads/CineCode-AI and toasts where it went. */
 suspend fun saveToDownloads(context: Context, fileName: String, text: String, mime: String = "text/markdown") =
     saveToDownloads(context, fileName, text.toByteArray(), mime)
 
 suspend fun saveToDownloads(context: Context, fileName: String, bytes: ByteArray, mime: String) =
     saveToDownloads(context, fileName, mime) { it.write(bytes) }
 
-/** Copies [file] to Downloads/AntiGem without loading it into memory. */
+/** Copies [file] to Downloads/CineCode-AI without loading it into memory. */
 suspend fun saveToDownloads(context: Context, file: File, mime: String) =
     saveToDownloads(context, file.name, mime) { out -> file.inputStream().use { it.copyTo(out) } }
 

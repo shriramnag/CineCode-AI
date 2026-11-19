@@ -39,7 +39,7 @@ object AndroidAutomation {
         "outward-facing: uninstalling, deleting, sending messages, payments, changing security settings. " +
         "If a tool says a permission or ADB is missing, tell the user exactly what to do and stop."
 
-    private const val ADB_NEEDED = "This needs ADB. Ask the user to open AntiGem → Settings → ADB Connect and connect " +
+    private const val ADB_NEEDED = "This needs ADB. Ask the user to open CineCode-AI → Settings → ADB Connect and connect " +
         "(pair once, with Wireless debugging on), then try again."
 
     /** Elements of the latest android_get_ui_tree, by id. */
@@ -731,7 +731,7 @@ object AndroidAutomation {
 
     private suspend fun uninstall(context: Context, svc: AutomationAccessibilityService, args: JSONObject): JSONObject {
         val pkg = packageArg(args)
-        if (pkg == context.packageName) return error("Refusing to uninstall AntiGem itself.")
+        if (pkg == context.packageName) return error("Refusing to uninstall CineCode-AI itself.")
         val device = AdbConnectManager.ensureConnected()
         if (device != null) {
             val keep = if (args.optBoolean("keep_data")) "-k " else ""

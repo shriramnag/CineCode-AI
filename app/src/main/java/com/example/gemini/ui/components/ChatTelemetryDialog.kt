@@ -77,7 +77,7 @@ fun ChatTelemetryDialog(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Chat Telemetry & Tokens",
+                        text = "Chat Token Summary",
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -86,7 +86,7 @@ fun ChatTelemetryDialog(
 
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Aggregated usage telemetry for \"${conversation?.title ?: "Current Chat"}\":",
+                    text = "Local token usage summary for \"${conversation?.title ?: "Current Chat"}\":",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

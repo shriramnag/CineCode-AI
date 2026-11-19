@@ -35,7 +35,7 @@ object ConversationExportHelper {
     }
 
     /**
-     * Exports a conversation by ID, saving it to Downloads/AntiGem/Exports and opening it.
+     * Exports a conversation by ID, saving it to Downloads/CineCode-AI/Exports and opening it.
      */
     suspend fun exportConversation(
         context: Context,
@@ -79,8 +79,8 @@ object ConversationExportHelper {
                 ExportFormat.HTML -> generateHtml(title, conversationId, messages)
             }
 
-            // Save to Downloads/AntiGem/Exports
-            val (savedUri, mimeType, savedFileName) = saveToAntiGemExports(context, fileName, content, format.mimeType)
+            // Save to Downloads/CineCode-AI/Exports
+            val (savedUri, mimeType, savedFileName) = saveToCineCodeExports(context, fileName, content, format.mimeType)
 
             withContext(Dispatchers.Main) {
                 if (savedUri != null) {
@@ -128,7 +128,7 @@ object ConversationExportHelper {
         }
     }
 
-    private fun saveToAntiGemExports(
+    private fun saveToCineCodeExports(
         context: Context,
         fileName: String,
         content: String,

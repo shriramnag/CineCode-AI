@@ -178,7 +178,7 @@ fun TerminalLauncherOnboardingDialog(
                             horizontalArrangement = Arrangement.SpaceEvenly,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // Icon 1: AntiGem (Main App)
+                            // Icon 1: CineCode-AI (Main App)
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 modifier = Modifier.width(90.dp)

@@ -1507,7 +1507,7 @@ fun ChatScreen(
                             IconButton(onClick = { showChatTelemetryDialog = true }) {
                                 Icon(
                                     imageVector = Icons.Outlined.Analytics,
-                                    contentDescription = "Chat Telemetry & Tokens",
+                                    contentDescription = "Chat Token Summary",
                                     tint = ClaudeTerracotta
                                 )
                             }
@@ -2038,7 +2038,7 @@ fun ChatScreen(
                     val isSlashActive = slash != null
                     val slashQuery = slash?.query ?: ""
 
-                    // `/plu:` browses custom AntiGem plugins and their skills; custom commands join the normal list
+                    // `/plu:` browses custom CineCode-AI plugins and their skills; custom commands join the normal list
                     val customCommands = com.shriram.cinecode.data.remote.CustomSlashCommands.commands.toList()
                     val installedPlugins = com.shriram.cinecode.ui.browser.BrowserExtensionManager.instance.extensions.toList()
                     val slashSuggestions = remember(slashQuery, effectiveSlashCommands, isSlashActive, customCommands, installedPlugins) {

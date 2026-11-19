@@ -1,7 +1,7 @@
 package com.shriram.cinecode.data.jarvis
 
 /**
- * What Jarvis knows about using AntiGem ("how do I add an MCP server", "where is the theme"), so it can guide the user by
+ * What Jarvis knows about using CineCode-AI ("how do I add an MCP server", "where is the theme"), so it can guide the user by
  * voice. The settings pages come from the app's own list, so their names are always the real ones.
  */
 object JarvisAppGuide {

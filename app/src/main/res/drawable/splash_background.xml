@@ -3,7 +3,7 @@
     <!-- Splash background: always white (splash_colors.xml) -->
     <item android:drawable="@color/splash_bg" />
 
-    <!-- Centered AntiGem Logo -->
+    <!-- Centered CineCode-AI Logo -->
     <item
         android:gravity="center"
         android:width="160dp"

@@ -144,7 +144,6 @@ dependencies {
     implementation(libs.tukaani.xz)
     implementation(libs.jsoup)
     implementation(libs.jlatexmath)
-    // implementation(libs.telemetrydeck)
     implementation(libs.termux.terminal.emulator)
 
     testImplementation(libs.junit)

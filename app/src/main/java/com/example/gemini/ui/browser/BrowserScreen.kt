@@ -1899,7 +1899,7 @@ fun BrowserDiagnosticOverlay(
 
                 Spacer(modifier = Modifier.height(18.dp))
 
-                // Expandable Telemetry / Console Logs
+                // Expandable Console & Network Logs
                 val logCount = tab.consoleLogs.size
                 val netCount = tab.networkErrors.size
                 val recentLogs = remember(logCount, netCount) {

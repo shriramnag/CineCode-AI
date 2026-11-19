@@ -27,7 +27,6 @@ xz = "1.9"
 jsoup = "1.17.2"
 jlatexmath = "0.2.0"
 work = "2.9.1"
-telemetrydeck = "7.3.1"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidxCore" }
@@ -70,7 +69,6 @@ tukaani-xz = { module = "org.tukaani:xz", version.ref = "xz" }
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 jlatexmath = { module = "ru.noties:jlatexmath-android", version.ref = "jlatexmath" }
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
-telemetrydeck = { module = "com.telemetrydeck:kotlin-sdk", version.ref = "telemetrydeck" }
 termux-terminal-emulator = { module = "com.github.termux.termux-app:terminal-emulator", version = "v0.118.0" }
 
 [plugins]

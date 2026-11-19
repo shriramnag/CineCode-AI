@@ -91,7 +91,7 @@ object ConversationShareHelper {
                 Pair(content.toByteArray(Charsets.UTF_8), fn)
             }
 
-            // 1. Auto-save to Downloads/AntiGem/Exports
+            // 1. Auto-save to Downloads/CineCode-AI/Exports
             val savedFileName = saveToDownloadsExports(context, fileName, bytes)
 
             // 2. Save a copy to cache for sharing via FileProvider
