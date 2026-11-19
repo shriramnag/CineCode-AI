@@ -159,8 +159,22 @@ fun ControlChip(
 
 /** "in 2h 14m" / "Tue 09:00" for an ISO-8601 or epoch-seconds reset time. */
 fun formatReset(iso: String?, epochSeconds: Long? = null): String? {
-    val millis = epochSeconds?.let { it * 1000 } ?: iso?.let { runCatching { java.time.OffsetDateTime.parse(it).toInstant().toEpochMilli() }.getOrNull() }
-    ?: return null
+    val millis = epochSeconds?.let { it * 1000 } ?: iso?.let { raw ->
+        runCatching {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                java.time.OffsetDateTime.parse(raw).toInstant().toEpochMilli()
+            } else {
+                val patterns = listOf("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", "yyyy-MM-dd'T'HH:mm:ssXXX", "yyyy-MM-dd'T'HH:mm:ss'Z'")
+                patterns.firstNotNullOfOrNull { pattern ->
+                    runCatching {
+                        java.text.SimpleDateFormat(pattern, java.util.Locale.US).apply {
+                            timeZone = java.util.TimeZone.getTimeZone("UTC")
+                        }.parse(raw)?.time
+                    }.getOrNull()
+                }
+            }
+        }.getOrNull()
+    } ?: return null
     val diff = millis - System.currentTimeMillis()
     if (diff <= 0) return "now"
     val mins = diff / 60_000

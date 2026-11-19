@@ -1,6 +1,11 @@
-import { Entry, Log } from "har-format";
-
 declare global {
-    type HARFormatEntry = Entry;
-    type HARFormatLog = Log;
+    interface HARFormatEntry {
+        [key: string]: unknown;
+    }
+    interface HARFormatLog {
+        version: string;
+        entries: HARFormatEntry[];
+        [key: string]: unknown;
+    }
 }
+export {};

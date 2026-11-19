@@ -67,7 +67,7 @@ fun ProjectSidebar(
     onRefreshTree: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var projectsDropdownExpanded by mutableStateOf(false)
+    var projectsDropdownExpanded by remember { mutableStateOf(false) }
     var selectedTab by remember { mutableStateOf(SidebarTab.EXPLORER) }
     var showCreateFileDialog by remember { mutableStateOf<String?>(null) } // parentPath
     var isNewFolderMode by remember { mutableStateOf(false) }

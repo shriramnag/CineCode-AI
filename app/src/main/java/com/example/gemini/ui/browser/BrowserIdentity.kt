@@ -1,5 +1,6 @@
 package com.shriram.cinecode.ui.browser
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
 import android.webkit.WebSettings
@@ -59,6 +60,7 @@ object BrowserIdentity {
     fun canSetClientHints() = WebViewFeature.isFeatureSupported(WebViewFeature.USER_AGENT_METADATA)
 
     /** Applies the UA string, matching client hints and the X-Requested-With removal to one WebView. */
+    @SuppressLint("RestrictedApi")
     fun applyTo(settings: WebSettings, context: Context, desktop: Boolean) {
         if (WebViewFeature.isFeatureSupported(WebViewFeature.REQUESTED_WITH_HEADER_ALLOW_LIST)) {
             WebSettingsCompat.setRequestedWithHeaderOriginAllowList(settings, emptySet())

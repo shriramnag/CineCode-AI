@@ -8,7 +8,7 @@ import com.jcraft.jsch.HostKeyRepository
 import com.jcraft.jsch.JSch
 import com.jcraft.jsch.Session
 import com.jcraft.jsch.UserInfo
-import java.util.Base64
+import android.util.Base64
 import java.util.Properties
 
 /**
@@ -103,7 +103,7 @@ object SshSessionFactory {
 
         override fun check(host: String?, key: ByteArray?): Int {
             val store = prefs ?: return HostKeyRepository.OK // no context yet: do not block
-            val presented = key?.let { Base64.getEncoder().encodeToString(it) } ?: return HostKeyRepository.NOT_INCLUDED
+            val presented = key?.let { Base64.encodeToString(it, Base64.NO_WRAP) } ?: return HostKeyRepository.NOT_INCLUDED
             val saved = store.getString(id, null)
             if (saved == null) {
                 store.edit().putString(id, "key|$presented").apply()

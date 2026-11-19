@@ -432,15 +432,30 @@ object LocalEnvironmentManager {
         return runCatching {
             links.forEach { (name, destination) ->
                 val link = File(ubuntuDir, name)
-                val path = link.toPath()
-                if (java.nio.file.Files.isSymbolicLink(path)) {
-                    val currentTarget = java.nio.file.Files.readSymbolicLink(path).toString()
-                    if (currentTarget != destination) {
-                        java.nio.file.Files.delete(path)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    val path = link.toPath()
+                    if (java.nio.file.Files.isSymbolicLink(path)) {
+                        val currentTarget = java.nio.file.Files.readSymbolicLink(path).toString()
+                        if (currentTarget != destination) {
+                            java.nio.file.Files.delete(path)
+                            Os.symlink(destination, link.absolutePath)
+                        }
+                    } else if (!link.exists()) {
                         Os.symlink(destination, link.absolutePath)
                     }
-                } else if (!link.exists()) {
-                    Os.symlink(destination, link.absolutePath)
+                } else {
+                    val isSymlink = runCatching {
+                        android.system.OsConstants.S_ISLNK(Os.lstat(link.absolutePath).st_mode)
+                    }.getOrDefault(false)
+                    if (isSymlink) {
+                        val currentTarget = runCatching { Os.readlink(link.absolutePath) }.getOrNull()
+                        if (currentTarget != destination) {
+                            runCatching { Os.remove(link.absolutePath) }.onFailure { link.delete() }
+                            Os.symlink(destination, link.absolutePath)
+                        }
+                    } else if (!link.exists()) {
+                        Os.symlink(destination, link.absolutePath)
+                    }
                 }
             }
             File(ubuntuDir, "usr/bin/env").setExecutable(true, false)
@@ -2402,11 +2417,49 @@ All files created here persist inside the application.
                 pb.environment()["HOME"] = homeDir.absolutePath
                 pb.environment()["PATH"] = "${binDir.absolutePath}:/system/bin"
                 val process = pb.start()
-                process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS)
+                waitForProcessCompat(process, 5, TimeUnit.SECONDS)
                 log("Generated fresh OpenSSH host keys via ssh-keygen -A")
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to run ssh-keygen -A: ${e.message}")
             }
+        }
+    }
+
+    private fun isProcessAliveCompat(process: Process): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            process.isAlive
+        } else {
+            try {
+                process.exitValue()
+                false
+            } catch (_: IllegalThreadStateException) {
+                true
+            }
+        }
+    }
+
+    private fun waitForProcessCompat(process: Process, timeout: Long, unit: TimeUnit): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            return process.waitFor(timeout, unit)
+        }
+        val deadline = System.currentTimeMillis() + unit.toMillis(timeout)
+        while (System.currentTimeMillis() < deadline) {
+            if (!isProcessAliveCompat(process)) return true
+            try {
+                Thread.sleep(50)
+            } catch (_: InterruptedException) {
+                Thread.currentThread().interrupt()
+                return !isProcessAliveCompat(process)
+            }
+        }
+        return !isProcessAliveCompat(process)
+    }
+
+    private fun destroyProcessForciblyCompat(process: Process) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            process.destroyForcibly()
+        } else {
+            process.destroy()
         }
     }
 
@@ -2519,10 +2572,10 @@ All files created here persist inside the application.
                     outputBuilder.append(line).append("\n")
                     onOutputLine?.invoke(line!!)
                 }
-                val exited = process.waitFor(timeoutSeconds, TimeUnit.SECONDS)
+                val exited = waitForProcessCompat(process, timeoutSeconds, TimeUnit.SECONDS)
                 val durationMs = System.currentTimeMillis() - startTime
                 if (!exited) {
-                    process.destroyForcibly()
+                    destroyProcessForciblyCompat(process)
                     outputBuilder.append("\n[Process timed out after ${timeoutSeconds}s]")
                     LocalCommandResult(exitCode = 124, output = outputBuilder.toString().trim(), durationMs = durationMs)
                 } else {
@@ -2619,11 +2672,11 @@ All files created here persist inside the application.
                 onOutputLine?.invoke(line!!)
             }
 
-            val exited = process.waitFor(timeoutSeconds, TimeUnit.SECONDS)
+            val exited = waitForProcessCompat(process, timeoutSeconds, TimeUnit.SECONDS)
             val durationMs = System.currentTimeMillis() - startTime
 
             if (!exited) {
-                process.destroyForcibly()
+                destroyProcessForciblyCompat(process)
                 outputBuilder.append("\n[Process timed out after ${timeoutSeconds}s]")
                 LocalCommandResult(exitCode = 124, output = outputBuilder.toString().trim(), durationMs = durationMs)
             } else {
@@ -2774,9 +2827,9 @@ All files created here persist inside the application.
                 durationMs = System.currentTimeMillis() - startTime
             )
         } finally {
-            if (process.isAlive) {
+            if (isProcessAliveCompat(process)) {
                 try {
-                    process.destroyForcibly()
+                    destroyProcessForciblyCompat(process)
                 } catch (_: Exception) {}
             }
         }
@@ -2850,9 +2903,9 @@ All files created here persist inside the application.
             withContext(Dispatchers.Main) { onLogLine(msg) }
             LocalCommandResult(1, msg, System.currentTimeMillis() - startTime)
         } finally {
-            if (process.isAlive) {
+            if (isProcessAliveCompat(process)) {
                 try {
-                    process.destroyForcibly()
+                    destroyProcessForciblyCompat(process)
                 } catch (_: Exception) {}
             }
         }

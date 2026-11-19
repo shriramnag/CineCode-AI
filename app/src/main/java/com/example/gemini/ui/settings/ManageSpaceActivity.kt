@@ -183,21 +183,28 @@ private fun ManageSpaceScreen(
             }
 
             if (!calculatedViaStats) {
+                fun isSymbolicLinkCompat(file: File): Boolean = try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        java.nio.file.Files.isSymbolicLink(file.toPath())
+                    } else {
+                        val st = android.system.Os.lstat(file.absolutePath)
+                        android.system.OsConstants.S_ISLNK(st.st_mode)
+                    }
+                } catch (_: Exception) {
+                    false
+                }
+
                 fun dirSize(dir: File?): Long {
                     if (dir == null || !dir.exists()) return 0L
                     var s = 0L
                     try {
                         dir.walkTopDown()
                             .onEnter { file ->
-                                try {
-                                    !java.nio.file.Files.isSymbolicLink(file.toPath())
-                                } catch (_: Exception) {
-                                    true
-                                }
+                                !isSymbolicLinkCompat(file)
                             }
                             .forEach { file ->
                                 try {
-                                    if (file.isFile && !java.nio.file.Files.isSymbolicLink(file.toPath())) {
+                                    if (file.isFile && !isSymbolicLinkCompat(file)) {
                                         s += file.length()
                                     }
                                 } catch (_: Exception) {}

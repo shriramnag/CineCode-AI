@@ -144,11 +144,12 @@ fun FullScreenLocalToolsInstaller(
                 Spacer(modifier = Modifier.height(28.dp))
 
                 AnimatedContent(
-                    targetState = installerState::class,
+                    targetState = installerState,
+                    contentKey = { it::class },
                     transitionSpec = { fadeIn(tween(220)) togetherWith fadeOut(tween(160)) },
                     label = "installerBody"
-                ) { _ ->
-                    when (val state = installerState) {
+                ) { state ->
+                    when (state) {
                         is LocalInstallerState.Idle -> SourcePicker(
                             isTermux = isTermux,
                             selected = selectedSourceType,

@@ -1071,7 +1071,11 @@ class BrowserSessionManager private constructor() {
                 }
 
                 override fun onRenderProcessGone(view: WebView?, detail: RenderProcessGoneDetail?): Boolean {
-                    val didCrash = detail?.didCrash() == true
+                    val didCrash = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        detail?.didCrash() == true
+                    } else {
+                        false
+                    }
                     val msg = if (didCrash) "WebView render process crashed unexpectedly." else "WebView render process was terminated by OS (Memory Pressure)."
                     val err = BrowserNetworkError(
                         url = tab.url,

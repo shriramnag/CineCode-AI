@@ -1,6 +1,12 @@
-/// <reference types="filesystem" />
 /// <reference path="./har-format/index.d.ts" />
 /// <reference path="./chrome-cast/index.d.ts" />
+
+interface DirectoryEntry {
+    readonly isFile: boolean;
+    readonly isDirectory: boolean;
+    readonly name: string;
+    readonly fullPath: string;
+}
 
 // Helpers
 type SetRequired<T, K extends keyof T> = Omit<T, K> & Required<Pick<T, K>>;

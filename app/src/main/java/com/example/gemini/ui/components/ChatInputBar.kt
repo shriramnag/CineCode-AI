@@ -1240,19 +1240,19 @@ fun ChatInputBar(
                             Surface(
                                 onClick = {
                                     val trimmed = textFieldState.text.toString().trim()
-                                        if (!isAuth) {
-                                            Toast.makeText(context, "Please sign in first to send messages.", Toast.LENGTH_SHORT).show()
-                                            return@Surface
-                                        }
-                                        if (!isOnline) {
-                                            Toast.makeText(context, offlineMessage, Toast.LENGTH_SHORT).show()
-                                            return@Surface
-                                        }
-                                        if (isLiveDictating) {
-                                            stopLiveDictation()
-                                        }
-                                        onSendMessage(trimmed)
-                                        textFieldState.clearText()
+                                    if (!isAuth) {
+                                        Toast.makeText(context, "Please sign in first to send messages.", Toast.LENGTH_SHORT).show()
+                                        return@Surface
+                                    }
+                                    if (!isOnline) {
+                                        Toast.makeText(context, offlineMessage, Toast.LENGTH_SHORT).show()
+                                        return@Surface
+                                    }
+                                    if (isLiveDictating) {
+                                        stopLiveDictation()
+                                    }
+                                    onSendMessage(trimmed)
+                                    textFieldState.clearText()
                                 },
                                 shape = CircleShape,
                                 color = sendBtnColor,

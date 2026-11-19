@@ -1,6 +1,7 @@
 package com.shriram.cinecode.data.local
 
 import android.content.Context
+import android.os.Build
 import android.util.Log
 import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient
@@ -473,9 +474,28 @@ object LocalSandboxExecutor {
         val process = ProcessBuilder(cmd)
             .directory(workDir)
             .start()
-        val finished = process.waitFor(timeoutSeconds, TimeUnit.SECONDS)
+        val finished = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            process.waitFor(timeoutSeconds, TimeUnit.SECONDS)
+        } else {
+            val deadline = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(timeoutSeconds)
+            var done = false
+            while (System.currentTimeMillis() < deadline) {
+                try {
+                    process.exitValue()
+                    done = true
+                    break
+                } catch (_: IllegalThreadStateException) {
+                    Thread.sleep(50)
+                }
+            }
+            done
+        }
         if (!finished) {
-            process.destroyForcibly()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                process.destroyForcibly()
+            } else {
+                process.destroy()
+            }
             return@runCatching Triple(124, "", "Sandbox execution timed out after ${timeoutSeconds}s")
         }
         val stdout = process.inputStream.bufferedReader().readText()

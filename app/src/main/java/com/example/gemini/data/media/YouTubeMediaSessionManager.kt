@@ -435,11 +435,12 @@ object YouTubeMediaSessionManager {
                 addAction(ACTION_YT_PAUSE)
                 addAction(ACTION_YT_STOP)
             }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                context.applicationContext.registerReceiver(mediaActionReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
-            } else {
-                context.applicationContext.registerReceiver(mediaActionReceiver, filter)
-            }
+            ContextCompat.registerReceiver(
+                context.applicationContext,
+                mediaActionReceiver,
+                filter,
+                ContextCompat.RECEIVER_NOT_EXPORTED
+            )
             isReceiverRegistered = true
         }
     }
@@ -625,7 +626,12 @@ object YouTubeMediaSessionManager {
             .setMediaSession(session.sessionToken)
             .setShowActionsInCompactView(0, 1)
 
-        val builder = Notification.Builder(context, CHANNEL_ID)
+        val builder = (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Notification.Builder(context, CHANNEL_ID)
+        } else {
+            @Suppress("DEPRECATION")
+            Notification.Builder(context)
+        })
             .setSmallIcon(android.R.drawable.ic_media_play)
             .setContentTitle(activeTitle)
             .setContentText("YouTube Video")

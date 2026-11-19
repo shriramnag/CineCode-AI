@@ -147,7 +147,10 @@ fun FileExplorer(
     showClipboard: Boolean = true
 ) {
     val context = LocalContext.current
-    remember { ExplorerPrefs.init(context) }
+    remember(context) {
+        ExplorerPrefs.init(context)
+        true
+    }
     val scope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
     val snackbar = remember { SnackbarHostState() }

@@ -901,7 +901,22 @@ class ClaudeTranscript {
 
         private fun stripContextTags(text: String) = text.replace(contextTagRe, "").trim()
 
-        private fun parseTime(ts: String?): Long? = ts?.let { runCatching { java.time.Instant.parse(it).toEpochMilli() }.getOrNull() }
+        private fun parseTime(ts: String?): Long? = ts?.let { raw ->
+            runCatching {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    java.time.Instant.parse(raw).toEpochMilli()
+                } else {
+                    val patterns = listOf("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", "yyyy-MM-dd'T'HH:mm:ss'Z'")
+                    patterns.firstNotNullOfOrNull { pattern ->
+                        runCatching {
+                            java.text.SimpleDateFormat(pattern, java.util.Locale.US).apply {
+                                timeZone = java.util.TimeZone.getTimeZone("UTC")
+                            }.parse(raw)?.time
+                        }.getOrNull()
+                    }
+                }
+            }.getOrNull()
+        }
 
         /** Claude reports cache reads separately; the token pill shows prompt (uncached) + cached + output. */
         private fun ClaudeUsage.toTokenUsage(durationMs: Long = 0, costUsd: Double? = null): TokenUsage? {
