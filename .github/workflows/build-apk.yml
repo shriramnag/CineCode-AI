@@ -155,58 +155,27 @@ jobs:
             chmod +x scripts/*.sh 2>/dev/null || true
           fi
 
-      - name: Build Unsigned Release APK & Sign with Dynamic Per-Build Key (zipalign -> apksigner V1+V2)
+      - name: Build Standard Debug APK (assembleDebug)
         run: |
+          if [ ! -f "debug.keystore" ] && [ -f "debug.keystore.base64" ]; then
+            base64 -d debug.keystore.base64 > debug.keystore
+          fi
           rm -rf app/build/outputs/apk
-          ./gradlew :app:assembleRelease \
+          ./gradlew :app:assembleDebug \
             -PAPP_VERSION_CODE="${{ env.VERSION_CODE }}" \
             -PAPP_VERSION_NAME="${{ env.VERSION_NAME }}" \
-            --no-daemon --no-build-cache --no-configuration-cache --max-workers=2 --stacktrace
+            --no-daemon
 
-          UNSIGNED_APK=$(find app/build/outputs/apk/release -type f -name "*.apk" 2>/dev/null | head -n 1)
-          if [ -z "$UNSIGNED_APK" ]; then
-            echo "No release APK found in app/build/outputs/apk/release/"
+          DEBUG_APK=$(find app/build/outputs/apk -path "*/debug/*.apk" -type f 2>/dev/null | head -n 1)
+          if [ -z "$DEBUG_APK" ]; then
+            echo "No debug APK found in app/build/outputs/apk/**/debug/"
             exit 1
           fi
-          echo "Unsigned Release APK: $UNSIGNED_APK"
+          echo "Standard Debug APK: $DEBUG_APK"
 
-          RUN_NUM="${{ github.run_number }}"
-          DYNAMIC_KS="cinecode-dynamic-${RUN_NUM}.jks"
-          DYNAMIC_ALIAS="key_${RUN_NUM}"
-          rm -f "$DYNAMIC_KS"
-
-          keytool -genkeypair -v \
-            -keystore "$DYNAMIC_KS" \
-            -storepass android \
-            -alias "$DYNAMIC_ALIAS" \
-            -keypass android \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -dname "CN=CineCode AI Build ${RUN_NUM}, O=CineCode, C=IN"
-
-          SDK_ROOT="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
-          BUILD_TOOLS_VERSION=$(ls "$SDK_ROOT/build-tools" | sort -V | tail -n 1)
-          ZIPALIGN="$SDK_ROOT/build-tools/$BUILD_TOOLS_VERSION/zipalign"
-          APKSIGNER="$SDK_ROOT/build-tools/$BUILD_TOOLS_VERSION/apksigner"
-
-          ALIGNED_APK="app/build/outputs/apk/aligned-temp.apk"
-          RELEASE_APK_PATH="app/build/outputs/apk/${{ env.APK_FILENAME }}"
-
-          "$ZIPALIGN" -p -f -v 4 "$UNSIGNED_APK" "$ALIGNED_APK"
-
-          "$APKSIGNER" sign \
-            --ks "$DYNAMIC_KS" \
-            --ks-key-alias "$DYNAMIC_ALIAS" \
-            --ks-pass pass:android \
-            --key-pass pass:android \
-            --v1-signing-enabled true \
-            --v2-signing-enabled true \
-            --out "$RELEASE_APK_PATH" \
-            "$ALIGNED_APK"
-
-          rm -f "$ALIGNED_APK" "$DYNAMIC_KS"
-          ls -lh "$RELEASE_APK_PATH"
+          FINAL_APK_PATH="app/build/outputs/apk/${{ env.APK_FILENAME }}"
+          cp "$DEBUG_APK" "$FINAL_APK_PATH"
+          ls -lh "$FINAL_APK_PATH"
 
       - name: Commit & Sync version.json [skip ci]
         if: "!startsWith(github.ref, 'refs/tags/')"
