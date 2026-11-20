@@ -58,17 +58,16 @@ fun JarvisSettingsScreen(cardBg: Color, cardBorder: BorderStroke, onOpen: (Jarvi
         Modifier.fillMaxSize().bouncyVerticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        JCard(cardBg, cardBorder, "Jarvis") {
+        JCard(cardBg, cardBorder, "मायरा (Myraa)") {
             JSwitch(
-                "Turn on Jarvis",
-                "A hands-free assistant for the whole app: talk to open projects and files, run and watch tasks, answer approvals, " +
-                    "change settings, ask for help or your usage. Off by default; nothing listens until you turn it on.",
+                "मायरा (Myraa) चालू करें",
+                "ऐप का हैंड्स-फ़्री और Google Live वॉइस असिस्टेंट: प्रोजेक्ट/फ़ाइलें खोलें, टास्क चलाएँ, अप्रूवल दें और लाइव बातचीत करें।",
                 enabled
             ) { JarvisController.setEnabled(it) }
-            JHint("Tap the orb to talk, long-press it for the Jarvis panel (tasks, conversation, typing, quick switches).")
+            JHint("बात करने के लिए ऑर्ब टैप करें, और मायरा (Myraa) लाइव पैनल खोलने के लिए ऑर्ब को लॉन्ग-प्रेस करें।")
         }
         if (!JarvisController.isAttached) {
-            Text("Jarvis is starting…", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+            Text("मायरा शुरू हो रही है…", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
             return@Column
         }
         val c = com.shriram.cinecode.theme.AppColors
@@ -88,7 +87,7 @@ fun JarvisSettingsScreen(cardBg: Color, cardBorder: BorderStroke, onOpen: (Jarvi
                 if (enabled) row(JarvisSettingsPage.SETUP, I.Checklist, c.success, "Setup") else null
             ),
             listOf(
-                row(JarvisSettingsPage.WAKE, I.Hearing, c.accentTeal, "Waking Jarvis", if (hotword == "phrase") "Wake phrase" else "Button"),
+                row(JarvisSettingsPage.WAKE, I.Hearing, c.accentTeal, "Waking Myraa", if (hotword == "phrase") "Wake phrase" else "Button"),
                 row(JarvisSettingsPage.LISTEN, I.Mic, c.accentIndigo, "Listening & sending", if (autoSend) "Auto-send" else "Manual send"),
                 row(JarvisSettingsPage.VOICE, I.RecordVoiceOver, c.accentAlt, "Voice output", when {
                     quiet -> "Quiet"
@@ -106,7 +105,7 @@ fun JarvisSettingsScreen(cardBg: Color, cardBorder: BorderStroke, onOpen: (Jarvi
                     else -> "Ask each time"
                 }),
                 row(JarvisSettingsPage.SCREEN, I.Visibility, c.info, "Screen & look"),
-                row(JarvisSettingsPage.CHAT, I.ChatBubbleOutline, JarvisCyan, "Jarvis chat")
+                row(JarvisSettingsPage.CHAT, I.ChatBubbleOutline, JarvisCyan, "Myraa chat")
             )
         ).filter { it.isNotEmpty() }.forEach { com.shriram.cinecode.ui.settings.SettingsRowGroup(it, cardBg) }
     }

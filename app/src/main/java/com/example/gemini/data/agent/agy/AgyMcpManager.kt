@@ -55,6 +55,15 @@ class AgyMcpManager(
     private val _refreshingMcpServer = MutableStateFlow<String?>(null)
     val refreshingMcpServer: StateFlow<String?> = _refreshingMcpServer.asStateFlow()
 
+    enum class McpConnectionStatus(val label: String) {
+        CONNECTED("Connected"),
+        RETRYING("Retrying…"),
+        DISCONNECTED("Disconnected")
+    }
+
+    private val _mcpConnectionStatus = MutableStateFlow(McpConnectionStatus.DISCONNECTED)
+    val mcpConnectionStatus: StateFlow<McpConnectionStatus> = _mcpConnectionStatus.asStateFlow()
+
     private val _mcpErrorMessage = MutableStateFlow<String?>(null)
     val mcpErrorMessage: StateFlow<String?> = _mcpErrorMessage.asStateFlow()
 
@@ -82,13 +91,21 @@ class AgyMcpManager(
             try {
                 val hubUrl = AuthPreferences.currentHubUrl
 
-                // 1. Fetch live states from AGY daemon
-                val liveResult = agyHubClient.getMcpServerStates(hubUrl)
+                // 1. Fetch live states from AGY daemon (with one lightweight retry for transient restarts)
+                var liveResult = agyHubClient.getMcpServerStates(hubUrl)
+                if (liveResult.isFailure) {
+                    _mcpConnectionStatus.value = McpConnectionStatus.RETRYING
+                    delay(700)
+                    liveResult = agyHubClient.getMcpServerStates(hubUrl)
+                }
                 var fetchError: String? = null
                 if (liveResult.isFailure) {
                     val err = liveResult.exceptionOrNull()?.message ?: "Failed to connect to Antigravity Hub"
                     Log.w("ChatViewModel", "loadMcpServers liveResult failed: $err")
                     fetchError = err
+                    _mcpConnectionStatus.value = McpConnectionStatus.DISCONNECTED
+                } else {
+                    _mcpConnectionStatus.value = McpConnectionStatus.CONNECTED
                 }
                 val liveList = liveResult.getOrDefault(emptyList()).toMutableList()
 
@@ -294,11 +311,12 @@ class AgyMcpManager(
                             // Ensure Termux stdio binaries (npx, python3, etc.) have proper loader and PATH on Android.
                             // A server runs the MCP on its own Linux: those Termux paths would break it there.
                             if (!AuthPreferences.currentRemoteMode) {
+                                val appPkg = com.shriram.cinecode.BuildConfig.APPLICATION_ID
                                 if (!envMap.containsKey("LD_PRELOAD")) {
-                                    envMap["LD_PRELOAD"] = "/data/data/com.shriram.cinecode/files/usr/lib/libtermux-exec.so"
+                                    envMap["LD_PRELOAD"] = "/data/data/$appPkg/files/usr/lib/libtermux-exec.so"
                                 }
                                 if (!envMap.containsKey("PATH")) {
-                                    envMap["PATH"] = "/data/data/com.shriram.cinecode/files/home/.local/bin:/data/data/com.shriram.cinecode/files/usr/bin:/system/bin"
+                                    envMap["PATH"] = "/data/data/$appPkg/files/home/.local/bin:/data/data/$appPkg/files/usr/bin:/system/bin"
                                 }
                             }
                             if (envMap.isNotEmpty()) {

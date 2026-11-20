@@ -30,6 +30,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -42,9 +43,10 @@ import com.shriram.cinecode.data.jarvis.JarvisTasks
 import kotlinx.coroutines.launch
 
 /**
- * The Jarvis panel (long-press the orb): quick switches (hands-free, voice or quiet, send mode, screen on, wake), the
- * tasks Jarvis manages with open / stop / dismiss, the conversation, a box to type to Jarvis, and shortcuts to its
- * settings, a fresh session and stop.
+ * The मायरा (Myraa) Assistant panel:
+ * - Tab 0 ("मायरा Live"): Real-time Google Live Voice Server UI ([MyraaAssistantView]) with waveform,
+ *   live status, User & Myraa transcript cards, quick actions, Mic, Speaker/Interrupt, and Minimize.
+ * - Tab 1 ("टास्क / कंट्रोल"): Hands-free quick switches, active agent tasks, and classic controls.
  */
 @Composable
 fun JarvisPanel(onTalk: () -> Unit, onNoticeAction: (String) -> Unit) {
@@ -63,11 +65,12 @@ fun JarvisPanel(onTalk: () -> Unit, onNoticeAction: (String) -> Unit) {
     val hotword by JarvisPreferences.hotword.state.collectAsState()
     val agent by JarvisPreferences.agent.state.collectAsState()
     var input by remember { mutableStateOf("") }
+    var activeTab by remember { mutableIntStateOf(0) } // 0 = Myraa Live Voice, 1 = Agent Tasks & Controls
 
     Box(
         Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.5f))
+            .background(Color.Black.copy(alpha = 0.58f))
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { close() },
         contentAlignment = Alignment.BottomCenter
     ) {
@@ -75,124 +78,211 @@ fun JarvisPanel(onTalk: () -> Unit, onNoticeAction: (String) -> Unit) {
             Modifier
                 .fillMaxWidth()
                 .widthIn(max = 600.dp)
-                .fillMaxHeight(0.86f)
+                .fillMaxHeight(0.88f)
                 .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
                 .background(Brush.verticalGradient(listOf(Color(0xFA111A2C), Color(0xFC070B14))))
                 .border(1.dp, Brush.verticalGradient(listOf(Cyan.copy(alpha = 0.5f), Color.Transparent)), RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
-                // taps inside the sheet stay inside
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { }
                 .navigationBarsPadding()
                 .imePadding()
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .padding(top = 10.dp)
         ) {
-            // handle
-            Box(Modifier.align(Alignment.CenterHorizontally).width(40.dp).height(4.dp).clip(RoundedCornerShape(50)).background(Color.White.copy(alpha = 0.18f)))
-            Spacer(Modifier.height(12.dp))
-
-            // ---- header
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(42.dp), contentAlignment = Alignment.Center) {
-                    if (phase == Phase.IDLE || phase == Phase.OFF) IdleOrb(42.dp, tasks.count { it.active }, false) else JarvisOrb(phase, 0.3f, 42.dp)
-                }
-                Spacer(Modifier.width(12.dp))
-                Column(Modifier.weight(1f)) {
-                    Text("Jarvis", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
-                    val sub = when (phase) {
-                        Phase.LISTENING -> "Listening"
-                        Phase.THINKING -> steps.lastOrNull()?.text ?: "Working"
-                        Phase.SPEAKING -> "Speaking"
-                        else -> "Ready · runs on ${if (agent == "AGY") "Antigravity" else "Claude Code"}"
-                    }
-                    Text(sub, color = Color.White.copy(alpha = 0.55f), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-                RoundIcon(Icons.Filled.Close, "Close", Color.White.copy(alpha = 0.7f)) { close() }
-            }
-            Spacer(Modifier.height(12.dp))
-
-            // ---- quick switches
-            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                QuickChip("Hands-free", if (handsFree) "On" else "Off", handsFree) { JarvisController.setHandsFree(!handsFree) }
-                QuickChip("Voice", if (quiet) "Quiet" else "Speaking", !quiet) { JarvisPreferences.quietMode.set(!quiet) }
-                QuickChip("Send", if (autoSend) "Auto on pause" else "Manual / phrase", autoSend) {
-                    JarvisPreferences.autoSend.set(!autoSend)
-                }
-                QuickChip("Wake", if (hotword == "phrase") "Phrase" else "Button", hotword == "phrase") {
-                    JarvisPreferences.hotword.set(if (hotword == "phrase") "push" else "phrase")
-                }
-                QuickChip("Screen", when (screenOn) { "off" -> "Can sleep"; "active" -> "On while active"; else -> "Always on" }, screenOn != "off") {
-                    val order = listOf("always", "active", "off")
-                    JarvisPreferences.keepScreenOn.set(order[(order.indexOf(screenOn) + 1).mod(order.size)])
-                }
-            }
-            notice?.let {
-                Spacer(Modifier.height(10.dp))
-                NoticeChip(it, onNoticeAction)
-            }
-            Spacer(Modifier.height(12.dp))
-
-            // ---- tasks and conversation
-            Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-                if (tasks.isNotEmpty()) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        SectionTitle("Tasks", Modifier.weight(1f))
-                        if (tasks.any { !it.active }) {
-                            Text("Clear finished", color = Cyan, fontSize = 12.sp, modifier = Modifier.clip(RoundedCornerShape(50)).clickable { JarvisTasks.clearFinished() }.padding(horizontal = 8.dp, vertical = 4.dp))
-                        }
-                    }
-                    tasks.take(12).forEach { t ->
-                        TaskRow(
-                            t,
-                            onOpen = { close(); JarvisController.vm.selectConversation(t.id); JarvisController.vm.requestViewMode("CHAT") },
-                            onStop = { scope.launch { JarvisTasks.stop(t.id) } },
-                            onDismiss = { JarvisTasks.close(t.id) }
-                        )
-                    }
-                    Spacer(Modifier.height(14.dp))
-                }
-                SectionTitle("Conversation")
-                if (log.isEmpty()) {
-                    Text(
-                        "Tap the orb and talk, or type below. Try “what's running?”, “start a task to fix the failing tests”, " +
-                            "“switch to dark mode”, “how do I add an MCP server?”.",
-                        color = Color.White.copy(alpha = 0.5f), fontSize = 12.5.sp, lineHeight = 18.sp
-                    )
-                }
-                log.takeLast(14).forEach { (who, text) -> LogBubble(who == "You", text) }
-            }
+            // sheet drag handle
+            Box(
+                Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .width(40.dp)
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(Color.White.copy(alpha = 0.2f))
+            )
             Spacer(Modifier.height(10.dp))
 
-            // ---- type to Jarvis
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                OutlinedTextField(
-                    value = input, onValueChange = { input = it },
-                    placeholder = { Text("Type to Jarvis…", color = Color.White.copy(alpha = 0.4f), fontSize = 14.sp) },
-                    modifier = Modifier.weight(1f),
-                    maxLines = 4,
-                    shape = RoundedCornerShape(22.dp),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-                    keyboardActions = KeyboardActions(onSend = { if (input.isNotBlank()) { JarvisController.submitText(input); input = "" } }),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White, unfocusedTextColor = Color.White, cursorColor = Cyan,
-                        focusedBorderColor = Cyan.copy(alpha = 0.7f), unfocusedBorderColor = Color.White.copy(alpha = 0.16f),
-                        focusedContainerColor = Color.White.copy(alpha = 0.04f), unfocusedContainerColor = Color.White.copy(alpha = 0.03f)
-                    )
+            // Mode Switcher Pill: Myraa Live Voice vs Agent & Tasks
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Color.White.copy(alpha = 0.05f))
+                    .border(1.dp, Color.White.copy(alpha = 0.09f), RoundedCornerShape(14.dp))
+                    .padding(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                ModeTabButton(
+                    label = "मायरा Live Voice",
+                    selected = activeTab == 0,
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag("myraa_tab_live")
+                ) { activeTab = 0 }
+                val activeCount = tasks.count { it.active }
+                ModeTabButton(
+                    label = if (activeCount > 0) "एजेंट टास्क ($activeCount)" else "एजेंट और कंट्रोल",
+                    selected = activeTab == 1,
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag("myraa_tab_tasks")
+                ) { activeTab = 1 }
+            }
+            Spacer(Modifier.height(6.dp))
+
+            if (activeTab == 0) {
+                MyraaAssistantView(
+                    liveClient = JarvisController.liveVoiceClient,
+                    onClose = close,
+                    onOpenSettings = { JarvisController.requestSettings("JARVIS") },
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
                 )
-                Spacer(Modifier.width(8.dp))
-                if (input.isNotBlank()) {
-                    RoundIcon(Icons.Filled.Send, "Send", Cyan, filled = true) { JarvisController.submitText(input); input = "" }
-                } else {
-                    RoundIcon(Icons.Filled.Mic, "Talk", Cyan, filled = true) { close(); onTalk() }
+            } else {
+                Column(
+                    Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    // ---- header
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(42.dp), contentAlignment = Alignment.Center) {
+                            if (phase == Phase.IDLE || phase == Phase.OFF) IdleOrb(42.dp, tasks.count { it.active }, false) else JarvisOrb(phase, 0.3f, 42.dp)
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text("मायरा (Myraa)", color = Color.White, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
+                            val sub = when (phase) {
+                                Phase.LISTENING -> "Listening"
+                                Phase.THINKING -> steps.lastOrNull()?.text ?: "Working"
+                                Phase.SPEAKING -> "Speaking"
+                                else -> "Ready · runs on ${if (agent == "AGY") "Antigravity" else "Claude Code"}"
+                            }
+                            Text(sub, color = Color.White.copy(alpha = 0.55f), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                        RoundIcon(Icons.Filled.Close, "Close", Color.White.copy(alpha = 0.7f)) { close() }
+                    }
+                    Spacer(Modifier.height(12.dp))
+
+                    // ---- quick switches
+                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        QuickChip("Hands-free", if (handsFree) "On" else "Off", handsFree) { JarvisController.setHandsFree(!handsFree) }
+                        QuickChip("Voice", if (quiet) "Quiet" else "Speaking", !quiet) { JarvisPreferences.quietMode.set(!quiet) }
+                        QuickChip("Send", if (autoSend) "Auto on pause" else "Manual / phrase", autoSend) {
+                            JarvisPreferences.autoSend.set(!autoSend)
+                        }
+                        QuickChip("Wake", if (hotword == "phrase") "Phrase" else "Button", hotword == "phrase") {
+                            JarvisPreferences.hotword.set(if (hotword == "phrase") "push" else "phrase")
+                        }
+                        QuickChip("Screen", when (screenOn) { "off" -> "Can sleep"; "active" -> "On while active"; else -> "Always on" }, screenOn != "off") {
+                            val order = listOf("always", "active", "off")
+                            JarvisPreferences.keepScreenOn.set(order[(order.indexOf(screenOn) + 1).mod(order.size)])
+                        }
+                    }
+                    notice?.let {
+                        Spacer(Modifier.height(10.dp))
+                        NoticeChip(it, onNoticeAction)
+                    }
+                    Spacer(Modifier.height(12.dp))
+
+                    // ---- tasks and conversation
+                    Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                        if (tasks.isNotEmpty()) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                SectionTitle("Tasks", Modifier.weight(1f))
+                                if (tasks.any { !it.active }) {
+                                    Text("Clear finished", color = Cyan, fontSize = 12.sp, modifier = Modifier.clip(RoundedCornerShape(50)).clickable { JarvisTasks.clearFinished() }.padding(horizontal = 8.dp, vertical = 4.dp))
+                                }
+                            }
+                            tasks.take(12).forEach { t ->
+                                TaskRow(
+                                    t,
+                                    onOpen = { close(); JarvisController.vm.selectConversation(t.id); JarvisController.vm.requestViewMode("CHAT") },
+                                    onStop = { scope.launch { JarvisTasks.stop(t.id) } },
+                                    onDismiss = { JarvisTasks.close(t.id) }
+                                )
+                            }
+                            Spacer(Modifier.height(14.dp))
+                        }
+                        SectionTitle("Conversation")
+                        if (log.isEmpty()) {
+                            Text(
+                                "ऑर्ब पर टैप करके बात करें, या नीचे लिखें। उदाहरण: “क्या चल रहा है?”, “डार्क मोड चालू करो”, “MCP सर्वर कैसे जोड़ें?”.",
+                                color = Color.White.copy(alpha = 0.5f), fontSize = 12.5.sp, lineHeight = 18.sp
+                            )
+                        }
+                        log.takeLast(14).forEach { (who, text) -> LogBubble(who == "You", text) }
+                    }
+                    Spacer(Modifier.height(10.dp))
+
+                    // ---- type to Myraa
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = input, onValueChange = { input = it },
+                            placeholder = { Text("मायरा को लिखें…", color = Color.White.copy(alpha = 0.4f), fontSize = 14.sp) },
+                            modifier = Modifier.weight(1f),
+                            maxLines = 4,
+                            shape = RoundedCornerShape(22.dp),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                            keyboardActions = KeyboardActions(onSend = { if (input.isNotBlank()) { JarvisController.submitText(input); input = "" } }),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.White, unfocusedTextColor = Color.White, cursorColor = Cyan,
+                                focusedBorderColor = Cyan.copy(alpha = 0.7f), unfocusedBorderColor = Color.White.copy(alpha = 0.16f),
+                                focusedContainerColor = Color.White.copy(alpha = 0.04f), unfocusedContainerColor = Color.White.copy(alpha = 0.03f)
+                            )
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        if (input.isNotBlank()) {
+                            RoundIcon(Icons.Filled.Send, "Send", Cyan, filled = true) { JarvisController.submitText(input); input = "" }
+                        } else {
+                            RoundIcon(Icons.Filled.Mic, "Talk", Cyan, filled = true) { close(); onTalk() }
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+
+                    // ---- shortcuts
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                        FooterButton("मायरा सेटिंग्स") { JarvisController.requestSettings("JARVIS") }
+                        FooterButton("New session") { JarvisController.newSession(carry = true) }
+                        FooterButton("Stop all", Danger) {
+                            JarvisController.liveVoiceClient.stopLiveSession()
+                            JarvisController.stopEverything()
+                        }
+                    }
                 }
             }
-            Spacer(Modifier.height(8.dp))
-
-            // ---- shortcuts
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
-                FooterButton("Jarvis settings") { JarvisController.requestSettings("JARVIS") }
-                FooterButton("New session") { JarvisController.newSession(carry = true) }
-                FooterButton("Stop all", Danger) { JarvisController.stopEverything() }
-            }
         }
+    }
+}
+
+@Composable
+private fun ModeTabButton(
+    label: String,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = modifier
+            .defaultMinSize(minHeight = 40.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(if (selected) Cyan.copy(alpha = 0.18f) else Color.Transparent)
+            .border(
+                width = 1.dp,
+                color = if (selected) Cyan.copy(alpha = 0.55f) else Color.Transparent,
+                shape = RoundedCornerShape(10.dp)
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = label,
+            color = if (selected) Color.White else Color.White.copy(alpha = 0.62f),
+            fontSize = 12.5.sp,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 
@@ -265,7 +355,7 @@ private fun LogBubble(mine: Boolean, text: String) {
 private fun RoundIcon(icon: ImageVector, label: String, tint: Color, filled: Boolean = false, small: Boolean = false, onClick: () -> Unit) {
     Box(
         Modifier
-            .size(if (small) 34.dp else 44.dp)
+            .size(if (small) 38.dp else 48.dp)
             .clip(CircleShape)
             .background(if (filled) tint.copy(alpha = 0.2f) else Color.Transparent)
             .clickable { onClick() },

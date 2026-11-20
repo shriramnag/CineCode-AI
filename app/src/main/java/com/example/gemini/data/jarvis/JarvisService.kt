@@ -78,7 +78,7 @@ class JarvisService : Service() {
                     JarvisController.Phase.LISTENING -> if (h.isNotBlank()) "Listening: $h" else "Listening…"
                     JarvisController.Phase.THINKING -> "Working on it…$taskLine"
                     JarvisController.Phase.SPEAKING -> "Speaking…"
-                    JarvisController.Phase.OFF -> "Jarvis is off"
+                    JarvisController.Phase.OFF -> "मायरा (Myraa) बंद है"
                     JarvisController.Phase.IDLE ->
                         (if (JarvisPreferences.hotword.value == "phrase") "Say “${JarvisPreferences.wakePhrase.value.substringBefore(',').trim()}”" else "Tap Talk to speak") + taskLine
                 }
@@ -143,8 +143,8 @@ class JarvisService : Service() {
         if (Build.VERSION.SDK_INT < 26) return
         val nm = getSystemService(NotificationManager::class.java)
         if (nm.getNotificationChannel(CHANNEL) == null) {
-            nm.createNotificationChannel(NotificationChannel(CHANNEL, "Jarvis hands-free", NotificationManager.IMPORTANCE_LOW).apply {
-                description = "Shown while Jarvis listens for your voice"
+            nm.createNotificationChannel(NotificationChannel(CHANNEL, "मायरा (Myraa) hands-free", NotificationManager.IMPORTANCE_LOW).apply {
+                description = "Shown while Myraa listens for your voice"
                 setShowBadge(false)
             })
         }
@@ -157,7 +157,7 @@ class JarvisService : Service() {
         val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), flags)
         val b = NotificationCompat.Builder(this, CHANNEL)
             .setSmallIcon(R.drawable.ic_jarvis_mic)
-            .setContentTitle("Jarvis")
+            .setContentTitle("मायरा (Myraa)")
             .setContentText(text)
             .setOngoing(true)
             .setOnlyAlertOnce(true)

@@ -1307,19 +1307,20 @@ class AgyChatBackend(
         if (content.isBlank() && _attachments.value.isEmpty()) return
 
         val state = systemConnectionState.value
+        val hasCloudKey = com.shriram.cinecode.data.remote.CloudBridgeStore.hasApiKey(application)
+        if ((!state.canSend || state.status == com.shriram.cinecode.data.remote.SystemStatus.UNAUTHENTICATED) && hasCloudKey) {
+            sendViaCloudNativeFallback(content)
+            return
+        }
         if (!state.canSend) {
-            if (com.shriram.cinecode.data.remote.CloudBridgeStore.hasApiKey(application)) {
-                sendViaCloudNativeFallback(content)
-                return
-            }
             val reason = when (state.status) {
-                com.shriram.cinecode.data.remote.SystemStatus.OFFLINE -> "Server is offline. Please start the server or add an API Key in Settings."
-                com.shriram.cinecode.data.remote.SystemStatus.STARTING -> "Server is starting up. Please wait..."
-                com.shriram.cinecode.data.remote.SystemStatus.ACQUIRING_CSRF -> "Acquiring security token. Please wait..."
-                com.shriram.cinecode.data.remote.SystemStatus.CHECKING_AUTH -> "Verifying authentication. Please wait..."
-                com.shriram.cinecode.data.remote.SystemStatus.UNAUTHENTICATED -> "Please sign in to send messages."
-                com.shriram.cinecode.data.remote.SystemStatus.ERROR -> "Server error. Please check server logs."
-                else -> "Cannot send message right now."
+                com.shriram.cinecode.data.remote.SystemStatus.OFFLINE -> "Antigravity Hub ऑफ़लाइन है। कृपया Hub चालू करें या Settings में Google API Key जोड़ें।"
+                com.shriram.cinecode.data.remote.SystemStatus.STARTING -> "Antigravity Hub शुरू हो रहा है, कृपया प्रतीक्षा करें…"
+                com.shriram.cinecode.data.remote.SystemStatus.ACQUIRING_CSRF -> "सुरक्षा टोकन (CSRF) प्राप्त हो रहा है…"
+                com.shriram.cinecode.data.remote.SystemStatus.CHECKING_AUTH -> "कनेक्शन सत्यापित हो रहा है…"
+                com.shriram.cinecode.data.remote.SystemStatus.UNAUTHENTICATED -> "कृपया Antigravity में साइन इन करें या Settings में Google API Key जोड़ें।"
+                com.shriram.cinecode.data.remote.SystemStatus.ERROR -> "Antigravity कनेक्शन एरर। कृपया सर्वर लॉग देखें या Google API Key उपयोग करें।"
+                else -> "अभी संदेश नहीं भेजा जा सकता।"
             }
             android.widget.Toast.makeText(application, reason, android.widget.Toast.LENGTH_SHORT).show()
             return

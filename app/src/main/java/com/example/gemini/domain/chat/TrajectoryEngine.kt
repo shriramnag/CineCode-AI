@@ -288,11 +288,11 @@ class TrajectoryEngine {
                 val curErr = existingStep.error_message?.error ?: existingStep.error
                 val baseErr = curErr ?: effectiveError
                 val enrichedErr = baseErr.copy(
-                    full_error = if (curErr?.full_error.isNullOrBlank()) effectiveError.full_error else curErr?.full_error ?: "",
-                    short_error = if (curErr?.short_error.isNullOrBlank()) effectiveError.short_error else curErr?.short_error ?: "",
-                    user_error_message = if (curErr?.user_error_message.isNullOrBlank()) effectiveError.user_error_message else curErr?.user_error_message ?: "",
+                    full_error = if (curErr?.full_error.isNullOrBlank()) effectiveError.full_error else curErr.full_error,
+                    short_error = if (curErr?.short_error.isNullOrBlank()) effectiveError.short_error else curErr.short_error,
+                    user_error_message = if (curErr?.user_error_message.isNullOrBlank()) effectiveError.user_error_message else curErr.user_error_message,
                     error_code = curErr?.error_code ?: effectiveError.error_code,
-                    error_id = if (curErr?.error_id.isNullOrBlank()) effectiveError.error_id else curErr?.error_id ?: ""
+                    error_id = if (curErr?.error_id.isNullOrBlank()) effectiveError.error_id else curErr.error_id
                 )
                 activeStepsMap[targetIdx] = existingStep.copy(
                     error_message = CortexStepErrorMessage(error = enrichedErr, should_show_user = true),

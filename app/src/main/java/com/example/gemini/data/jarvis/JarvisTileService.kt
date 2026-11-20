@@ -19,7 +19,7 @@ class JarvisTileService : TileService() {
         JarvisPreferences.init(this)
         qsTile?.apply {
             state = if (JarvisPreferences.enabled.value) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
-            label = "Jarvis"
+            label = "मायरा (Myraa)"
             if (Build.VERSION.SDK_INT >= 29) subtitle = if (JarvisPreferences.handsFree.value) "Hands-free" else if (JarvisPreferences.enabled.value) "Tap to talk" else "Off"
             updateTile()
         }

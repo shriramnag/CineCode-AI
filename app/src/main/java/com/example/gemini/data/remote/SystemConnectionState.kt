@@ -109,6 +109,19 @@ sealed class SystemConnectionState {
     val canSend: Boolean
         get() = status.canSend
 
+    /**
+     * True when either Antigravity Hub is ready or the user has a Google AI Studio API Key for Cloud fallback.
+     */
+    fun effectiveCanSend(hasCloudApiKey: Boolean): Boolean =
+        isReady || hasCloudApiKey || (canSend && status != SystemStatus.UNAUTHENTICATED)
+
+    fun effectiveLabel(hasCloudApiKey: Boolean): String = when {
+        isReady -> status.label
+        hasCloudApiKey && (status == SystemStatus.OFFLINE || status == SystemStatus.UNAUTHENTICATED || status == SystemStatus.ERROR) ->
+            "Cloud API Ready"
+        else -> status.label
+    }
+
     val dotColor: Color
         get() = status.dotColor
 

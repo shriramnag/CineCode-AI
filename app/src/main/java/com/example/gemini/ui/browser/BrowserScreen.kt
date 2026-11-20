@@ -1806,7 +1806,7 @@ fun BrowserDiagnosticOverlay(
 
     val description = when {
         isStalled -> "The page is taking unusually long to respond (timeout > 15s). The local server or remote site might be unresponsive."
-        !lastErr?.description.isNullOrBlank() -> lastErr?.description ?: "An unexpected network or connection error occurred."
+        !lastErr?.description.isNullOrBlank() -> lastErr.description
         else -> "Could not connect to the server or display the requested URL."
     }
 

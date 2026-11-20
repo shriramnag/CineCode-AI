@@ -96,7 +96,7 @@ internal fun accentOf(p: Phase) = when (p) {
 private fun defaultLabel(p: Phase, quiet: Boolean) = when (p) {
     Phase.LISTENING -> "Listening…"
     Phase.THINKING -> "Thinking…"
-    Phase.SPEAKING -> if (quiet) "Jarvis" else "Speaking…"
+    Phase.SPEAKING -> if (quiet) "मायरा (Myraa)" else "Speaking…"
     else -> "Ready"
 }
 

@@ -27,21 +27,42 @@ import org.json.JSONObject
  * Browser MCP tool dispatcher + interactive CDP Inspector Dialog for CineCode-AI Browser.
  */
 object BrowserMcp {
+    fun isReady(tabId: String? = null): Boolean {
+        return runCatching { BrowserSessionManager.instance.getTab(tabId) != null }.getOrDefault(false)
+    }
+
     suspend fun executeTool(toolName: String, args: JSONObject, tabId: String? = null): Result<String> {
-        return when (toolName) {
-            "cdp_snapshot" -> WebViewCdp.getPageSnapshot(tabId).map { it.toString(2) }
-            "cdp_elements" -> WebViewCdp.getInteractiveElements(tabId)
-            "cdp_click" -> WebViewCdp.clickSelector(args.optString("selector"), tabId)
-            "cdp_fill" -> WebViewCdp.fillInput(args.optString("selector"), args.optString("value"), tabId)
-            "cdp_eval" -> WebViewCdp.evalJs(args.optString("script"), tabId)
-            "cdp_console" -> {
-                val tab = BrowserSessionManager.instance.getTab(tabId)
-                val logs = tab?.consoleLogs?.toList()?.takeLast(30)?.joinToString("\n") {
-                    "[${it.level}] ${it.message}"
-                }.orEmpty()
-                Result.success(logs.ifBlank { "No console logs captured on this tab." })
+        return runCatching {
+            val tab = BrowserSessionManager.instance.getTab(tabId)
+            if (tab == null && toolName != "cdp_console") {
+                return Result.failure(IllegalStateException("Browser MCP disconnected: no active browser tab available."))
             }
-            else -> Result.failure(IllegalArgumentException("Unknown Browser MCP tool: $toolName"))
+            when (toolName) {
+                "cdp_snapshot" -> WebViewCdp.getPageSnapshot(tabId).map { it.toString(2) }.getOrThrow()
+                "cdp_elements" -> WebViewCdp.getInteractiveElements(tabId).getOrThrow()
+                "cdp_click" -> {
+                    val selector = args.optString("selector").trim()
+                    if (selector.isBlank()) throw IllegalArgumentException("CSS selector is required for cdp_click.")
+                    WebViewCdp.clickSelector(selector, tabId).getOrThrow()
+                }
+                "cdp_fill" -> {
+                    val selector = args.optString("selector").trim()
+                    if (selector.isBlank()) throw IllegalArgumentException("CSS selector is required for cdp_fill.")
+                    WebViewCdp.fillInput(selector, args.optString("value"), tabId).getOrThrow()
+                }
+                "cdp_eval" -> {
+                    val script = args.optString("script").trim()
+                    if (script.isBlank()) throw IllegalArgumentException("JavaScript script is required for cdp_eval.")
+                    WebViewCdp.evalJs(script, tabId).getOrThrow()
+                }
+                "cdp_console" -> {
+                    val logs = tab?.consoleLogs?.toList()?.takeLast(30)?.joinToString("\n") {
+                        "[${it.level}] ${it.message}"
+                    }.orEmpty()
+                    logs.ifBlank { "No console logs captured on this tab." }
+                }
+                else -> throw IllegalArgumentException("Unknown Browser MCP tool: $toolName")
+            }
         }
     }
 }

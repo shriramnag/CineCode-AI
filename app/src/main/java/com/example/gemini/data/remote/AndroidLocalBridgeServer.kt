@@ -6,6 +6,9 @@ import android.view.KeyEvent
 import com.shriram.cinecode.data.local.LocalTerminalBridge
 import com.shriram.cinecode.ui.browser.BrowserSessionManager
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
@@ -58,6 +61,10 @@ class AndroidLocalBridgeServer private constructor() {
 
     private var serverSocket: ServerSocket? = null
     private var isRunning = false
+    private val _isRunningState = MutableStateFlow(false)
+    val isRunningState: StateFlow<Boolean> = _isRunningState.asStateFlow()
+    private val _boundPortState = MutableStateFlow(DEFAULT_PORT)
+    val boundPortState: StateFlow<Int> = _boundPortState.asStateFlow()
     private val serverScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     // one thread per open request: Flow calls wait up to ~50 s each, so a fixed pool would make parallel calls queue
     private val clientThreadPool = Executors.newCachedThreadPool()
@@ -70,9 +77,19 @@ class AndroidLocalBridgeServer private constructor() {
     fun start(context: Context, port: Int = DEFAULT_PORT) {
         if (isRunning) return
         appContext = context.applicationContext
-        cachedDeviceId = try {
+        val androidId = try {
             android.provider.Settings.Secure.getString(context.contentResolver, android.provider.Settings.Secure.ANDROID_ID) ?: ""
         } catch (_: Exception) { "" }
+        cachedDeviceId = if (androidId.length > 5) {
+            androidId
+        } else {
+            val prefs = context.applicationContext.getSharedPreferences("cinecode_bridge_sec", Context.MODE_PRIVATE)
+            prefs.getString("fallback_device_id", null)?.takeIf { it.length > 5 } ?: run {
+                val generated = "cc_${java.util.UUID.randomUUID().toString().replace("-", "").take(16)}"
+                prefs.edit().putString("fallback_device_id", generated).apply()
+                generated
+            }
+        }
         BrowserSessionManager.instance.init(context)
         LocalTerminalBridge.instance.init(context)
         com.shriram.cinecode.ui.browser.BrowserExtensionManager.instance.init(context)
@@ -96,6 +113,8 @@ class AndroidLocalBridgeServer private constructor() {
                 }
                 serverSocket = socket ?: ServerSocket(0, 50, bindAddr).also { boundPort = it.localPort }
                 isRunning = true
+                _boundPortState.value = boundPort
+                _isRunningState.value = true
                 Log.i(TAG, "Bridge MCP / REST Server running on http://127.0.0.1:$boundPort")
                 // a server (Remote mode) reaches this MCP server through an SSH reverse tunnel: point it at the bound port
                 com.shriram.cinecode.data.remote.RemoteServerManager.resyncTunnels()
@@ -110,12 +129,16 @@ class AndroidLocalBridgeServer private constructor() {
                 if (isRunning) {
                     Log.e(TAG, "Server accept error", e)
                 }
+            } finally {
+                isRunning = false
+                _isRunningState.value = false
             }
         }
     }
 
     fun stop() {
         isRunning = false
+        _isRunningState.value = false
         try {
             serverSocket?.close()
         } catch (_: Exception) {}
@@ -292,7 +315,7 @@ class AndroidLocalBridgeServer private constructor() {
             if (out != null && req != null && !out.used) {
                 runCatching {
                     val path = req.rawPath.substringBefore("?")
-                    if (path == "/browser" || path == "/terminal" || path == "/google_flow" || path == "/extension_developer" || path == "/android" || path == "/notes" || path == "/jarvis" || path == "/theme") {
+                    if (path == "/browser" || path == "/terminal" || path == "/google_flow" || path == "/extension_developer" || path == "/android" || path == "/notes" || path == "/jarvis" || path == "/theme" || path == "/cinecode_skills") {
                         val id = runCatching { JSONObject(req.body).opt("id") }.getOrNull()
                         sendResponse(out, 200, "application/json", jsonRpcError(id, -32603, "Internal error: ${t.message ?: t.javaClass.simpleName}").toString())
                     } else {

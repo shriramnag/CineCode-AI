@@ -149,13 +149,13 @@ class AgyBridgeService(
         }
         .build()
 
-    // Dedicated WebSocket client for live bridge monitoring with 1s connect timeout and 1s heartbeat ping
-    // (remote: 10s connect and a 15s heartbeat, so mobile-network hiccups reconnect instead of flapping Offline)
+    // Dedicated WebSocket client for live bridge monitoring with balanced 5s local / 15s remote heartbeat
+    // to keep background memory & CPU wakeups low on 4GB RAM devices
     val wsClient: OkHttpClient = OkHttpClient.Builder()
-        .connectTimeout(if (AuthPreferences.isRemoteEndpoint()) 10000 else 1000, TimeUnit.MILLISECONDS)
+        .connectTimeout(if (AuthPreferences.isRemoteEndpoint()) 10000 else 1500, TimeUnit.MILLISECONDS)
         .readTimeout(0, TimeUnit.MILLISECONDS)
-        .writeTimeout(if (AuthPreferences.isRemoteEndpoint()) 10 else 3, TimeUnit.SECONDS)
-        .pingInterval(if (AuthPreferences.isRemoteEndpoint()) 15 else 1, TimeUnit.SECONDS)
+        .writeTimeout(if (AuthPreferences.isRemoteEndpoint()) 10 else 4, TimeUnit.SECONDS)
+        .pingInterval(if (AuthPreferences.isRemoteEndpoint()) 15 else 5, TimeUnit.SECONDS)
         .retryOnConnectionFailure(false)
         .addInterceptor { chain ->
             val b = chain.request().newBuilder()
@@ -461,6 +461,30 @@ class AgyBridgeService(
             } catch (_: Exception) {
                 false
             }
+        }
+
+    /**
+     * Lightweight one-shot bridge + hub status resync that updates CSRF and SystemConnectionState
+     * cleanly without throwing when offline.
+     */
+    suspend fun refreshBridgeAndHubStatus(httpBaseUrl: String = AuthPreferences.currentBridgeHttpUrl): Boolean =
+        withContext(Dispatchers.IO) {
+            val healthy = checkServerHealth(httpBaseUrl)
+            if (!healthy) {
+                isBridgeConnected = false
+                _connectionState.value = BridgeConnectionState.OFFLINE_ERROR
+                recomputeSystemConnectionState()
+                return@withContext false
+            }
+            isBridgeConnected = true
+            _connectionState.value = BridgeConnectionState.CONNECTED_READY
+            val status = fetchServerStatus(httpBaseUrl)
+            if (status != null) {
+                updateHubStatus(status)
+            } else {
+                recomputeSystemConnectionState()
+            }
+            true
         }
 
     fun monitorHubStatus(wsUrl: String = AuthPreferences.currentBridgeWsUrl): Flow<AgyHubStatus> = callbackFlow {

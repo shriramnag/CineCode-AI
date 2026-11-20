@@ -21,57 +21,63 @@ class AgyMcpService {
     }
 
     suspend fun getMcpServerStates(hubUrl: String = AuthPreferences.currentHubUrl): Result<List<McpServerState>> = withContext(Dispatchers.IO) {
-        val req = GetMcpServerStatesRequest()
-        AgyLanguageService.GetMcpServerStates().executeSafely(req).map { res ->
-            res.states.map { state ->
-                val spec = state.spec
-                val name = spec?.server_name?.takeIf { it.isNotBlank() } ?: "mcp_server"
-                val envMap = spec?.env ?: emptyMap()
-                val headersMap = spec?.headers ?: emptyMap()
-                val disabled = spec?.disabled ?: false
+        runCatching {
+            val req = GetMcpServerStatesRequest()
+            getAgyLanguageService(hubUrl).GetMcpServerStates().executeSafely(req).map { res ->
+                res.states.map { state ->
+                    val spec = state.spec
+                    val name = spec?.server_name?.takeIf { it.isNotBlank() } ?: "mcp_server"
+                    val envMap = spec?.env ?: emptyMap()
+                    val headersMap = spec?.headers ?: emptyMap()
+                    val disabled = spec?.disabled ?: false
 
-                val domainSpec = McpServerSpec(
-                    serverName = name,
-                    command = spec?.command ?: "",
-                    args = spec?.args ?: emptyList(),
-                    env = envMap,
-                    serverUrl = spec?.server_url ?: "",
-                    headers = headersMap,
-                    disabled = disabled,
-                    cwd = spec?.cwd ?: ""
-                )
+                    val domainSpec = McpServerSpec(
+                        serverName = name,
+                        command = spec?.command ?: "",
+                        args = spec?.args ?: emptyList(),
+                        env = envMap,
+                        serverUrl = spec?.server_url ?: "",
+                        headers = headersMap,
+                        disabled = disabled,
+                        cwd = spec?.cwd ?: ""
+                    )
 
-                val toolsList = state.tools.map { t ->
-                    McpToolInfo(
-                        name = t.name,
-                        description = t.description,
-                        inputSchema = t.json_schema_string
+                    val toolsList = state.tools.map { t ->
+                        McpToolInfo(
+                            name = t.name,
+                            description = t.description,
+                            inputSchema = t.json_schema_string
+                        )
+                    }
+
+                    McpServerState(
+                        name = name,
+                        spec = domainSpec,
+                        status = state.status.name,
+                        error = state.error.takeIf { it.isNotBlank() },
+                        tools = toolsList,
+                        instructions = state.instructions.takeIf { it.isNotBlank() },
+                        isEnabled = !disabled
                     )
                 }
-
-                McpServerState(
-                    name = name,
-                    spec = domainSpec,
-                    status = state.status.name,
-                    error = state.error.takeIf { it.isNotBlank() },
-                    tools = toolsList,
-                    instructions = state.instructions.takeIf { it.isNotBlank() },
-                    isEnabled = !disabled
-                )
-            }
+            }.getOrThrow()
         }
     }
 
     suspend fun refreshMcpServers(hubUrl: String = AuthPreferences.currentHubUrl): Result<Unit> = withContext(Dispatchers.IO) {
-        val req = RefreshMcpServersRequest()
-        AgyLanguageService.RefreshMcpServers().executeSafely(req).map { }
+        runCatching {
+            val req = RefreshMcpServersRequest()
+            getAgyLanguageService(hubUrl).RefreshMcpServers().executeSafely(req).map { }.getOrThrow()
+        }
     }
 
     suspend fun toggleMcpServer(serverName: String, enabled: Boolean, hubUrl: String = AuthPreferences.currentHubUrl): Result<Unit> = withContext(Dispatchers.IO) {
-        val req = ToggleMcpServerRequest(
-            server_name = serverName,
-            enabled = enabled
-        )
-        AgyLanguageService.ToggleMcpServer().executeSafely(req).map { }
+        runCatching {
+            val req = ToggleMcpServerRequest(
+                server_name = serverName,
+                enabled = enabled
+            )
+            getAgyLanguageService(hubUrl).ToggleMcpServer().executeSafely(req).map { }.getOrThrow()
+        }
     }
 }

@@ -20,25 +20,55 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOn
 import java.io.IOException
 
-/**
- * Single shared typed entrypoint for Antigravity LanguageServerService gRPC APIs.
- * Connects to the active Hub URL using the shared OkHttpClient connection pool.
- */
-val AgyLanguageService: LanguageServerServiceClient by lazy {
-    val hubUrl = AuthPreferences.currentHubUrl.ifBlank { AuthPreferences.DEFAULT_HUB_URL }
-    val normalizedUrl = if (!hubUrl.startsWith("http://") && !hubUrl.startsWith("https://")) {
+private val agyLanguageServiceLock = Any()
+@Volatile
+private var cachedHubUrl: String = ""
+@Volatile
+private var cachedLanguageService: LanguageServerServiceClient? = null
+
+private fun normalizeHubUrl(rawUrl: String): String {
+    val hubUrl = rawUrl.ifBlank { AuthPreferences.DEFAULT_HUB_URL }.trim()
+    return if (!hubUrl.startsWith("http://") && !hubUrl.startsWith("https://")) {
         "http://$hubUrl"
     } else {
         hubUrl
     }.trimEnd('/')
-
-    GrpcLanguageServerServiceClient(
-        GrpcClient.Builder()
-            .client(AgyOkHttpClient.client)
-            .baseUrl(normalizedUrl)
-            .build()
-    )
 }
+
+/**
+ * Returns a typed Antigravity LanguageServerService gRPC client bound to [hubUrl].
+ * Automatically updates whenever the active local/remote Hub URL changes.
+ */
+fun getAgyLanguageService(hubUrl: String = AuthPreferences.currentHubUrl): LanguageServerServiceClient {
+    val normalizedUrl = normalizeHubUrl(hubUrl)
+    val existing = cachedLanguageService
+    if (existing != null && cachedHubUrl == normalizedUrl) {
+        return existing
+    }
+    return synchronized(agyLanguageServiceLock) {
+        val current = cachedLanguageService
+        if (current != null && cachedHubUrl == normalizedUrl) {
+            current
+        } else {
+            val created = GrpcLanguageServerServiceClient(
+                GrpcClient.Builder()
+                    .client(AgyOkHttpClient.client)
+                    .baseUrl(normalizedUrl)
+                    .build()
+            )
+            cachedHubUrl = normalizedUrl
+            cachedLanguageService = created
+            created
+        }
+    }
+}
+
+/**
+ * Single shared typed entrypoint for Antigravity LanguageServerService gRPC APIs.
+ * Dynamically resolves to the currently active Hub URL using the shared OkHttpClient pool.
+ */
+val AgyLanguageService: LanguageServerServiceClient
+    get() = getAgyLanguageService(AuthPreferences.currentHubUrl)
 
 /**
  * Domain error model for AGY Language Server gRPC calls.

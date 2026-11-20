@@ -149,6 +149,9 @@ object JarvisController {
         ClaudeChatBackend(app, scope, ChatSessionStore(), vm.claudePrefs, ClaudeBridgeClient())
     }
     private val hub by lazy { AgyHubClient() }
+    val liveVoiceClient: com.example.gemini.data.remote.GeminiLiveVoiceClient by lazy {
+        com.example.gemini.data.remote.GeminiLiveVoiceClient(app)
+    }
     @Volatile private var agyBusyUntil = 0L
     @Volatile private var agyRefreshing = false
 
