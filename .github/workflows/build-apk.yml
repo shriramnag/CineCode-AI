@@ -76,7 +76,7 @@ jobs:
               next_version_name = f"{major}.{minor}.{patch:03d}{suffix}"
               tag_name = f"v{next_version_name}"
 
-          apk_filename = f"CineCode-AI-{tag_name}.apk"
+          apk_filename = f"CineCode-AI-v{next_version_name}.apk"
           repo = os.environ.get("GITHUB_REPOSITORY", "shriramnag/CineCode-AI")
 
           data["version_code"] = next_version_code
@@ -157,8 +157,9 @@ jobs:
 
       - name: Ensure Debug Keystore Exists
         run: |
-          if [ ! -f "app/debug.keystore" ]; then
-            mkdir -p app
+          mkdir -p app
+          if [ ! -s "app/debug.keystore" ] || ! keytool -list -keystore app/debug.keystore -storepass android >/dev/null 2>&1; then
+            rm -f app/debug.keystore
             keytool -genkeypair -v -keystore app/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           fi
           if [ ! -s "debug.keystore" ] && [ -s "debug.keystore.base64" ]; then
@@ -187,6 +188,20 @@ jobs:
           FINAL_APK_PATH="app/build/outputs/apk/${{ env.APK_FILENAME }}"
           cp "$DEBUG_APK" "$FINAL_APK_PATH"
           ls -lh "$FINAL_APK_PATH"
+
+          APK_SIZE=$(stat -c%s "$FINAL_APK_PATH")
+          MIN_SIZE=$((20 * 1024 * 1024))
+          echo "APK size: $APK_SIZE bytes (minimum required: $MIN_SIZE bytes)"
+          if [ "$APK_SIZE" -le "$MIN_SIZE" ]; then
+            echo "ERROR: APK size ($APK_SIZE bytes) is not greater than 20MB!"
+            exit 1
+          fi
+
+          unzip -tq "$FINAL_APK_PATH" >/dev/null
+          APKSIGNER=$(find "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/build-tools" -name apksigner -type f 2>/dev/null | sort -V | tail -n 1 || true)
+          if [ -n "$APKSIGNER" ]; then
+            "$APKSIGNER" verify --verbose "$FINAL_APK_PATH"
+          fi
 
       - name: Commit & Sync version.json [skip ci]
         if: "!startsWith(github.ref, 'refs/tags/')"

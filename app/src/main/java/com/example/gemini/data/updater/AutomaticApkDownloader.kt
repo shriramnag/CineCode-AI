@@ -4,7 +4,9 @@ import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
+import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.core.content.FileProvider
@@ -89,7 +91,8 @@ object AutomaticApkDownloader {
                     .removePrefix("v")
                     .removePrefix("V")
                     .replace(Regex("[^A-Za-z0-9._-]"), "_")
-                val apkFileName = "CineCode-AI-v${cleanVer}.apk"
+                    .ifBlank { "latest" }
+                val apkFileName = ensureApkExtension("CineCode-AI-v${cleanVer}")
 
                 withContext(Dispatchers.Main) {
                     val openedInBrowser = openInBrowser(appContext, resolvedUrl)
@@ -126,16 +129,22 @@ object AutomaticApkDownloader {
     }
 
     private fun enqueueWithDownloadManager(context: Context, url: String, fileName: String) {
+        val safeApkName = ensureApkExtension(fileName)
         val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager
             ?: throw IllegalStateException("DownloadManager उपलब्ध नहीं है")
         val request = DownloadManager.Request(Uri.parse(url)).apply {
-            setTitle(fileName)
+            setTitle(safeApkName)
             setDescription("CineCode-AI अपडेट डाउनलोड हो रहा है")
             setMimeType("application/vnd.android.package-archive")
             setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+            setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, safeApkName)
         }
         dm.enqueue(request)
+    }
+
+    private fun ensureApkExtension(fileName: String): String {
+        val trimmed = fileName.trim().ifBlank { "CineCode-AI-update.apk" }
+        return if (trimmed.endsWith(".apk", ignoreCase = true)) trimmed else "$trimmed.apk"
     }
 
     private fun resolveDownloadUrl(versionName: String, preferredDownloadUrl: String): String {
@@ -189,9 +198,30 @@ object AutomaticApkDownloader {
     fun triggerApkInstall(context: Context, apkFile: File): Boolean {
         val appContext = context.applicationContext
         return try {
-            if (!apkFile.exists()) return false
-            val authority = "${appContext.packageName}.fileprovider"
-            val apkUri = FileProvider.getUriForFile(appContext, authority, apkFile)
+            if (!apkFile.exists() || apkFile.length() <= 0L) return false
+
+            val readyApkFile = if (apkFile.name.endsWith(".apk", ignoreCase = true)) {
+                apkFile
+            } else {
+                val targetDir = appContext.externalCacheDir ?: appContext.cacheDir
+                val normalizedFile = File(targetDir, ensureApkExtension(apkFile.name))
+                apkFile.copyTo(normalizedFile, overwrite = true)
+                normalizedFile
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+                !appContext.packageManager.canRequestPackageInstalls()
+            ) {
+                val manageIntent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                    data = Uri.parse("package:${appContext.packageName}")
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                appContext.startActivity(manageIntent)
+                return false
+            }
+
+            val authority = "${BuildConfig.APPLICATION_ID}.fileprovider"
+            val apkUri = FileProvider.getUriForFile(appContext, authority, readyApkFile)
             val installIntent = Intent(Intent.ACTION_VIEW).apply {
                 setDataAndType(apkUri, "application/vnd.android.package-archive")
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)

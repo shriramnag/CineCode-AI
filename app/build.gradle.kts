@@ -33,7 +33,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.termux"
+        applicationId = "com.shriramnag.cinecodeai"
         minSdk = 24
         targetSdk = 35
         versionCode = appVersionCode
@@ -88,6 +88,10 @@ android {
         jniLibs {
             useLegacyPackaging = true
         }
+    }
+
+    androidResources {
+        noCompress += listOf("tar", "xz", "gz", "bin")
     }
 
     splits {
