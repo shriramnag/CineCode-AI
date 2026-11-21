@@ -1,10 +1,10 @@
 {
-  "version_code": 341156,
-  "version_name": "0.227.573-beta",
+  "version_code": 341157,
+  "version_name": "0.227.574-beta",
   "min_supported_version_code": 1,
-  "url": "https://github.com/shriramnag/CineCode-AI/releases/download/v0.227.573-beta/CineCode-AI-v0.227.573-beta.apk",
+  "url": "https://github.com/shriramnag/CineCode-AI/releases/download/v0.227.574-beta/CineCode-AI-v0.227.574-beta.apk",
   "changelog": [
-    "feat(agent): implement post-setup connection orchestration"
+    "ci: enhance CI reliability and improve APK downloader resilience"
   ],
   "is_critical": false
 }
