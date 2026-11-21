@@ -36,8 +36,10 @@ object WebSearchManager {
     private const val USER_AGENT = "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36"
 
     private val httpClient = OkHttpClient.Builder()
-        .connectTimeout(12, TimeUnit.SECONDS)
-        .readTimeout(15, TimeUnit.SECONDS)
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(20, TimeUnit.SECONDS)
+        .callTimeout(30, TimeUnit.SECONDS)
+        .retryOnConnectionFailure(true)
         .followRedirects(true)
         .build()
 
@@ -56,12 +58,12 @@ object WebSearchManager {
                 .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
                 .build()
 
-            val response = httpClient.newCall(request).execute()
-            if (!response.isSuccessful) {
-                return@withContext Result.failure(Exception("Search HTTP request failed with code ${response.code}"))
+            val html = httpClient.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    return@withContext Result.failure(Exception("Search HTTP request failed with code ${response.code}"))
+                }
+                response.body?.string() ?: return@withContext Result.failure(Exception("Empty search response body"))
             }
-
-            val html = response.body?.string() ?: return@withContext Result.failure(Exception("Empty search response body"))
             val doc = Jsoup.parse(html)
 
             val results = mutableListOf<SearchResult>()
@@ -130,8 +132,9 @@ object WebSearchManager {
                 .header("User-Agent", USER_AGENT)
                 .build()
 
-            val response = httpClient.newCall(request).execute()
-            val html = response.body?.string() ?: return Result.failure(Exception("Empty lite response"))
+            val html = httpClient.newCall(request).execute().use { response ->
+                response.body?.string() ?: return Result.failure(Exception("Empty lite response"))
+            }
             val doc = Jsoup.parse(html)
 
             val results = mutableListOf<SearchResult>()
@@ -170,14 +173,17 @@ object WebSearchManager {
                 .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
                 .build()
 
-            val response = httpClient.newCall(request).execute()
-            if (!response.isSuccessful) {
-                return@withContext Result.failure(Exception("Failed to fetch URL, HTTP ${response.code}"))
+            val (contentType, rawBodyText) = httpClient.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    return@withContext Result.failure(Exception("Failed to fetch URL, HTTP ${response.code}"))
+                }
+                val ct = response.header("Content-Type") ?: ""
+                val bodyText = response.body?.string()
+                Pair(ct, bodyText)
             }
 
-            val contentType = response.header("Content-Type") ?: ""
             if (!contentType.contains("text/html") && !contentType.contains("application/xhtml") && !contentType.contains("text/plain")) {
-                val rawBody = response.body?.string()?.take(maxLength) ?: ""
+                val rawBody = rawBodyText?.take(maxLength) ?: ""
                 return@withContext Result.success(
                     WebpageContent(
                         title = targetUrl,
@@ -188,7 +194,7 @@ object WebSearchManager {
                 )
             }
 
-            val html = response.body?.string() ?: return@withContext Result.failure(Exception("Empty webpage body"))
+            val html = rawBodyText ?: return@withContext Result.failure(Exception("Empty webpage body"))
             val doc: Document = Jsoup.parse(html, targetUrl)
 
             val pageTitle = doc.title().trim().ifEmpty { targetUrl }

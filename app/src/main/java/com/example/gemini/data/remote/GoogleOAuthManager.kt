@@ -11,13 +11,23 @@ import okhttp3.Request
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.InetAddress
+import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.URLDecoder
 import java.net.URLEncoder
 import java.security.MessageDigest
 import java.security.SecureRandom
+import java.util.concurrent.TimeUnit
 
-class GoogleOAuthManager(private val client: OkHttpClient = OkHttpClient()) {
+class GoogleOAuthManager(
+    private val client: OkHttpClient = OkHttpClient.Builder()
+        .connectTimeout(25, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .writeTimeout(25, TimeUnit.SECONDS)
+        .callTimeout(55, TimeUnit.SECONDS)
+        .retryOnConnectionFailure(true)
+        .build()
+) {
 
     companion object {
         val CLIENT_ID: String by lazy {
@@ -83,7 +93,10 @@ class GoogleOAuthManager(private val client: OkHttpClient = OkHttpClient()) {
     suspend fun startLocalCallbackServer(onCodeReceived: (String) -> Unit) = withContext(Dispatchers.IO) {
         try {
             stopLocalCallbackServer()
-            serverSocket = ServerSocket(51121, 5, InetAddress.getByName("127.0.0.1"))
+            serverSocket = ServerSocket().apply {
+                reuseAddress = true
+                bind(InetSocketAddress(InetAddress.getByName("127.0.0.1"), 51121), 5)
+            }
             isServerListening.value = true
             android.util.Log.d("GeminiApp", "[OAuthServer] Listening on http://localhost:51121/oauth-callback")
 
@@ -352,84 +365,94 @@ class GoogleOAuthManager(private val client: OkHttpClient = OkHttpClient()) {
     )
 
     suspend fun exchangeCodeForToken(code: String, verifier: String): Result<TokenResponse> = withContext(Dispatchers.IO) {
-        try {
-            val body = FormBody.Builder()
-                .add("client_id", CLIENT_ID)
-                .add("client_secret", CLIENT_SECRET)
-                .add("code", code)
-                .add("grant_type", "authorization_code")
-                .add("redirect_uri", REDIRECT_URI)
-                .add("code_verifier", verifier)
-                .build()
+        val body = FormBody.Builder()
+            .add("client_id", CLIENT_ID)
+            .add("client_secret", CLIENT_SECRET)
+            .add("code", code)
+            .add("grant_type", "authorization_code")
+            .add("redirect_uri", REDIRECT_URI)
+            .add("code_verifier", verifier)
+            .build()
 
-            val request = Request.Builder()
-                .url(TOKEN_URL)
-                .post(body)
-                .build()
+        val request = Request.Builder()
+            .url(TOKEN_URL)
+            .post(body)
+            .build()
 
-            val response = client.newCall(request).execute()
-            val text = response.body?.string() ?: ""
-            android.util.Log.d("GeminiApp", "[OAuth] Token exchange HTTP ${response.code}: $text")
-            if (!response.isSuccessful) {
-                return@withContext Result.failure(Exception("Token exchange failed (${response.code}): $text"))
+        executeWithRetry("Token exchange") {
+            client.newCall(request).execute().use { response ->
+                val text = response.body?.string() ?: ""
+                android.util.Log.d("GeminiApp", "[OAuth] Token exchange HTTP ${response.code}")
+                if (!response.isSuccessful) {
+                    throw java.io.IOException("Token exchange failed (${response.code}): $text")
+                }
+                json.decodeFromString<TokenResponse>(text)
             }
-
-            val tokenData = json.decodeFromString<TokenResponse>(text)
-            Result.success(tokenData)
-        } catch (e: Exception) {
-            android.util.Log.e("GeminiApp", "[OAuth] Token exchange exception: ${e.message}")
-            Result.failure(e)
         }
     }
 
     suspend fun refreshToken(refreshToken: String): Result<TokenResponse> = withContext(Dispatchers.IO) {
-        try {
-            val body = FormBody.Builder()
-                .add("client_id", CLIENT_ID)
-                .add("client_secret", CLIENT_SECRET)
-                .add("refresh_token", refreshToken)
-                .add("grant_type", "refresh_token")
-                .build()
+        val body = FormBody.Builder()
+            .add("client_id", CLIENT_ID)
+            .add("client_secret", CLIENT_SECRET)
+            .add("refresh_token", refreshToken)
+            .add("grant_type", "refresh_token")
+            .build()
 
-            val request = Request.Builder()
-                .url(TOKEN_URL)
-                .post(body)
-                .build()
+        val request = Request.Builder()
+            .url(TOKEN_URL)
+            .post(body)
+            .build()
 
-            val response = client.newCall(request).execute()
-            val text = response.body?.string() ?: ""
-            android.util.Log.d("GeminiApp", "[OAuth] Refresh token HTTP ${response.code}: $text")
-            if (!response.isSuccessful) {
-                return@withContext Result.failure(Exception("Refresh token failed (${response.code}): $text"))
+        executeWithRetry("Refresh token") {
+            client.newCall(request).execute().use { response ->
+                val text = response.body?.string() ?: ""
+                android.util.Log.d("GeminiApp", "[OAuth] Refresh token HTTP ${response.code}")
+                if (!response.isSuccessful) {
+                    throw java.io.IOException("Refresh token failed (${response.code}): $text")
+                }
+                json.decodeFromString<TokenResponse>(text)
             }
-
-            val tokenData = json.decodeFromString<TokenResponse>(text)
-            Result.success(tokenData)
-        } catch (e: Exception) {
-            android.util.Log.e("GeminiApp", "[OAuth] Refresh token exception: ${e.message}")
-            Result.failure(e)
         }
     }
 
     suspend fun fetchUserInfo(accessToken: String): Result<UserInfoResponse> = withContext(Dispatchers.IO) {
-        try {
-            val request = Request.Builder()
-                .url(USER_INFO_URL)
-                .header("Authorization", "Bearer $accessToken")
-                .get()
-                .build()
+        val request = Request.Builder()
+            .url(USER_INFO_URL)
+            .header("Authorization", "Bearer $accessToken")
+            .get()
+            .build()
 
-            val response = client.newCall(request).execute()
-            val text = response.body?.string() ?: ""
-            android.util.Log.d("GeminiApp", "[OAuth] Fetch userinfo HTTP ${response.code}: $text")
-            if (!response.isSuccessful) {
-                return@withContext Result.failure(Exception("Fetch userinfo failed (${response.code}): $text"))
+        executeWithRetry("Fetch userinfo") {
+            client.newCall(request).execute().use { response ->
+                val text = response.body?.string() ?: ""
+                android.util.Log.d("GeminiApp", "[OAuth] Fetch userinfo HTTP ${response.code}")
+                if (!response.isSuccessful) {
+                    throw java.io.IOException("Fetch userinfo failed (${response.code}): $text")
+                }
+                json.decodeFromString<UserInfoResponse>(text)
             }
-
-            Result.success(json.decodeFromString<UserInfoResponse>(text))
-        } catch (e: Exception) {
-            android.util.Log.e("GeminiApp", "[OAuth] Fetch userinfo exception: ${e.message}")
-            Result.failure(e)
         }
+    }
+
+    private suspend fun <T> executeWithRetry(label: String, block: () -> T): Result<T> {
+        var lastError: Exception? = null
+        for (attempt in 1..2) {
+            try {
+                return Result.success(block())
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: java.io.IOException) {
+                lastError = e
+                android.util.Log.w("GeminiApp", "[OAuth] $label transient error (attempt $attempt/2): ${e.message}")
+                val isClientHttpError = e.message?.contains("(400)") == true || e.message?.contains("(401)") == true
+                if (isClientHttpError || attempt >= 2) break
+                kotlinx.coroutines.delay(1000L)
+            } catch (e: Exception) {
+                android.util.Log.e("GeminiApp", "[OAuth] $label exception: ${e.message}")
+                return Result.failure(e)
+            }
+        }
+        return Result.failure(lastError ?: Exception("$label failed"))
     }
 }

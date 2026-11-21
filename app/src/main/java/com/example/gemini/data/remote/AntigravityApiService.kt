@@ -85,19 +85,22 @@ class AntigravityApiService(
                     .post(body)
                     .build()
 
-                val response = client.newCall(request).execute()
-                val text = response.body?.string() ?: ""
-                Log.d(TAG, "[API] loadCodeAssist response code: ${response.code}")
-                if (response.isSuccessful) {
-                    val parsed = json.decodeFromString<LoadCodeAssistResponse>(text)
-                    val projectId = when (val p = parsed.cloudaicompanionProject) {
-                        is JsonObject -> p["id"]?.jsonPrimitive?.content ?: "rising-fact-p41fc"
-                        else -> p?.jsonPrimitive?.content ?: "rising-fact-p41fc"
+                client.newCall(request).execute().use { response ->
+                    val text = response.body?.string() ?: ""
+                    Log.d(TAG, "[API] loadCodeAssist response code: ${response.code}")
+                    if (response.isSuccessful) {
+                        val parsed = json.decodeFromString<LoadCodeAssistResponse>(text)
+                        val projectId = when (val p = parsed.cloudaicompanionProject) {
+                            is JsonObject -> p["id"]?.jsonPrimitive?.content ?: "rising-fact-p41fc"
+                            else -> p?.jsonPrimitive?.content ?: "rising-fact-p41fc"
+                        }
+                        val tier = parsed.paidTier?.id ?: parsed.currentTier?.id ?: "pro"
+                        Log.d(TAG, "[API] Discovered Project ID: $projectId, Tier: $tier")
+                        return@withContext Result.success(Pair(projectId, tier))
                     }
-                    val tier = parsed.paidTier?.id ?: parsed.currentTier?.id ?: "pro"
-                    Log.d(TAG, "[API] Discovered Project ID: $projectId, Tier: $tier")
-                    return@withContext Result.success(Pair(projectId, tier))
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "[API] loadCodeAssist error: ${e.message}")
             }
@@ -124,37 +127,40 @@ class AntigravityApiService(
                     .post(body)
                     .build()
 
-                val response = client.newCall(request).execute()
-                val text = response.body?.string() ?: ""
-                Log.d(TAG, "[API] fetchAvailableModels response code: ${response.code}")
-                if (response.isSuccessful) {
-                    val parsed = json.decodeFromString<FetchAvailableModelsResponse>(text)
-                    val modelList = mutableListOf<com.shriram.cinecode.domain.model.AiModel>()
-                    val quotaList = mutableListOf<ModelQuota>()
+                client.newCall(request).execute().use { response ->
+                    val text = response.body?.string() ?: ""
+                    Log.d(TAG, "[API] fetchAvailableModels response code: ${response.code}")
+                    if (response.isSuccessful) {
+                        val parsed = json.decodeFromString<FetchAvailableModelsResponse>(text)
+                        val modelList = mutableListOf<com.shriram.cinecode.domain.model.AiModel>()
+                        val quotaList = mutableListOf<ModelQuota>()
 
-                    parsed.models.forEach { (modelId, detail) ->
-                        modelList.add(
-                            com.shriram.cinecode.domain.model.AiModel.fromApi(
-                                id = modelId,
-                                displayName = detail.displayName
-                            )
-                        )
-                        detail.quotaInfo?.let { quota ->
-                            quotaList.add(
-                                ModelQuota(
-                                    modelId = modelId,
-                                    remainingFraction = quota.remainingFraction,
-                                    resetTime = quota.resetTime
+                        parsed.models.forEach { (modelId, detail) ->
+                            modelList.add(
+                                com.shriram.cinecode.domain.model.AiModel.fromApi(
+                                    id = modelId,
+                                    displayName = detail.displayName
                                 )
                             )
+                            detail.quotaInfo?.let { quota ->
+                                quotaList.add(
+                                    ModelQuota(
+                                        modelId = modelId,
+                                        remainingFraction = quota.remainingFraction,
+                                        resetTime = quota.resetTime
+                                    )
+                                )
+                            }
+                        }
+
+                        if (modelList.isNotEmpty()) {
+                            Log.d(TAG, "[API] Loaded ${modelList.size} models from backend: ${modelList.map { it.id }}")
+                            return@withContext Result.success(AvailableModelsResult(modelList, quotaList))
                         }
                     }
-
-                    if (modelList.isNotEmpty()) {
-                        Log.d(TAG, "[API] Loaded ${modelList.size} models from backend: ${modelList.map { it.id }}")
-                        return@withContext Result.success(AvailableModelsResult(modelList, quotaList))
-                    }
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "[API] fetchAvailableModels error: ${e.message}")
             }
@@ -340,110 +346,118 @@ class AntigravityApiService(
                 .build()
 
             var call: Call? = null
+            var shouldTryNextEndpoint = false
             try {
                 call = client.newCall(request)
-                val response = call.execute()
+                call.execute().use { response ->
+                    Log.d(TAG, "[API] SSE response status: ${response.code} from $endpoint")
 
-                Log.d(TAG, "[API] SSE response status: ${response.code} from $endpoint")
-
-                if (!response.isSuccessful) {
-                    val errorMsg = response.body?.string() ?: "HTTP ${response.code}"
-                    Log.e(TAG, "[API] SSE error response from $endpoint (${response.code}): $errorMsg")
-                    if (CloudBridgeStore.isRateLimitError(response.code, errorMsg)) {
-                        CloudBridgeStore.notifyRateLimit429("AntigravityApiService (${response.code})")
-                        if (endpoint != endpoints.last()) {
-                            kotlinx.coroutines.delay(350)
-                            continue
+                    if (!response.isSuccessful) {
+                        val errorMsg = response.body?.string() ?: "HTTP ${response.code}"
+                        Log.e(TAG, "[API] SSE error response from $endpoint (${response.code}): $errorMsg")
+                        if (CloudBridgeStore.isRateLimitError(response.code, errorMsg)) {
+                            CloudBridgeStore.notifyRateLimit429("AntigravityApiService (${response.code})")
+                            if (endpoint != endpoints.last()) {
+                                kotlinx.coroutines.delay(350)
+                                shouldTryNextEndpoint = true
+                                return@use
+                            }
+                            emit(StreamEvent.Error("Connecting to Fallback/Local Hub 🟠 (HTTP ${response.code} Rate Limit)"))
+                            return@flow
                         }
-                        emit(StreamEvent.Error("Connecting to Fallback/Local Hub 🟠 (HTTP ${response.code} Rate Limit)"))
-                        return@flow
+                        if (endpoint == endpoints.last()) {
+                            emit(StreamEvent.Error(errorMsg))
+                            return@flow
+                        }
+                        shouldTryNextEndpoint = true
+                        return@use
                     }
-                    if (endpoint == endpoints.last()) {
-                        emit(StreamEvent.Error(errorMsg))
-                        return@flow
-                    }
-                    continue
-                }
 
-                val source = response.body?.byteStream() ?: throw Exception("Empty response stream")
-                val reader = BufferedReader(InputStreamReader(source, Charsets.UTF_8))
-                var line: String?
-                var chunkCount = 0
+                    val source = response.body?.byteStream() ?: throw Exception("Empty response stream")
+                    BufferedReader(InputStreamReader(source, Charsets.UTF_8)).use { reader ->
+                        var line: String?
+                        var chunkCount = 0
 
-                while (reader.readLine().also { line = it } != null) {
-                    val currentLine = line ?: break
-                    if (currentLine.startsWith("data:")) {
-                        val dataJson = currentLine.substring(5).trim()
-                        if (dataJson.isNotEmpty() && dataJson != "[DONE]") {
-                            Log.d(TAG, "[Raw SSE] $dataJson")
-                            try {
-                                val chunk = json.decodeFromString<StreamCandidateChunk>(dataJson)
-                                val candidates = chunk.activeCandidates
-                                val parts = candidates?.firstOrNull()?.content?.parts
-                                if (parts != null) {
-                                    for (part in parts) {
-                                        val isThoughtPart = part.thought == true || (!part.thoughtSignature.isNullOrEmpty() && part.thought != false)
-                                        if (isThoughtPart && !part.text.isNullOrEmpty()) {
-                                            Log.d(TAG, "[SSE Thought Chunk] ${part.text}")
-                                            emit(StreamEvent.ThoughtChunk(part.text))
-                                            outputCharsCount += part.text.length
-                                            chunkCount++
-                                        } else if (!part.text.isNullOrEmpty()) {
-                                            Log.d(TAG, "[SSE Text Chunk] ${part.text}")
-                                            emit(StreamEvent.TextChunk(part.text))
-                                            outputCharsCount += part.text.length
-                                            chunkCount++
+                        while (reader.readLine().also { line = it } != null) {
+                            val currentLine = line ?: break
+                            if (currentLine.startsWith("data:")) {
+                                val dataJson = currentLine.substring(5).trim()
+                                if (dataJson.isNotEmpty() && dataJson != "[DONE]") {
+                                    Log.d(TAG, "[Raw SSE] $dataJson")
+                                    try {
+                                        val chunk = json.decodeFromString<StreamCandidateChunk>(dataJson)
+                                        val candidates = chunk.activeCandidates
+                                        val parts = candidates?.firstOrNull()?.content?.parts
+                                        if (parts != null) {
+                                            for (part in parts) {
+                                                val isThoughtPart = part.thought == true || (!part.thoughtSignature.isNullOrEmpty() && part.thought != false)
+                                                if (isThoughtPart && !part.text.isNullOrEmpty()) {
+                                                    Log.d(TAG, "[SSE Thought Chunk] ${part.text}")
+                                                    emit(StreamEvent.ThoughtChunk(part.text))
+                                                    outputCharsCount += part.text.length
+                                                    chunkCount++
+                                                } else if (!part.text.isNullOrEmpty()) {
+                                                    Log.d(TAG, "[SSE Text Chunk] ${part.text}")
+                                                    emit(StreamEvent.TextChunk(part.text))
+                                                    outputCharsCount += part.text.length
+                                                    chunkCount++
+                                                }
+                                            }
                                         }
+                                        val usage = chunk.activeUsage
+                                        if (usage != null) {
+                                            lastUsageMetadata = usage
+                                            Log.d(TAG, "[SSE Usage] Prompt: ${usage.promptTokenCount}, Output: ${usage.candidatesTokenCount}, Cached: ${usage.cachedContentTokenCount ?: usage.cacheReadInputTokens}, Total: ${usage.totalTokenCount}")
+                                        }
+                                    } catch (e: Exception) {
+                                        Log.w(TAG, "[SSE Parse Warning] $dataJson - Error: ${e.message}")
                                     }
                                 }
-                                val usage = chunk.activeUsage
-                                if (usage != null) {
-                                    lastUsageMetadata = usage
-                                    Log.d(TAG, "[SSE Usage] Prompt: ${usage.promptTokenCount}, Output: ${usage.candidatesTokenCount}, Cached: ${usage.cachedContentTokenCount ?: usage.cacheReadInputTokens}, Total: ${usage.totalTokenCount}")
-                                }
-                            } catch (e: Exception) {
-                                Log.w(TAG, "[SSE Parse Warning] $dataJson - Error: ${e.message}")
                             }
                         }
+
+                        val durationMs = System.currentTimeMillis() - streamStartTime
+                        Log.d(TAG, "[API] Stream finished successfully with $chunkCount chunks in ${durationMs}ms from $endpoint")
+
+                        val finalTokenUsage = if (lastUsageMetadata != null) {
+                            val prompt = lastUsageMetadata.promptTokenCount ?: (inputCharsCount / 4)
+                            val output = lastUsageMetadata.candidatesTokenCount ?: (outputCharsCount / 4).coerceAtLeast(chunkCount)
+                            val cached = lastUsageMetadata.cachedContentTokenCount ?: lastUsageMetadata.cacheReadInputTokens ?: 0
+                            val cacheCreation = lastUsageMetadata.cacheCreationInputTokens ?: 0
+                            val total = lastUsageMetadata.totalTokenCount ?: (prompt + output)
+                            com.shriram.cinecode.domain.model.TokenUsage(
+                                promptTokens = prompt,
+                                outputTokens = output,
+                                cachedTokens = cached,
+                                cacheCreationTokens = cacheCreation,
+                                totalTokens = total,
+                                durationMs = durationMs,
+                                isEstimated = false
+                            )
+                        } else {
+                            // Fallback heuristic tokenizer (~3.8 characters per token)
+                            val estimatedPrompt = (inputCharsCount / 3.8).toInt().coerceAtLeast(1)
+                            val estimatedOutput = (outputCharsCount / 3.8).toInt().coerceAtLeast(chunkCount)
+                            com.shriram.cinecode.domain.model.TokenUsage(
+                                promptTokens = estimatedPrompt,
+                                outputTokens = estimatedOutput,
+                                cachedTokens = 0,
+                                cacheCreationTokens = 0,
+                                totalTokens = estimatedPrompt + estimatedOutput,
+                                durationMs = durationMs,
+                                isEstimated = true
+                            )
+                        }
+
+                        emit(StreamEvent.Completed(tokenUsage = finalTokenUsage, rawPayload = jsonBody))
+                        streamSucceeded = true
                     }
                 }
-
-                val durationMs = System.currentTimeMillis() - streamStartTime
-                Log.d(TAG, "[API] Stream finished successfully with $chunkCount chunks in ${durationMs}ms from $endpoint")
-
-                val finalTokenUsage = if (lastUsageMetadata != null) {
-                    val prompt = lastUsageMetadata.promptTokenCount ?: (inputCharsCount / 4)
-                    val output = lastUsageMetadata.candidatesTokenCount ?: (outputCharsCount / 4).coerceAtLeast(chunkCount)
-                    val cached = lastUsageMetadata.cachedContentTokenCount ?: lastUsageMetadata.cacheReadInputTokens ?: 0
-                    val cacheCreation = lastUsageMetadata.cacheCreationInputTokens ?: 0
-                    val total = lastUsageMetadata.totalTokenCount ?: (prompt + output)
-                    com.shriram.cinecode.domain.model.TokenUsage(
-                        promptTokens = prompt,
-                        outputTokens = output,
-                        cachedTokens = cached,
-                        cacheCreationTokens = cacheCreation,
-                        totalTokens = total,
-                        durationMs = durationMs,
-                        isEstimated = false
-                    )
-                } else {
-                    // Fallback heuristic tokenizer (~3.8 characters per token)
-                    val estimatedPrompt = (inputCharsCount / 3.8).toInt().coerceAtLeast(1)
-                    val estimatedOutput = (outputCharsCount / 3.8).toInt().coerceAtLeast(chunkCount)
-                    com.shriram.cinecode.domain.model.TokenUsage(
-                        promptTokens = estimatedPrompt,
-                        outputTokens = estimatedOutput,
-                        cachedTokens = 0,
-                        cacheCreationTokens = 0,
-                        totalTokens = estimatedPrompt + estimatedOutput,
-                        durationMs = durationMs,
-                        isEstimated = true
-                    )
-                }
-
-                emit(StreamEvent.Completed(tokenUsage = finalTokenUsage, rawPayload = jsonBody))
-                streamSucceeded = true
-                break
+                if (streamSucceeded) break
+                if (shouldTryNextEndpoint) continue
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                call?.cancel()
+                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "[API] Stream exception on $endpoint: ${e.message}")
                 if (endpoint == endpoints.last()) {

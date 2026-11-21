@@ -30,6 +30,19 @@ val LocalSnackbarHostState = staticCompositionLocalOf<SnackbarHostState?> { null
 
 object ImageDownloadHelper {
 
+    private val mediaHttpClient: OkHttpClient by lazy {
+        OkHttpClient.Builder()
+            .connectionPool(okhttp3.ConnectionPool(4, 30, java.util.concurrent.TimeUnit.SECONDS))
+            .connectTimeout(25, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+            .writeTimeout(25, java.util.concurrent.TimeUnit.SECONDS)
+            .callTimeout(0, java.util.concurrent.TimeUnit.MILLISECONDS)
+            .retryOnConnectionFailure(true)
+            .followRedirects(true)
+            .followSslRedirects(true)
+            .build()
+    }
+
     fun downloadImage(
         context: Context,
         imageSource: String,
@@ -100,23 +113,9 @@ object ImageDownloadHelper {
         // in Server mode a plain path is a file on the server: read it through the bridge
         val serverUrl = if (source.startsWith("http://") || source.startsWith("https://")) null
         else com.shriram.cinecode.data.remote.HubMediaResolver.bridgeUrlFor(source)
-        val input: java.io.InputStream? = when {
-            serverUrl != null -> {
-                val resp = com.shriram.cinecode.data.remote.AgyBridgeService.instance.client.newCall(Request.Builder().url(serverUrl).get().build()).execute()
-                if (resp.isSuccessful) resp.body?.byteStream() else { resp.close(); null }
-            }
-            source.startsWith("content://") -> context.contentResolver.openInputStream(Uri.parse(source))
-            source.startsWith("http://") || source.startsWith("https://") -> {
-                val fixedSource = com.shriram.cinecode.data.preferences.AuthPreferences.rebaseBridgeUrl(source)
-                val http = if (com.shriram.cinecode.data.preferences.AuthPreferences.isBridgeUrl(fixedSource))
-                    com.shriram.cinecode.data.remote.AgyBridgeService.instance.client else OkHttpClient()
-                val resp = http.newCall(Request.Builder().url(fixedSource).get().build()).execute()
-                if (resp.isSuccessful) resp.body?.byteStream() else { resp.close(); null }
-            }
-            else -> File(clean).takeIf { it.canRead() && it.length() > 0 }?.inputStream()
-        }
-        input?.use { stream ->
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+
+        fun writeStreamToDownloads(stream: java.io.InputStream): Uri? {
+            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 val values = ContentValues().apply {
                     put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
                     put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
@@ -126,7 +125,7 @@ object ImageDownloadHelper {
                 val resolver = context.contentResolver
                 val itemUri = resolver.insert(MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), values)
                 itemUri?.also { uri ->
-                    resolver.openOutputStream(uri)?.use { out -> stream.copyTo(out) }
+                    resolver.openOutputStream(uri)?.use { out -> stream.copyTo(out, 64 * 1024) }
                     values.clear()
                     values.put(MediaStore.MediaColumns.IS_PENDING, 0)
                     resolver.update(uri, values, null, null)
@@ -134,9 +133,34 @@ object ImageDownloadHelper {
             } else {
                 val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "CineCode-AI").apply { mkdirs() }
                 val target = File(dir, fileName)
-                target.outputStream().use { out -> stream.copyTo(out) }
+                target.outputStream().use { out -> stream.copyTo(out, 64 * 1024) }
                 Uri.fromFile(target)
             }
+        }
+
+        when {
+            serverUrl != null -> {
+                com.shriram.cinecode.data.remote.AgyBridgeService.instance.client
+                    .newCall(Request.Builder().url(serverUrl).get().build())
+                    .execute()
+                    .use { resp ->
+                        if (resp.isSuccessful) resp.body?.byteStream()?.use { writeStreamToDownloads(it) } else null
+                    }
+            }
+            source.startsWith("content://") -> {
+                context.contentResolver.openInputStream(Uri.parse(source))?.use { writeStreamToDownloads(it) }
+            }
+            source.startsWith("http://") || source.startsWith("https://") -> {
+                val fixedSource = com.shriram.cinecode.data.preferences.AuthPreferences.rebaseBridgeUrl(source)
+                val http = if (com.shriram.cinecode.data.preferences.AuthPreferences.isBridgeUrl(fixedSource))
+                    com.shriram.cinecode.data.remote.AgyBridgeService.instance.client else mediaHttpClient
+                http.newCall(Request.Builder().url(fixedSource).get().build())
+                    .execute()
+                    .use { resp ->
+                        if (resp.isSuccessful) resp.body?.byteStream()?.use { writeStreamToDownloads(it) } else null
+                    }
+            }
+            else -> File(clean).takeIf { it.canRead() && it.length() > 0 }?.inputStream()?.use { writeStreamToDownloads(it) }
         }
     } catch (_: Exception) {
         null
@@ -239,7 +263,7 @@ object ImageDownloadHelper {
             return try {
                 val fixedSource = com.shriram.cinecode.data.preferences.AuthPreferences.rebaseBridgeUrl(source)
                 val client = if (com.shriram.cinecode.data.preferences.AuthPreferences.isBridgeUrl(fixedSource))
-                    com.shriram.cinecode.data.remote.AgyBridgeService.instance.client else OkHttpClient()
+                    com.shriram.cinecode.data.remote.AgyBridgeService.instance.client else mediaHttpClient
                 val req = Request.Builder()
                     .url(fixedSource)
                     .header("User-Agent", "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36 CineCode-AI/1.0")
