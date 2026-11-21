@@ -81,6 +81,20 @@ jobs:
             -PAPP_VERSION_NAME="${{ env.VERSION_NAME }}" \
             --no-daemon --max-workers=2 --stacktrace
           ls -lh app/build/outputs/apk/release/*.apk
+          RELEASE_APK=$(find app/build/outputs/apk/release -maxdepth 1 -name "*.apk" -type f | head -n 1)
+          if [ -z "$RELEASE_APK" ]; then
+            echo "ERROR: No release APK found in app/build/outputs/apk/release/"
+            exit 1
+          fi
+          APK_SIZE=$(stat -c%s "$RELEASE_APK")
+          MIN_SIZE=$((10 * 1024 * 1024))
+          echo "Release APK size: $APK_SIZE bytes"
+          if [ "$APK_SIZE" -le "$MIN_SIZE" ]; then
+            echo "ERROR: Release APK size ($APK_SIZE bytes) looks truncated!"
+            exit 1
+          fi
+          unzip -tq "$RELEASE_APK" >/dev/null
+          sha256sum "$RELEASE_APK"
 
       - name: Generate Dynamic Release Notes
         id: release_notes
@@ -280,5 +294,6 @@ jobs:
             #### इस रिलीज़ में किए गए मुख्य सुधार / अपडेट:
             ${{ steps.release_notes.outputs.changelog }}
           files: app/build/outputs/apk/release/*.apk
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

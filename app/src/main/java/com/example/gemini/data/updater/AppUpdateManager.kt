@@ -40,8 +40,22 @@ sealed class DownloadState {
 class AppUpdateManager(private val context: Context) {
 
     private val httpClient = OkHttpClient.Builder()
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
+        .connectTimeout(25, TimeUnit.SECONDS)
+        .readTimeout(35, TimeUnit.SECONDS)
+        .retryOnConnectionFailure(true)
+        .followRedirects(true)
+        .followSslRedirects(true)
+        .build()
+
+    private val downloadHttpClient = OkHttpClient.Builder()
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(60, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
+        .callTimeout(0, TimeUnit.MILLISECONDS)
+        .pingInterval(20, TimeUnit.SECONDS)
+        .retryOnConnectionFailure(true)
+        .followRedirects(true)
+        .followSslRedirects(true)
         .build()
 
 
@@ -55,7 +69,7 @@ class AppUpdateManager(private val context: Context) {
         try {
             val request = Request.Builder()
                 .url(versionJsonUrl)
-                .header("User-Agent", "antiGem-Updater/${BuildConfig.VERSION_NAME}")
+                .header("User-Agent", "CineCode-AI-Updater/${BuildConfig.VERSION_NAME}")
                 .header("Cache-Control", "no-cache")
                 .build()
 
@@ -83,16 +97,17 @@ class AppUpdateManager(private val context: Context) {
                     }
                 }
             }
-            if (!response.isSuccessful) {
-                val errorMsg = when (response.code) {
-                    404 -> "version.json not found on GitHub repository (HTTP 404). Please ensure version.json is pushed to the repository."
-                    403 -> "GitHub rate limit exceeded or access forbidden (HTTP 403)."
-                    else -> "Failed to fetch version info: HTTP ${response.code} (${response.message})"
+            val rawJson = response.use { resp ->
+                if (!resp.isSuccessful) {
+                    val errorMsg = when (resp.code) {
+                        404 -> "version.json not found on GitHub repository (HTTP 404). Please ensure version.json is pushed to the repository."
+                        403 -> "GitHub rate limit exceeded or access forbidden (HTTP 403)."
+                        else -> "Failed to fetch version info: HTTP ${resp.code} (${resp.message})"
+                    }
+                    return@withContext Result.failure(Exception(errorMsg))
                 }
-                return@withContext Result.failure(Exception(errorMsg))
+                resp.body?.string() ?: return@withContext Result.failure(Exception("Empty version response from server"))
             }
-
-            val rawJson = response.body?.string() ?: return@withContext Result.failure(Exception("Empty version response from server"))
 
             val json = JSONObject(rawJson)
             val remoteVersionCode = json.optInt("version_code", 0)
@@ -107,23 +122,6 @@ class AppUpdateManager(private val context: Context) {
 
             // Auto-generate package-specific download URL based on remote version name and flavor
             val currentPkg = context.packageName
-            val isSharedUser = try {
-                val pkgInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    context.packageManager.getPackageInfo(context.packageName, android.content.pm.PackageManager.PackageInfoFlags.of(0))
-                } else {
-                    @Suppress("DEPRECATION")
-                    context.packageManager.getPackageInfo(context.packageName, 0)
-                }
-                !pkgInfo.sharedUserId.isNullOrEmpty()
-            } catch (_: Exception) {
-                BuildConfig.IS_SHARED_USER_ID
-            }
-
-            val flavorType = when {
-                currentPkg == "com.shriram.cinecode" && isSharedUser -> "termux-shared"
-                currentPkg == "com.shriram.cinecode" -> "termux"
-                else -> "standard"
-            }
             val cleanVer = remoteVersionName.trim().removePrefix("v").removePrefix("V")
             val downloadUrl = json.optString("url").takeIf { it.isNotBlank() }
                 ?: "https://github.com/shriramnag/CineCode-AI/releases/download/v$cleanVer/CineCode-AI-v$cleanVer.apk"
@@ -133,7 +131,7 @@ class AppUpdateManager(private val context: Context) {
                 val probeRequest = Request.Builder()
                     .url(downloadUrl)
                     .head()
-                    .header("User-Agent", "antiGem-Updater/${BuildConfig.VERSION_NAME}")
+                    .header("User-Agent", "CineCode-AI-Updater/${BuildConfig.VERSION_NAME}")
                     .build()
 
                 val isAvailable = try {
@@ -171,57 +169,126 @@ class AppUpdateManager(private val context: Context) {
     }
 
     /**
-     * Downloads the APK file to cache directory with live progress updates.
+     * Downloads the APK file to cache directory with resumable HTTP Range streaming,
+     * automatic retries, temporary `.part` staging, and throttled progress updates.
      */
     suspend fun downloadApk(
         downloadUrl: String,
         onProgress: (Float, Long, Long) -> Unit
     ): Result<File> = withContext(Dispatchers.IO) {
-        try {
-            val request = Request.Builder()
-                .url(downloadUrl)
-                .header("User-Agent", "antiGem-Updater/${BuildConfig.VERSION_NAME}")
-                .build()
+        val updatesDir = File(context.externalCacheDir ?: context.cacheDir, "apk_updates").apply {
+            if (!exists()) mkdirs()
+        }
+        val safeName = downloadUrl.substringAfterLast('/').substringBefore('?')
+            .replace(Regex("[^A-Za-z0-9._-]"), "_")
+            .ifBlank { "CineCode-AI-update.apk" }
+            .let { if (it.endsWith(".apk", ignoreCase = true)) it else "$it.apk" }
+        val partFile = File(updatesDir, "$safeName.part")
+        val finalFile = File(updatesDir, safeName)
 
-            val response = httpClient.newCall(request).execute()
-            if (!response.isSuccessful) {
-                return@withContext Result.failure(Exception("Download failed: HTTP ${response.code}"))
+        var expectedTotalBytes = -1L
+        var lastError: Exception? = null
+        val maxAttempts = 5
+
+        for (attempt in 1..maxAttempts) {
+            var existingBytes = if (partFile.exists()) partFile.length() else 0L
+            if (expectedTotalBytes > 0L && existingBytes > expectedTotalBytes) {
+                partFile.delete()
+                existingBytes = 0L
             }
 
-            val body = response.body ?: return@withContext Result.failure(Exception("Empty download body"))
-            val totalBytes = body.contentLength()
+            try {
+                val reqBuilder = Request.Builder()
+                    .url(downloadUrl)
+                    .header("User-Agent", "CineCode-AI-Updater/${BuildConfig.VERSION_NAME}")
+                    .header("Accept", "application/octet-stream, */*")
+                    .header("Accept-Encoding", "identity")
+                    .header("Connection", "keep-alive")
+                if (existingBytes > 0L) {
+                    reqBuilder.header("Range", "bytes=$existingBytes-")
+                }
 
-            val targetDir = context.externalCacheDir ?: context.cacheDir
-            val targetFile = File(targetDir, "antiGem_update_${System.currentTimeMillis()}.apk")
+                downloadHttpClient.newCall(reqBuilder.build()).execute().use { response ->
+                    if (response.code == 416) {
+                        partFile.delete()
+                        throw java.io.IOException("Range reset (HTTP 416)")
+                    }
+                    if (response.code != 200 && response.code != 206) {
+                        throw java.io.IOException("Download failed: HTTP ${response.code}")
+                    }
+                    val body = response.body ?: throw java.io.IOException("Empty download body")
+                    val isPartial = response.code == 206 && existingBytes > 0L
+                    val totalFromRange = response.header("Content-Range")
+                        ?.substringAfterLast('/', "")
+                        ?.trim()
+                        ?.toLongOrNull() ?: -1L
+                    val totalBytes = when {
+                        isPartial && totalFromRange > 0L -> totalFromRange
+                        isPartial && body.contentLength() > 0L -> existingBytes + body.contentLength()
+                        body.contentLength() > 0L -> body.contentLength()
+                        else -> expectedTotalBytes
+                    }
+                    if (totalBytes > 0L) expectedTotalBytes = totalBytes
 
-            body.byteStream().use { input ->
-                targetFile.outputStream().use { output ->
-                    val buffer = ByteArray(32 * 1024)
-                    var bytesRead: Int
-                    var downloadedBytes = 0L
+                    var downloadedBytes = if (isPartial) existingBytes else 0L
+                    var lastEmitTime = 0L
 
-                    while (input.read(buffer).also { bytesRead = it } != -1) {
-                        output.write(buffer, 0, bytesRead)
-                        downloadedBytes += bytesRead
-
-                        val progress = if (totalBytes > 0) {
-                            (downloadedBytes.toFloat() / totalBytes.toFloat()).coerceIn(0f, 1f)
-                        } else {
-                            0f
-                        }
-                        withContext(Dispatchers.Main) {
-                            onProgress(progress, downloadedBytes, totalBytes)
+                    body.byteStream().use { input ->
+                        java.io.FileOutputStream(partFile, isPartial).use { fos ->
+                            java.io.BufferedOutputStream(fos, 64 * 1024).use { output ->
+                                val buffer = ByteArray(64 * 1024)
+                                var bytesRead: Int
+                                while (input.read(buffer).also { bytesRead = it } != -1) {
+                                    output.write(buffer, 0, bytesRead)
+                                    downloadedBytes += bytesRead
+                                    val now = System.currentTimeMillis()
+                                    if (now - lastEmitTime >= 250L) {
+                                        lastEmitTime = now
+                                        val progress = if (expectedTotalBytes > 0L) {
+                                            (downloadedBytes.toFloat() / expectedTotalBytes.toFloat()).coerceIn(0f, 1f)
+                                        } else 0f
+                                        withContext(Dispatchers.Main) {
+                                            onProgress(progress, downloadedBytes, expectedTotalBytes)
+                                        }
+                                    }
+                                }
+                                output.flush()
+                            }
+                            runCatching { fos.fd.sync() }
                         }
                     }
-                    output.flush()
+
+                    val finalProgress = if (expectedTotalBytes > 0L) {
+                        (downloadedBytes.toFloat() / expectedTotalBytes.toFloat()).coerceIn(0f, 1f)
+                    } else 1f
+                    withContext(Dispatchers.Main) {
+                        onProgress(finalProgress, downloadedBytes, expectedTotalBytes)
+                    }
+                }
+
+                if (expectedTotalBytes > 0L && partFile.length() < expectedTotalBytes) {
+                    throw java.io.IOException("Incomplete APK download (${partFile.length()} / $expectedTotalBytes bytes)")
+                }
+                if (partFile.length() < 1_000_000L) {
+                    partFile.delete()
+                    throw java.io.IOException("Downloaded APK file is too small or invalid")
+                }
+
+                if (finalFile.exists()) finalFile.delete()
+                if (!partFile.renameTo(finalFile)) {
+                    partFile.copyTo(finalFile, overwrite = true)
+                    partFile.delete()
+                }
+                return@withContext Result.success(finalFile)
+            } catch (e: Exception) {
+                lastError = e
+                Log.w(TAG, "downloadApk attempt $attempt/$maxAttempts failed: ${e.message}")
+                if (attempt < maxAttempts) {
+                    kotlinx.coroutines.delay((attempt * 1800L).coerceAtMost(8000L))
                 }
             }
-
-            Result.success(targetFile)
-        } catch (e: Exception) {
-            Log.e(TAG, "Download APK error: ${e.message}", e)
-            Result.failure(e)
         }
+        Result.failure(lastError ?: Exception("Download APK failed after retries"))
     }
 
     /**

@@ -352,6 +352,7 @@ jobs:
           fi
 
           unzip -tq "$FINAL_APK_PATH" >/dev/null
+          sha256sum "$FINAL_APK_PATH"
           APKSIGNER=$(find "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/build-tools" -name apksigner -type f 2>/dev/null | sort -V | tail -n 1 || true)
           if [ -n "$APKSIGNER" ]; then
             "$APKSIGNER" verify --verbose "$FINAL_APK_PATH"
@@ -396,6 +397,7 @@ jobs:
             #### इस रिलीज़ में किए गए मुख्य सुधार / अपडेट:
             ${{ steps.version.outputs.changelog }}
           files: app/build/outputs/apk/${{ env.APK_FILENAME }}
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -416,5 +418,6 @@ jobs:
             #### इस रिलीज़ में किए गए मुख्य सुधार / अपडेट:
             ${{ steps.version.outputs.changelog }}
           files: app/build/outputs/apk/${{ env.APK_FILENAME }}
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

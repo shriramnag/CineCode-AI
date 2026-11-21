@@ -75,16 +75,38 @@ object ArtifactDownloadHelper {
         }
     }
 
+    private val streamingClient by lazy {
+        OkHttpClient.Builder()
+            .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+            .writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+            .callTimeout(0, java.util.concurrent.TimeUnit.MILLISECONDS)
+            .retryOnConnectionFailure(true)
+            .followRedirects(true)
+            .followSslRedirects(true)
+            .build()
+    }
+
     private suspend fun saveArtifactToDownloads(
         context: Context,
         artifact: ArtifactSnapshot
     ): Triple<Uri?, String, String> = withContext(Dispatchers.IO) {
+        var stagedTempFile: File? = null
         try {
             val rawSource = artifact.absoluteUri.ifBlank { artifact.name }
-            val bytes = resolveFileBytes(context, rawSource) ?: return@withContext Triple(null, "*/*", artifact.name)
-            
+
+            // Stream remote HTTP/HTTPS files to a temporary .part file with auto-resume (safe for 4GB RAM)
+            val isRemoteHttp = rawSource.startsWith("http://") || rawSource.startsWith("https://")
+            val bytes: ByteArray? = if (isRemoteHttp) {
+                stagedTempFile = downloadHttpToTempFile(context, rawSource)
+                if (stagedTempFile == null) return@withContext Triple(null, "*/*", artifact.name)
+                null
+            } else {
+                resolveFileBytes(context, rawSource) ?: return@withContext Triple(null, "*/*", artifact.name)
+            }
+
             // Determine file name
-            val uriFileName = rawSource.removePrefix("file://").substringAfterLast("/")
+            val uriFileName = rawSource.removePrefix("file://").substringBefore('?').substringAfterLast("/")
             var fileName = if (artifact.name.isNotBlank()) {
                 val clean = artifact.name.substringAfterLast("/")
                 if (clean.contains(".")) clean else if (uriFileName.contains(".")) "$clean.${uriFileName.substringAfterLast(".")}" else clean
@@ -95,7 +117,8 @@ object ArtifactDownloadHelper {
             // Determine mime type and extension
             var extension = if (fileName.contains(".")) fileName.substringAfterLast(".").lowercase() else ""
             if (extension.isBlank()) {
-                if (isImageBytes(bytes)) {
+                val headBytes = bytes ?: readHeadBytes(stagedTempFile)
+                if (isImageBytes(headBytes)) {
                     extension = "png"
                     fileName = "$fileName.png"
                 } else {
@@ -106,6 +129,7 @@ object ArtifactDownloadHelper {
 
             val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
                 ?: when (extension) {
+                    "apk" -> "application/vnd.android.package-archive"
                     "md", "markdown" -> "text/markdown"
                     "py" -> "text/x-python"
                     "kt" -> "text/x-kotlin"
@@ -131,7 +155,13 @@ object ArtifactDownloadHelper {
                 val itemUri = resolver.insert(collection, contentValues) ?: return@withContext Triple(null, mimeType, fileName)
 
                 resolver.openOutputStream(itemUri)?.use { out ->
-                    out.write(bytes)
+                    if (stagedTempFile != null) {
+                        stagedTempFile.inputStream().use { input ->
+                            input.copyTo(out, 64 * 1024)
+                        }
+                    } else if (bytes != null) {
+                        out.write(bytes)
+                    }
                     out.flush()
                 }
 
@@ -144,7 +174,22 @@ object ArtifactDownloadHelper {
                 val downloadsDir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "CineCode-AI")
                 if (!downloadsDir.exists()) downloadsDir.mkdirs()
                 val targetFile = File(downloadsDir, fileName)
-                targetFile.writeBytes(bytes)
+                val partTarget = File(downloadsDir, "$fileName.part")
+                if (stagedTempFile != null) {
+                    stagedTempFile.inputStream().use { input ->
+                        partTarget.outputStream().use { output ->
+                            input.copyTo(output, 64 * 1024)
+                            output.flush()
+                        }
+                    }
+                    if (targetFile.exists()) targetFile.delete()
+                    if (!partTarget.renameTo(targetFile)) {
+                        partTarget.copyTo(targetFile, overwrite = true)
+                        partTarget.delete()
+                    }
+                } else if (bytes != null) {
+                    targetFile.writeBytes(bytes)
+                }
 
                 val fileUri = try {
                     FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", targetFile)
@@ -155,7 +200,87 @@ object ArtifactDownloadHelper {
             }
         } catch (e: Exception) {
             Triple(null, "*/*", artifact.name)
+        } finally {
+            runCatching { stagedTempFile?.delete() }
         }
+    }
+
+    private suspend fun downloadHttpToTempFile(context: Context, source: String): File? = withContext(Dispatchers.IO) {
+        val fixedSource = com.shriram.cinecode.data.preferences.AuthPreferences.rebaseBridgeUrl(source)
+        val client = if (com.shriram.cinecode.data.preferences.AuthPreferences.isBridgeUrl(fixedSource)) {
+            com.shriram.cinecode.data.remote.AgyBridgeService.instance.client
+        } else {
+            streamingClient
+        }
+        val cacheDir = File(context.externalCacheDir ?: context.cacheDir, "artifact_downloads").apply {
+            if (!exists()) mkdirs()
+        }
+        val partFile = File(cacheDir, "dl_${System.currentTimeMillis()}.part")
+        var expectedTotal = -1L
+
+        for (attempt in 1..3) {
+            val existing = if (partFile.exists()) partFile.length() else 0L
+            try {
+                val reqBuilder = Request.Builder()
+                    .url(fixedSource)
+                    .header("Accept-Encoding", "identity")
+                    .get()
+                if (existing > 0L) {
+                    reqBuilder.header("Range", "bytes=$existing-")
+                }
+                client.newCall(reqBuilder.build()).execute().use { resp ->
+                    if (resp.code == 416) {
+                        partFile.delete()
+                        throw java.io.IOException("Range reset (HTTP 416)")
+                    }
+                    if (resp.code != 200 && resp.code != 206) {
+                        throw java.io.IOException("HTTP ${resp.code}")
+                    }
+                    val body = resp.body ?: throw java.io.IOException("Empty response body")
+                    val isPartial = resp.code == 206 && existing > 0L
+                    val fromRange = resp.header("Content-Range")?.substringAfterLast('/', "")?.trim()?.toLongOrNull() ?: -1L
+                    val total = when {
+                        isPartial && fromRange > 0L -> fromRange
+                        isPartial && body.contentLength() > 0L -> existing + body.contentLength()
+                        body.contentLength() > 0L -> body.contentLength()
+                        else -> expectedTotal
+                    }
+                    if (total > 0L) expectedTotal = total
+
+                    body.byteStream().use { input ->
+                        java.io.FileOutputStream(partFile, isPartial).use { fos ->
+                            java.io.BufferedOutputStream(fos, 64 * 1024).use { out ->
+                                val buf = ByteArray(64 * 1024)
+                                var read: Int
+                                while (input.read(buf).also { read = it } != -1) {
+                                    out.write(buf, 0, read)
+                                }
+                                out.flush()
+                            }
+                        }
+                    }
+                }
+                if (expectedTotal > 0L && partFile.length() < expectedTotal) {
+                    throw java.io.IOException("Incomplete stream (${partFile.length()} / $expectedTotal)")
+                }
+                return@withContext partFile
+            } catch (_: Exception) {
+                if (attempt < 3) {
+                    kotlinx.coroutines.delay(attempt * 1500L)
+                }
+            }
+        }
+        runCatching { partFile.delete() }
+        null
+    }
+
+    private fun readHeadBytes(file: File?): ByteArray {
+        if (file == null || !file.exists()) return ByteArray(0)
+        return runCatching {
+            val buf = ByteArray(16)
+            val count = file.inputStream().use { it.read(buf) }
+            if (count > 0) buf.copyOf(count) else ByteArray(0)
+        }.getOrDefault(ByteArray(0))
     }
 
     private suspend fun resolveFileBytes(context: Context, source: String): ByteArray? {
@@ -184,22 +309,7 @@ object ArtifactDownloadHelper {
             }
         }
 
-        // 4. Remote HTTP URL
-        if (source.startsWith("http://") || source.startsWith("https://")) {
-            return try {
-                val fixedSource = com.shriram.cinecode.data.preferences.AuthPreferences.rebaseBridgeUrl(source)
-                val client = if (com.shriram.cinecode.data.preferences.AuthPreferences.isBridgeUrl(fixedSource))
-                    com.shriram.cinecode.data.remote.AgyBridgeService.instance.client else OkHttpClient()
-                val req = Request.Builder().url(fixedSource).get().build()
-                client.newCall(req).execute().use { resp ->
-                    if (resp.isSuccessful) resp.body?.bytes() else null
-                }
-            } catch (_: Exception) {
-                null
-            }
-        }
-
-        // 5. Hub media resolver
+        // 4. Hub media resolver
         val resolved = HubMediaResolver.resolveMediaUri(context, source)
         if (resolved.startsWith("data:")) {
             val b64 = resolved.substringAfter("base64,")

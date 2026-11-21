@@ -278,11 +278,16 @@ fun AppUpdateDialog(
                                     text = current.statusText,
                                     fontSize = 11.5.sp,
                                     color = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.weight(1f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
+                                Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "${current.downloadedBytes / (1024 * 1024)} MB / ${if (current.totalBytes > 0) "${current.totalBytes / (1024 * 1024)} MB" else "..."}",
+                                    text = "${AutomaticApkDownloader.formatMb(current.downloadedBytes)} / ${if (current.totalBytes > 0) AutomaticApkDownloader.formatMb(current.totalBytes) else "..."}",
                                     fontSize = 11.sp,
+                                    fontFamily = FontFamily.Monospace,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -290,29 +295,66 @@ fun AppUpdateDialog(
                         Spacer(modifier = Modifier.height(10.dp))
                     }
                     is ApkDownloadState.Error -> {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.16f))
-                                .border(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
-                                .padding(8.dp)
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Rounded.ErrorOutline,
-                                contentDescription = "Download Error",
-                                tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = current.message,
-                                color = MaterialTheme.colorScheme.error,
-                                fontSize = 11.5.sp,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis
-                            )
+                            Row(
+                                verticalAlignment = Alignment.Top,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.16f))
+                                    .border(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                                    .padding(10.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.ErrorOutline,
+                                    contentDescription = "Download Error",
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier
+                                        .padding(top = 1.dp)
+                                        .size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = current.message,
+                                    color = MaterialTheme.colorScheme.error,
+                                    fontSize = 11.5.sp,
+                                    lineHeight = 16.sp,
+                                    maxLines = 4,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                            OutlinedButton(
+                                onClick = {
+                                    AutomaticApkDownloader.openReleaseFallback(
+                                        context = context,
+                                        versionName = updateInfo.versionName,
+                                        preferredDownloadUrl = current.resolvedUrl ?: updateInfo.downloadUrl
+                                    )
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .defaultMinSize(minHeight = 48.dp)
+                                    .testTag("update_open_browser_button"),
+                                shape = RoundedCornerShape(12.dp),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.45f))
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Rounded.OpenInNew,
+                                    contentDescription = "ब्राउज़र से डाउनलोड करें",
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "ब्राउज़र / GitHub से सीधे डाउनलोड करें",
+                                    fontSize = 12.5.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
                         }
                         Spacer(modifier = Modifier.height(10.dp))
                     }
@@ -445,7 +487,7 @@ fun AppUpdateDialog(
                                 )
                                 Spacer(modifier = Modifier.width(5.dp))
                                 Text(
-                                    text = if (downloadState is ApkDownloadState.Error) "पुनः प्रयास" else "अपडेट करें",
+                                    text = if (downloadState is ApkDownloadState.Error) "पुनः प्रयास (Resume)" else "अपडेट करें",
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
                                     maxLines = 1,
