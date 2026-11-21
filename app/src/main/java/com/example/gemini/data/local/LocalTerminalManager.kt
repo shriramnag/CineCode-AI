@@ -273,7 +273,9 @@ class LocalPtySession(
 
                 val loginShellBinaries = arrayOf("login", "bash", "zsh", "fish", "sh")
 
+                val wxRestricted = LocalEnvironmentManager.isLocalExecRestricted(context)
                 val shellBinary = when {
+                    wxRestricted -> "/system/bin/sh"
                     forceShell != null && File(bin, forceShell).exists() && File(bin, forceShell).canExecute() -> File(bin, forceShell).absolutePath
                     forceShell != null && File(bin, forceShell).exists() -> File(bin, forceShell).absolutePath
                     forceShell != null && File(forceShell).exists() -> File(forceShell).absolutePath
@@ -1263,9 +1265,11 @@ object LocalTerminalManager {
     }
 
     fun autoLaunchServerIfReady(context: Context) {
-        val pkg = context.packageName
-        val isTermux = pkg == "com.shriram.cinecode" || pkg.contains("termux")
-        if (!isTermux) return
+        if (!LocalEnvironmentManager.isTermuxPackage(context)) return
+        if (LocalEnvironmentManager.isLocalExecRestricted(context)) {
+            Log.i(TAG, "[AutoLaunch] Android W^X restricts direct local binary execution; using Cloud/In-App mode cleanly.")
+            return
+        }
 
         if (!LocalEnvironmentManager.isInstalled(context)) {
             Log.d(TAG, "[AutoLaunch] Bootstrap is not installed yet, skipping auto-launch")

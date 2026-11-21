@@ -795,17 +795,27 @@ fun LocalToolsInstallDialog(
                     }
 
                     is LocalInstallerState.Error -> {
+                        val isWxError = state.isPermissionDeniedWx || LocalEnvironmentManager.isPermissionDeniedExecError(state.errorMessage)
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
-                            color = Color.Red.copy(alpha = 0.12f)
+                            color = (if (isWxError) Color(0xFFF59E0B) else Color.Red).copy(alpha = 0.12f)
                         ) {
                             Column(modifier = Modifier.padding(14.dp)) {
+                                if (isWxError) {
+                                    Text(
+                                        text = com.shriram.cinecode.data.local.TermuxLinkBridge.buildWxFallbackMessage(context),
+                                        fontSize = 12.5.sp,
+                                        lineHeight = 18.sp,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                }
                                 Text(
                                     text = state.errorMessage,
-                                    fontSize = 12.sp,
+                                    fontSize = 11.5.sp,
                                     fontFamily = FontFamily.Monospace,
-                                    color = Color.Red
+                                    color = if (isWxError) Color(0xFFF59E0B) else Color.Red
                                 )
                             }
                         }
@@ -1021,7 +1031,21 @@ fun LocalToolsInstallDialog(
                     }
 
                     is LocalInstallerState.Error -> {
+                        val isWxError = state.isPermissionDeniedWx || LocalEnvironmentManager.isPermissionDeniedExecError(state.errorMessage)
                         Column(modifier = Modifier.fillMaxWidth()) {
+                            if (isWxError) {
+                                Button(
+                                    onClick = onDismiss,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(10.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = ClaudeTerracotta)
+                                ) {
+                                    Icon(imageVector = Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Cloud / In-App मोड में आगे बढ़ें", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.5.sp)
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(10.dp)

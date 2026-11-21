@@ -91,6 +91,43 @@ object LocalEnvironmentManager {
     private val _installerLogs = MutableStateFlow<List<String>>(emptyList())
     val installerLogs: StateFlow<List<String>> = _installerLogs.asStateFlow()
 
+    private val _localExecRestricted = MutableStateFlow(false)
+    val localExecRestricted: StateFlow<Boolean> = _localExecRestricted.asStateFlow()
+
+    private const val PREFS_WX_STATE = "cinecode_wx_exec_prefs"
+    private const val KEY_WX_RESTRICTED = "local_bash_wx_restricted"
+
+    fun isLocalExecRestricted(context: Context): Boolean {
+        if (_localExecRestricted.value) return true
+        return runCatching {
+            val saved = context.applicationContext
+                .getSharedPreferences(PREFS_WX_STATE, Context.MODE_PRIVATE)
+                .getBoolean(KEY_WX_RESTRICTED, false)
+            if (saved) _localExecRestricted.value = true
+            saved
+        }.getOrDefault(false)
+    }
+
+    private fun markLocalExecRestricted(context: Context?, restricted: Boolean) {
+        _localExecRestricted.value = restricted
+        if (context != null) {
+            runCatching {
+                context.applicationContext
+                    .getSharedPreferences(PREFS_WX_STATE, Context.MODE_PRIVATE)
+                    .edit()
+                    .putBoolean(KEY_WX_RESTRICTED, restricted)
+                    .apply()
+            }
+        }
+    }
+
+    fun isPermissionDeniedExecError(outputOrMsg: String?): Boolean {
+        if (outputOrMsg.isNullOrBlank()) return false
+        return outputOrMsg.contains("error=13", ignoreCase = true) ||
+            outputOrMsg.contains("Permission denied", ignoreCase = true) ||
+            outputOrMsg.contains("EACCES", ignoreCase = true)
+    }
+
     private val managerScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private fun setupInstallNotificationChannel(context: Context) {
@@ -1775,12 +1812,13 @@ object LocalEnvironmentManager {
             } catch (_: Exception) {}
 
             ensureExecutablesPermissions(appContext)
+            markLocalExecRestricted(appContext, false)
             log("Running verification test command in shell...")
             var testRes = executeCommand(
                 command = "echo 'GEMINI_LOCAL_TOOLS_OK' && pwd && (which bash || which sh)",
                 context = appContext
             )
-            if (!testRes.output.contains("GEMINI_LOCAL_TOOLS_OK")) {
+            if (!testRes.output.contains("GEMINI_LOCAL_TOOLS_OK") && !isLocalExecRestricted(appContext)) {
                 log("First verification failed (${testRes.output.trim()}); re-granting 0755 permissions & retrying...")
                 ensureExecutablesPermissions(appContext)
                 testRes = executeCommand(
@@ -1790,6 +1828,35 @@ object LocalEnvironmentManager {
             }
             log("Verification output: ${testRes.output.trim()}")
 
+            val hitWxRestriction = isLocalExecRestricted(appContext) || isPermissionDeniedExecError(testRes.output)
+            if (hitWxRestriction) {
+                markLocalExecRestricted(appContext, true)
+                val fallbackMsg = TermuxLinkBridge.buildWxFallbackMessage(appContext)
+                val hasExternalTermux = TermuxLinkBridge.isExternalTermuxInstalled(appContext)
+                log("⚠️ Android W^X / noexec (error=13) detected on local bash. Enabling In-App /system/bin/sh + Cloud/API fallback (externalTermux=$hasExternalTermux).")
+
+                authPreferences.setLocalToolsInstalled(true, BOOTSTRAP_VERSION)
+                authPreferences.setLocalToolsEnabled(true)
+                authPreferences.setTerminalToolEnabled(true)
+
+                _installerState.value = LocalInstallerState.Success(
+                    message = fallbackMsg,
+                    prefixPath = prefixDir.absolutePath,
+                    totalDiskUsageFormatted = getFormattedDiskSpace(appContext),
+                    isWxFallbackMode = true,
+                    externalTermuxAvailable = hasExternalTermux
+                )
+                updateInstallNotification(
+                    appContext,
+                    "Setup Complete (Cloud & Safe Shell Mode)",
+                    "Android W^X की वजह से इन-ऐप सेफ़ शेल और Cloud/API मोड सक्रिय है।",
+                    100,
+                    ongoing = false,
+                    force = true
+                )
+                return@withContext true
+            }
+
             if (!testRes.output.contains("GEMINI_LOCAL_TOOLS_OK")) {
                 val errorMsg = "Shell verification test failed: ${testRes.output}"
                 log("❌ $errorMsg")
@@ -1797,7 +1864,8 @@ object LocalEnvironmentManager {
                 updateInstallNotification(appContext, "Installation Failed", errorMsg, -2, ongoing = false, force = true)
                 _installerState.value = LocalInstallerState.Error(
                     errorMessage = errorMsg,
-                    canRetry = true
+                    canRetry = true,
+                    isPermissionDeniedWx = isPermissionDeniedExecError(testRes.output)
                 )
                 return@withContext false
             }
@@ -2635,7 +2703,8 @@ All files created here persist inside the application.
             env.putAll(customEnv)
         }
 
-        val shellBinary = if (context != null) {
+        val preferSystemShell = context != null && isLocalExecRestricted(context)
+        val shellBinary = if (context != null && !preferSystemShell) {
             val localBash = File(getBinDir(context), "bash")
             val localDash = File(getBinDir(context), "dash")
             val localSh = File(getBinDir(context), "sh")
@@ -2652,16 +2721,15 @@ All files created here persist inside the application.
             "/system/bin/sh"
         }
 
-        val processBuilder = ProcessBuilder(shellBinary, "-c", command)
-        if (resolvedWorkingDir != null && File(resolvedWorkingDir).exists()) {
-            processBuilder.directory(File(resolvedWorkingDir))
-        }
+        fun runWithShell(binary: String): LocalCommandResult {
+            val processBuilder = ProcessBuilder(binary, "-c", command)
+            if (resolvedWorkingDir != null && File(resolvedWorkingDir).exists()) {
+                processBuilder.directory(File(resolvedWorkingDir))
+            }
+            val procEnv = processBuilder.environment()
+            procEnv.putAll(env)
+            processBuilder.redirectErrorStream(true)
 
-        val procEnv = processBuilder.environment()
-        procEnv.putAll(env)
-        processBuilder.redirectErrorStream(true)
-
-        return@withContext try {
             val process = processBuilder.start()
             val outputBuilder = StringBuilder()
 
@@ -2675,7 +2743,7 @@ All files created here persist inside the application.
             val exited = waitForProcessCompat(process, timeoutSeconds, TimeUnit.SECONDS)
             val durationMs = System.currentTimeMillis() - startTime
 
-            if (!exited) {
+            return if (!exited) {
                 destroyProcessForciblyCompat(process)
                 outputBuilder.append("\n[Process timed out after ${timeoutSeconds}s]")
                 LocalCommandResult(exitCode = 124, output = outputBuilder.toString().trim(), durationMs = durationMs)
@@ -2683,14 +2751,35 @@ All files created here persist inside the application.
                 val exitCode = process.exitValue()
                 LocalCommandResult(exitCode = exitCode, output = outputBuilder.toString().trim(), durationMs = durationMs)
             }
+        }
+
+        return@withContext try {
+            runWithShell(shellBinary)
         } catch (e: Exception) {
-            val durationMs = System.currentTimeMillis() - startTime
-            Log.e(TAG, "Command execution error: ${e.message}")
-            LocalCommandResult(
-                exitCode = 1,
-                output = "Execution failed: ${e.localizedMessage ?: e.message}",
-                durationMs = durationMs
-            )
+            val errMsg = e.localizedMessage ?: e.message ?: ""
+            if (shellBinary != "/system/bin/sh" && isPermissionDeniedExecError(errMsg)) {
+                Log.w(TAG, "Android W^X/noexec blocked $shellBinary ($errMsg); falling back to /system/bin/sh")
+                markLocalExecRestricted(context, true)
+                try {
+                    runWithShell("/system/bin/sh")
+                } catch (fallbackErr: Exception) {
+                    val durationMs = System.currentTimeMillis() - startTime
+                    Log.e(TAG, "Fallback /system/bin/sh execution error: ${fallbackErr.message}")
+                    LocalCommandResult(
+                        exitCode = 1,
+                        output = "Execution failed (Android W^X fallback): ${fallbackErr.localizedMessage ?: fallbackErr.message}",
+                        durationMs = durationMs
+                    )
+                }
+            } else {
+                val durationMs = System.currentTimeMillis() - startTime
+                Log.e(TAG, "Command execution error: ${e.message}")
+                LocalCommandResult(
+                    exitCode = 1,
+                    output = "Execution failed: $errMsg",
+                    durationMs = durationMs
+                )
+            }
         }
     }
 
@@ -3031,17 +3120,30 @@ All files created here persist inside the application.
                     context = appCtx
                 )
                 log("Permission-fix verification output: ${testRes.output.trim()}")
-                if (testRes.exitCode == 0 && testRes.output.contains("GEMINI_LOCAL_TOOLS_OK")) {
+                val hitWx = isLocalExecRestricted(appCtx) || isPermissionDeniedExecError(testRes.output)
+                if (hitWx || (testRes.exitCode == 0 && testRes.output.contains("GEMINI_LOCAL_TOOLS_OK"))) {
                     authPreferences.setLocalToolsInstalled(true, BOOTSTRAP_VERSION)
                     authPreferences.setLocalToolsEnabled(true)
                     authPreferences.setTerminalToolEnabled(true)
+                    val hasExtTermux = TermuxLinkBridge.isExternalTermuxInstalled(appCtx)
                     _installerState.value = LocalInstallerState.Success(
-                        message = "Permissions auto-granted (0755) and Linux environment verified!",
+                        message = if (hitWx) TermuxLinkBridge.buildWxFallbackMessage(appCtx) else "Permissions auto-granted (0755) and Linux environment verified!",
                         prefixPath = getInstallPath(appCtx),
-                        totalDiskUsageFormatted = getFormattedDiskSpace(appCtx)
+                        totalDiskUsageFormatted = getFormattedDiskSpace(appCtx),
+                        isWxFallbackMode = hitWx,
+                        externalTermuxAvailable = hasExtTermux
                     )
-                    updateInstallNotification(appCtx, "Installation Complete", "Linux environment verified and ready!", 100, ongoing = false, force = true)
-                    LocalTerminalManager.autoLaunchServerIfReady(appCtx)
+                    updateInstallNotification(
+                        appCtx,
+                        if (hitWx) "Setup Complete (Safe Shell & Cloud Mode)" else "Installation Complete",
+                        if (hitWx) "Android W^X फ़ॉलबैक सक्रिय है — आप तुरंत आगे बढ़ सकते हैं।" else "Linux environment verified and ready!",
+                        100,
+                        ongoing = false,
+                        force = true
+                    )
+                    if (!hitWx) {
+                        LocalTerminalManager.autoLaunchServerIfReady(appCtx)
+                    }
                     return@launch
                 }
             }

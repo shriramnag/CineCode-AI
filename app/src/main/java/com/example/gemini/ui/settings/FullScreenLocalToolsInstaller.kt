@@ -192,22 +192,37 @@ fun FullScreenLocalToolsInstaller(
                         is LocalInstallerState.Configuring,
                         is LocalInstallerState.Verifying -> InstallSteps(state)
 
-                        is LocalInstallerState.Success -> InstallerCard(tint = QuotaGreen) {
+                        is LocalInstallerState.Success -> InstallerCard(tint = if (state.isWxFallbackMode) AppColors.warning else QuotaGreen) {
                             Text(
-                                text = "The terminal, the IDE backend and the Antigravity language server are ready to run.",
+                                text = state.message.ifBlank {
+                                    "The terminal, the IDE backend and the Antigravity language server are ready to run."
+                                },
                                 fontSize = 13.5.sp,
                                 lineHeight = 19.sp,
                                 color = AppColors.onBackground
                             )
                         }
 
-                        is LocalInstallerState.Error -> InstallerCard(tint = AppColors.danger) {
-                            Text(
-                                text = state.errorMessage,
-                                fontSize = 13.sp,
-                                lineHeight = 18.sp,
-                                color = AppColors.onBackground
-                            )
+                        is LocalInstallerState.Error -> {
+                            val isWxError = state.isPermissionDeniedWx || LocalEnvironmentManager.isPermissionDeniedExecError(state.errorMessage)
+                            InstallerCard(tint = if (isWxError) AppColors.warning else AppColors.danger) {
+                                if (isWxError) {
+                                    Text(
+                                        text = com.shriram.cinecode.data.local.TermuxLinkBridge.buildWxFallbackMessage(context),
+                                        fontSize = 13.5.sp,
+                                        lineHeight = 19.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = AppColors.onBackground
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                }
+                                Text(
+                                    text = state.errorMessage,
+                                    fontSize = 12.sp,
+                                    lineHeight = 17.sp,
+                                    color = AppColors.textSecondary
+                                )
+                            }
                         }
                     }
                 }
@@ -264,20 +279,52 @@ fun FullScreenLocalToolsInstaller(
                     is LocalInstallerState.Configuring,
                     is LocalInstallerState.Verifying -> SecondaryButton("Continue in background", onClick = onSkip)
 
-                    is LocalInstallerState.Success -> PrimaryButton("Get started", Icons.Default.Check, onComplete)
+                    is LocalInstallerState.Success -> {
+                        PrimaryButton(
+                            text = if (state.isWxFallbackMode) "आगे बढ़ें (Cloud / In-App Mode)" else "Get started",
+                            icon = Icons.Default.Check,
+                            onClick = onComplete
+                        )
+                        if (state.isWxFallbackMode && state.externalTermuxAvailable) {
+                            SecondaryButton("Open External Termux (com.termux)") {
+                                com.shriram.cinecode.data.local.TermuxLinkBridge.openExternalTermux(context)
+                            }
+                        }
+                    }
 
                     is LocalInstallerState.Error -> {
-                        PrimaryButton("Try again", Icons.Default.Refresh) {
-                            val fallbackSource = when (selectedSourceType) {
-                                1 -> BootstrapSource.BaseMinimum
-                                2 -> selectedFileUri?.let { BootstrapSource.LocalZipUri(it) } ?: BootstrapSource.Auto
-                                else -> BootstrapSource.Auto
+                        val isWxError = state.isPermissionDeniedWx || LocalEnvironmentManager.isPermissionDeniedExecError(state.errorMessage)
+                        if (isWxError) {
+                            PrimaryButton("Cloud / In-App मोड में आगे बढ़ें", Icons.Default.Check, onSkip)
+                            if (com.shriram.cinecode.data.local.TermuxLinkBridge.isExternalTermuxInstalled(context)) {
+                                SecondaryButton("Open External Termux (com.termux)") {
+                                    com.shriram.cinecode.data.local.TermuxLinkBridge.openExternalTermux(context)
+                                }
                             }
-                            LocalEnvironmentManager.retryVerificationOrReinstall(context, authPreferences, fallbackSource)
-                        }
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            SecondaryButton("Change source", Modifier.weight(1f)) { LocalEnvironmentManager.resetState() }
-                            SecondaryButton("Skip", Modifier.weight(1f), onSkip)
+                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                SecondaryButton("Try again", Modifier.weight(1f)) {
+                                    val fallbackSource = when (selectedSourceType) {
+                                        1 -> BootstrapSource.BaseMinimum
+                                        2 -> selectedFileUri?.let { BootstrapSource.LocalZipUri(it) } ?: BootstrapSource.Auto
+                                        else -> BootstrapSource.Auto
+                                    }
+                                    LocalEnvironmentManager.retryVerificationOrReinstall(context, authPreferences, fallbackSource)
+                                }
+                                SecondaryButton("Change source", Modifier.weight(1f)) { LocalEnvironmentManager.resetState() }
+                            }
+                        } else {
+                            PrimaryButton("Try again", Icons.Default.Refresh) {
+                                val fallbackSource = when (selectedSourceType) {
+                                    1 -> BootstrapSource.BaseMinimum
+                                    2 -> selectedFileUri?.let { BootstrapSource.LocalZipUri(it) } ?: BootstrapSource.Auto
+                                    else -> BootstrapSource.Auto
+                                }
+                                LocalEnvironmentManager.retryVerificationOrReinstall(context, authPreferences, fallbackSource)
+                            }
+                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                SecondaryButton("Change source", Modifier.weight(1f)) { LocalEnvironmentManager.resetState() }
+                                SecondaryButton("Skip", Modifier.weight(1f), onSkip)
+                            }
                         }
                     }
                 }

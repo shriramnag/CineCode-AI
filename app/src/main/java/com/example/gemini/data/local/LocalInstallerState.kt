@@ -48,12 +48,15 @@ sealed class LocalInstallerState {
     data class Success(
         val message: String,
         val prefixPath: String,
-        val totalDiskUsageFormatted: String
+        val totalDiskUsageFormatted: String,
+        val isWxFallbackMode: Boolean = false,
+        val externalTermuxAvailable: Boolean = false
     ) : LocalInstallerState()
 
     data class Error(
         val errorMessage: String,
-        val canRetry: Boolean = true
+        val canRetry: Boolean = true,
+        val isPermissionDeniedWx: Boolean = false
     ) : LocalInstallerState()
 }
 
