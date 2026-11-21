@@ -248,12 +248,41 @@ fun AppUpdateDialog(
                 // Download Progress / Error
                 when (val current = downloadState) {
                     is ApkDownloadState.Downloading -> {
+                        val percent = if (current.totalBytes > 0L) {
+                            (current.progress * 100f).toInt().coerceIn(0, 100)
+                        } else null
+                        val speedLabel = AutomaticApkDownloader.formatSpeed(current.speedBytesPerSec)
+
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .testTag("update_download_progress"),
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = current.statusText,
+                                    fontSize = 11.5.sp,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.weight(1f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                if (percent != null) {
+                                    Text(
+                                        text = "$percent%",
+                                        fontSize = 12.sp,
+                                        fontFamily = FontFamily.Monospace,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
                             if (current.totalBytes > 0L) {
                                 LinearProgressIndicator(
                                     progress = { current.progress },
@@ -272,14 +301,22 @@ fun AppUpdateDialog(
                             }
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
+                                val turboMeta = buildString {
+                                    if (current.activeChunks > 1) append("⚡ ${current.activeChunks}x Turbo")
+                                    if (speedLabel.isNotBlank()) {
+                                        if (isNotEmpty()) append(" • ")
+                                        append(speedLabel)
+                                    }
+                                }
                                 Text(
-                                    text = current.statusText,
-                                    fontSize = 11.5.sp,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.weight(1f),
+                                    text = turboMeta.ifBlank { "कनेक्ट हो रहा है..." },
+                                    fontSize = 11.sp,
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.secondary,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )

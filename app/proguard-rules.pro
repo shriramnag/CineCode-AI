@@ -85,3 +85,12 @@
 }
 # WorkManager's Room database is created by reflection; R8 full mode strips its no-arg constructor.
 -keep class * extends androidx.room.RoomDatabase { <init>(); }
+
+# CineCode-AI core services, updater, MCP, Myraa Live Voice, and Wire protobuf models
+-keep class com.shriram.cinecode.data.updater.** { *; }
+-keep class com.shriram.cinecode.data.remote.** { *; }
+-keep class com.shriram.cinecode.data.agent.** { *; }
+-keep class com.example.gemini.data.remote.** { *; }
+-keep class exa.** { *; }
+-keep class com.squareup.wire.** { *; }
+-dontwarn com.squareup.wire.**

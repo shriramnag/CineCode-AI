@@ -16,14 +16,20 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.ConnectionPool
+import okhttp3.Dispatcher
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
@@ -34,6 +40,7 @@ import java.io.IOException
 import java.io.RandomAccessFile
 import java.util.Locale
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicLong
 
 sealed class ApkDownloadState {
     object Idle : ApkDownloadState()
@@ -41,7 +48,9 @@ sealed class ApkDownloadState {
         val progress: Float,
         val downloadedBytes: Long,
         val totalBytes: Long,
-        val statusText: String = "डाउनलोडिंग..."
+        val statusText: String = "डाउनलोडिंग...",
+        val speedBytesPerSec: Long = 0L,
+        val activeChunks: Int = 1
     ) : ApkDownloadState()
     data class Completed(val file: File) : ApkDownloadState()
     data class Error(
@@ -50,19 +59,26 @@ sealed class ApkDownloadState {
     ) : ApkDownloadState()
 }
 
+private data class DownloadProbe(
+    val totalBytes: Long,
+    val supportsRange: Boolean
+)
+
 /**
- * Resilient in-app APK downloader engineered for large (~46 MB+) GitHub Release APKs on 4GB RAM devices:
- * - Long read/connect timeouts with unlimited total call timeout
- * - 64 KB buffered streaming directly to a deterministic `.part` temporary file
- * - Automatic HTTP Range resume & exponential backoff retries (up to 5 attempts) when streams drop near 90%
- * - Full Content-Length + APK/ZIP magic header (`PK\x03\x04`) verification before atomic `.part` -> `.apk` move
- * - Clean browser & GitHub Release fallback if the user prefers external download
+ * Turbo High-Speed Multi-Chunk APK Downloader for CineCode-AI (4GB RAM / 64GB storage safe):
+ * - Probes server for `Accept-Ranges: bytes` (GitHub Releases CDN supported)
+ * - Uses 4 lightweight parallel HTTP Range chunks with 64 KB buffered streaming and per-chunk resume/retry
+ * - Falls back automatically to 64 KB keep-alive resumable single-stream if server doesn't support ranges
+ * - Reports live download speed (MB/s or KB/s), exact MB progress, and verifies size + ZIP/APK header (`PK\x03\x04`)
+ * - Launches 1-tap system installer upon completion and provides direct Browser/GitHub fallback
  */
 object AutomaticApkDownloader {
     private const val TAG = "AutomaticApkDownloader"
     private const val REPO_LATEST_RELEASE_API = "https://api.github.com/repos/shriramnag/CineCode-AI/releases/latest"
     private const val REPO_RELEASES_PAGE = "https://github.com/shriramnag/CineCode-AI/releases"
     private const val MAX_ATTEMPTS = 5
+    private const val PARALLEL_CHUNKS = 4
+    private const val MIN_PARALLEL_BYTES = 4L * 1024L * 1024L
     private const val IO_BUFFER_BYTES = 64 * 1024
     private const val MIN_VALID_APK_BYTES = 1_000_000L
     private const val PROGRESS_EMIT_INTERVAL_MS = 250L
@@ -79,6 +95,11 @@ object AutomaticApkDownloader {
         .build()
 
     private val streamClient = OkHttpClient.Builder()
+        .dispatcher(Dispatcher().apply {
+            maxRequests = 8
+            maxRequestsPerHost = 6
+        })
+        .connectionPool(ConnectionPool(6, 45, TimeUnit.SECONDS))
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
         .writeTimeout(30, TimeUnit.SECONDS)
@@ -106,6 +127,16 @@ object AutomaticApkDownloader {
         return String.format(Locale.US, "%.2f MB", bytes.toDouble() / (1024.0 * 1024.0))
     }
 
+    fun formatSpeed(bytesPerSec: Long): String {
+        if (bytesPerSec <= 0L) return ""
+        val kb = bytesPerSec / 1024.0
+        return if (kb >= 1024.0) {
+            String.format(Locale.US, "%.2f MB/s", kb / 1024.0)
+        } else {
+            String.format(Locale.US, "%.0f KB/s", kb.coerceAtLeast(1.0))
+        }
+    }
+
     fun startDownload(
         context: Context,
         versionName: String,
@@ -118,14 +149,16 @@ object AutomaticApkDownloader {
             progress = 0f,
             downloadedBytes = 0L,
             totalBytes = 0L,
-            statusText = "डाउनलोड लिंक तैयार हो रहा है..."
+            statusText = "टर्बो डाउनलोड लिंक तैयार हो रहा है...",
+            speedBytesPerSec = 0L,
+            activeChunks = 1
         )
 
         downloadJob = scope.launch {
             var resolvedUrl = preferredDownloadUrl.trim()
             try {
                 resolvedUrl = resolveDownloadUrl(versionName, preferredDownloadUrl)
-                Log.i(TAG, "Starting resumable APK download: $resolvedUrl")
+                Log.i(TAG, "Starting Turbo APK download: $resolvedUrl")
 
                 val cleanVer = versionName.trim()
                     .removePrefix("v")
@@ -142,10 +175,11 @@ object AutomaticApkDownloader {
                 val partFile = File(updatesDir, "$apkFileName.part")
                 val finalFile = File(updatesDir, apkFileName)
 
-                // If final APK already downloaded cleanly earlier, reuse and install immediately
+                val probe = probeDownloadCapabilities(resolvedUrl)
+
+                // Reuse already-verified cached APK if size matches remote
                 if (finalFile.exists() && finalFile.length() >= MIN_VALID_APK_BYTES && hasValidApkHeader(finalFile)) {
-                    val remoteSize = probeRemoteContentLength(resolvedUrl)
-                    if (remoteSize <= 0L || finalFile.length() == remoteSize) {
+                    if (probe.totalBytes <= 0L || finalFile.length() == probe.totalBytes) {
                         Log.i(TAG, "Reusing verified cached APK: ${finalFile.absolutePath} (${finalFile.length()} bytes)")
                         _state.value = ApkDownloadState.Completed(finalFile)
                         withContext(Dispatchers.Main) {
@@ -157,12 +191,40 @@ object AutomaticApkDownloader {
                     }
                 }
 
-                val downloadedApk = downloadWithResumeAndRetry(
-                    downloadUrl = resolvedUrl,
-                    partFile = partFile,
-                    finalFile = finalFile,
-                    updatesDir = updatesDir
-                )
+                // Prefer 4-chunk parallel Turbo mode when Range is supported & file >= 4MB & no large single-stream resume exists
+                val existingSinglePart = if (partFile.exists()) partFile.length() else 0L
+                val downloadedApk = if (probe.supportsRange && probe.totalBytes >= MIN_PARALLEL_BYTES && existingSinglePart == 0L) {
+                    try {
+                        downloadParallelChunks(
+                            downloadUrl = resolvedUrl,
+                            totalBytes = probe.totalBytes,
+                            apkFileName = apkFileName,
+                            partFile = partFile,
+                            finalFile = finalFile,
+                            updatesDir = updatesDir
+                        )
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Parallel 4-chunk mode fell back to single-stream: ${e.message}")
+                        cleanupChunkFiles(updatesDir, apkFileName)
+                        downloadSingleStreamWithResume(
+                            downloadUrl = resolvedUrl,
+                            initialExpectedBytes = probe.totalBytes,
+                            partFile = partFile,
+                            finalFile = finalFile,
+                            updatesDir = updatesDir
+                        )
+                    }
+                } else {
+                    downloadSingleStreamWithResume(
+                        downloadUrl = resolvedUrl,
+                        initialExpectedBytes = probe.totalBytes,
+                        partFile = partFile,
+                        finalFile = finalFile,
+                        updatesDir = updatesDir
+                    )
+                }
 
                 _state.value = ApkDownloadState.Completed(downloadedApk)
                 withContext(Dispatchers.Main) {
@@ -178,7 +240,7 @@ object AutomaticApkDownloader {
             } catch (e: CancellationException) {
                 _state.value = ApkDownloadState.Idle
             } catch (e: Exception) {
-                Log.e(TAG, "Resumable APK download failed: ${e.message}", e)
+                Log.e(TAG, "APK download failed: ${e.message}", e)
                 val friendlyReason = buildFriendlyError(e)
                 _state.value = ApkDownloadState.Error(
                     message = friendlyReason,
@@ -188,20 +250,249 @@ object AutomaticApkDownloader {
         }
     }
 
-    private suspend fun downloadWithResumeAndRetry(
+    /**
+     * Downloads the APK in 4 lightweight parallel HTTP Range chunks and merges them sequentially
+     * with a 64 KB buffer (zero RAM spikes on 4GB RAM devices).
+     */
+    private suspend fun downloadParallelChunks(
         downloadUrl: String,
+        totalBytes: Long,
+        apkFileName: String,
+        partFile: File,
+        finalFile: File,
+        updatesDir: File
+    ): File = coroutineScope {
+        val chunkFiles = (0 until PARALLEL_CHUNKS).map { idx ->
+            File(updatesDir, "$apkFileName.chunk$idx")
+        }
+
+        // Compute 4 contiguous byte ranges
+        val baseChunkSize = totalBytes / PARALLEL_CHUNKS
+        val ranges = (0 until PARALLEL_CHUNKS).map { idx ->
+            val start = idx * baseChunkSize
+            val end = if (idx == PARALLEL_CHUNKS - 1) totalBytes - 1L else ((idx + 1) * baseChunkSize) - 1L
+            start to end
+        }
+
+        // Validate any resumed chunk files from a previous interrupted Turbo session
+        var initialResumed = 0L
+        for (idx in 0 until PARALLEL_CHUNKS) {
+            val expectedChunkLen = ranges[idx].second - ranges[idx].first + 1L
+            val f = chunkFiles[idx]
+            if (f.exists()) {
+                val len = f.length()
+                if (len > expectedChunkLen) {
+                    f.delete()
+                } else {
+                    initialResumed += len
+                }
+            }
+        }
+
+        // Storage safety check (need remaining + merge space + 15 MB safety margin)
+        val remainingDownload = (totalBytes - initialResumed).coerceAtLeast(0L)
+        val requiredFree = remainingDownload + totalBytes + (15L * 1024L * 1024L)
+        if (updatesDir.usableSpace in 1L until requiredFree) {
+            // If storage is tight for parallel merge, let caller fall back to single-stream (needs only 1x file size)
+            throw IOException("Parallel merge needs ${formatMb(requiredFree)}, switching to single-stream")
+        }
+
+        val totalDownloaded = AtomicLong(initialResumed)
+        emitProgress(
+            downloadedBytes = initialResumed,
+            totalBytes = totalBytes,
+            statusText = if (initialResumed > 0L) {
+                "टर्बो 4x रीज़्यूम (${formatMb(initialResumed)} से)..."
+            } else {
+                "टर्बो 4x हाई-स्पीड डाउनलोड..."
+            },
+            speedBytesPerSec = 0L,
+            activeChunks = PARALLEL_CHUNKS
+        )
+
+        // Live progress + smoothed speed reporter coroutine
+        val progressReporter = launch {
+            var lastBytes = totalDownloaded.get()
+            var lastTime = System.currentTimeMillis()
+            var smoothedSpeed = 0L
+            while (isActive) {
+                delay(PROGRESS_EMIT_INTERVAL_MS)
+                val now = System.currentTimeMillis()
+                val currentBytes = totalDownloaded.get().coerceAtMost(totalBytes)
+                val elapsedMs = (now - lastTime).coerceAtLeast(1L)
+                val deltaBytes = (currentBytes - lastBytes).coerceAtLeast(0L)
+                val instantSpeed = (deltaBytes * 1000L) / elapsedMs
+                smoothedSpeed = if (smoothedSpeed == 0L) {
+                    instantSpeed
+                } else {
+                    ((smoothedSpeed * 6L) + (instantSpeed * 4L)) / 10L
+                }
+                lastBytes = currentBytes
+                lastTime = now
+                emitProgress(
+                    downloadedBytes = currentBytes,
+                    totalBytes = totalBytes,
+                    statusText = "टर्बो 4x डाउनलोडिंग...",
+                    speedBytesPerSec = smoothedSpeed,
+                    activeChunks = PARALLEL_CHUNKS
+                )
+            }
+        }
+
+        try {
+            val jobs = (0 until PARALLEL_CHUNKS).map { idx ->
+                val (rangeStart, rangeEnd) = ranges[idx]
+                async(Dispatchers.IO) {
+                    downloadSingleChunkWithRetry(
+                        downloadUrl = downloadUrl,
+                        chunkIndex = idx,
+                        rangeStart = rangeStart,
+                        rangeEnd = rangeEnd,
+                        chunkFile = chunkFiles[idx],
+                        totalCounter = totalDownloaded
+                    )
+                }
+            }
+            jobs.awaitAll()
+        } finally {
+            progressReporter.cancel()
+        }
+
+        // Verify all 4 chunks match exact expected sizes
+        for (idx in 0 until PARALLEL_CHUNKS) {
+            val expectedLen = ranges[idx].second - ranges[idx].first + 1L
+            val actualLen = chunkFiles[idx].length()
+            if (actualLen != expectedLen) {
+                throw IOException("Chunk #$idx size mismatch ($actualLen / $expectedLen)")
+            }
+        }
+
+        emitProgress(
+            downloadedBytes = totalBytes,
+            totalBytes = totalBytes,
+            statusText = "फ़ाइल जोड़ी और सत्यापित हो रही है...",
+            speedBytesPerSec = 0L,
+            activeChunks = PARALLEL_CHUNKS
+        )
+
+        // Stream-merge the 4 chunks sequentially into partFile using 64 KB buffer
+        if (partFile.exists()) partFile.delete()
+        FileOutputStream(partFile, false).use { fos ->
+            BufferedOutputStream(fos, IO_BUFFER_BYTES).use { out ->
+                val buf = ByteArray(IO_BUFFER_BYTES)
+                for (chunkFile in chunkFiles) {
+                    currentCoroutineContext().ensureActive()
+                    chunkFile.inputStream().use { input ->
+                        var read: Int
+                        while (input.read(buf).also { read = it } != -1) {
+                            out.write(buf, 0, read)
+                        }
+                    }
+                }
+                out.flush()
+            }
+            runCatching { fos.fd.sync() }
+        }
+
+        cleanupChunkFiles(updatesDir, apkFileName)
+
+        if (partFile.length() != totalBytes || partFile.length() < MIN_VALID_APK_BYTES || !hasValidApkHeader(partFile)) {
+            partFile.delete()
+            throw IOException("मर्ज की गई APK फ़ाइल सत्यापन में विफल रही")
+        }
+
+        finalizeApkFile(partFile, finalFile, totalBytes)
+    }
+
+    private suspend fun downloadSingleChunkWithRetry(
+        downloadUrl: String,
+        chunkIndex: Int,
+        rangeStart: Long,
+        rangeEnd: Long,
+        chunkFile: File,
+        totalCounter: AtomicLong
+    ) {
+        val expectedChunkLen = rangeEnd - rangeStart + 1L
+        var lastError: Exception? = null
+
+        for (attempt in 1..MAX_ATTEMPTS) {
+            currentCoroutineContext().ensureActive()
+            var existingLen = if (chunkFile.exists()) chunkFile.length() else 0L
+            if (existingLen == expectedChunkLen) {
+                return
+            }
+            if (existingLen > expectedChunkLen) {
+                chunkFile.delete()
+                totalCounter.addAndGet(-existingLen)
+                existingLen = 0L
+            }
+
+            val reqStart = rangeStart + existingLen
+            try {
+                val request = Request.Builder()
+                    .url(downloadUrl)
+                    .header("User-Agent", "CineCode-AI-Updater/${BuildConfig.VERSION_NAME}")
+                    .header("Accept", "application/octet-stream, */*")
+                    .header("Accept-Encoding", "identity")
+                    .header("Connection", "keep-alive")
+                    .header("Range", "bytes=$reqStart-$rangeEnd")
+                    .build()
+
+                streamClient.newCall(request).execute().use { response ->
+                    if (response.code != 206) {
+                        throw IOException("Chunk #$chunkIndex expected HTTP 206, got HTTP ${response.code}")
+                    }
+                    val body = response.body ?: throw IOException("Empty body on chunk #$chunkIndex")
+                    val append = existingLen > 0L
+
+                    body.byteStream().use { input ->
+                        FileOutputStream(chunkFile, append).use { fos ->
+                            BufferedOutputStream(fos, IO_BUFFER_BYTES).use { out ->
+                                val buffer = ByteArray(IO_BUFFER_BYTES)
+                                var read: Int
+                                while (input.read(buffer).also { read = it } != -1) {
+                                    currentCoroutineContext().ensureActive()
+                                    out.write(buffer, 0, read)
+                                    totalCounter.addAndGet(read.toLong())
+                                }
+                                out.flush()
+                            }
+                            runCatching { fos.fd.sync() }
+                        }
+                    }
+                }
+
+                if (chunkFile.length() == expectedChunkLen) {
+                    return
+                }
+                throw IOException("Chunk #$chunkIndex interrupted (${chunkFile.length()} / $expectedChunkLen)")
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                lastError = e
+                Log.w(TAG, "Chunk #$chunkIndex attempt $attempt/$MAX_ATTEMPTS failed: ${e.message}")
+                if (attempt < MAX_ATTEMPTS) {
+                    delay((attempt * 1200L).coerceAtMost(5000L))
+                }
+            }
+        }
+        throw lastError ?: IOException("Chunk #$chunkIndex failed after $MAX_ATTEMPTS retries")
+    }
+
+    private suspend fun downloadSingleStreamWithResume(
+        downloadUrl: String,
+        initialExpectedBytes: Long,
         partFile: File,
         finalFile: File,
         updatesDir: File
     ): File {
-        var expectedTotalBytes = probeRemoteContentLength(downloadUrl)
+        var expectedTotalBytes = initialExpectedBytes
         var lastError: Exception? = null
 
         for (attempt in 1..MAX_ATTEMPTS) {
             currentCoroutineContext().ensureActive()
             var existingBytes = if (partFile.exists()) partFile.length() else 0L
 
-            // Check if partial file is already oversized/corrupt vs expected size
             if (expectedTotalBytes > 0L && existingBytes > expectedTotalBytes) {
                 partFile.delete()
                 existingBytes = 0L
@@ -230,7 +521,7 @@ object AutomaticApkDownloader {
                     else ->
                         "डाउनलोड हो रहा है..."
                 }
-                emitProgress(existingBytes, expectedTotalBytes, statusPrefix)
+                emitProgress(existingBytes, expectedTotalBytes, statusPrefix, 0L, 1)
 
                 val reqBuilder = Request.Builder()
                     .url(downloadUrl)
@@ -245,7 +536,6 @@ object AutomaticApkDownloader {
                 streamClient.newCall(reqBuilder.build()).execute().use { response ->
                     val code = response.code
 
-                    // HTTP 416: Range not satisfiable (either already complete or stale partial file)
                     if (code == 416) {
                         val contentRangeTotal = parseTotalFromContentRange(response.header("Content-Range"))
                         if (contentRangeTotal > 0L) expectedTotalBytes = contentRangeTotal
@@ -278,8 +568,9 @@ object AutomaticApkDownloader {
                     }
 
                     var downloadedBytes = if (isPartial) existingBytes else 0L
-                    var lastEmitTime = 0L
+                    var lastEmitTime = System.currentTimeMillis()
                     var lastEmitBytes = downloadedBytes
+                    var smoothedSpeed = 0L
 
                     body.byteStream().use { input ->
                         FileOutputStream(partFile, isPartial).use { fos ->
@@ -292,15 +583,25 @@ object AutomaticApkDownloader {
                                     downloadedBytes += read
 
                                     val now = System.currentTimeMillis()
-                                    if (now - lastEmitTime >= PROGRESS_EMIT_INTERVAL_MS ||
+                                    val elapsedMs = now - lastEmitTime
+                                    if (elapsedMs >= PROGRESS_EMIT_INTERVAL_MS ||
                                         downloadedBytes - lastEmitBytes >= PROGRESS_EMIT_STEP_BYTES
                                     ) {
+                                        val deltaBytes = (downloadedBytes - lastEmitBytes).coerceAtLeast(0L)
+                                        val instantSpeed = if (elapsedMs > 0L) (deltaBytes * 1000L) / elapsedMs else smoothedSpeed
+                                        smoothedSpeed = if (smoothedSpeed == 0L) {
+                                            instantSpeed
+                                        } else {
+                                            ((smoothedSpeed * 6L) + (instantSpeed * 4L)) / 10L
+                                        }
                                         lastEmitTime = now
                                         lastEmitBytes = downloadedBytes
                                         emitProgress(
                                             downloadedBytes,
                                             expectedTotalBytes,
-                                            if (attempt > 1) "डाउनलोडिंग (प्रयास $attempt/$MAX_ATTEMPTS)..." else "डाउनलोडिंग..."
+                                            if (attempt > 1) "डाउनलोडिंग (प्रयास $attempt/$MAX_ATTEMPTS)..." else "डाउनलोडिंग...",
+                                            smoothedSpeed,
+                                            1
                                         )
                                     }
                                 }
@@ -310,10 +611,9 @@ object AutomaticApkDownloader {
                         }
                     }
 
-                    emitProgress(downloadedBytes, expectedTotalBytes, "APK सत्यापित हो रहा है...")
+                    emitProgress(downloadedBytes, expectedTotalBytes, "APK सत्यापित हो रहा है...", 0L, 1)
                 }
 
-                // Verify completeness before accepting the download
                 val actualLen = partFile.length()
                 if (expectedTotalBytes > 0L && actualLen < expectedTotalBytes) {
                     throw IOException(
@@ -338,7 +638,9 @@ object AutomaticApkDownloader {
                     emitProgress(
                         currentSaved,
                         expectedTotalBytes,
-                        "नेटवर्क रुका — ${formatMb(currentSaved)} से रीज़्यूम (${attempt + 1}/$MAX_ATTEMPTS)..."
+                        "नेटवर्क रुका — ${formatMb(currentSaved)} से रीज़्यूम (${attempt + 1}/$MAX_ATTEMPTS)...",
+                        0L,
+                        1
                     )
                     delay(backoffMs)
                 }
@@ -374,7 +676,13 @@ object AutomaticApkDownloader {
         return finalFile
     }
 
-    private fun emitProgress(downloadedBytes: Long, totalBytes: Long, statusText: String) {
+    private fun emitProgress(
+        downloadedBytes: Long,
+        totalBytes: Long,
+        statusText: String,
+        speedBytesPerSec: Long = 0L,
+        activeChunks: Int = 1
+    ) {
         val progress = if (totalBytes > 0L) {
             (downloadedBytes.toFloat() / totalBytes.toFloat()).coerceIn(0f, 1f)
         } else {
@@ -384,12 +692,15 @@ object AutomaticApkDownloader {
             progress = progress,
             downloadedBytes = downloadedBytes,
             totalBytes = totalBytes,
-            statusText = statusText
+            statusText = statusText,
+            speedBytesPerSec = speedBytesPerSec,
+            activeChunks = activeChunks
         )
     }
 
-    private fun probeRemoteContentLength(url: String): Long {
-        return runCatching {
+    private fun probeDownloadCapabilities(url: String): DownloadProbe {
+        // 1. Fast HEAD probe
+        val headProbe = runCatching {
             val req = Request.Builder()
                 .url(url)
                 .head()
@@ -398,12 +709,48 @@ object AutomaticApkDownloader {
                 .build()
             metadataClient.newCall(req).execute().use { resp ->
                 if (resp.isSuccessful) {
-                    resp.header("Content-Length")?.toLongOrNull() ?: -1L
+                    val len = resp.header("Content-Length")?.toLongOrNull() ?: -1L
+                    val acceptRanges = resp.header("Accept-Ranges").orEmpty()
+                    DownloadProbe(
+                        totalBytes = len,
+                        supportsRange = acceptRanges.contains("bytes", ignoreCase = true)
+                    )
                 } else {
-                    -1L
+                    DownloadProbe(-1L, false)
                 }
             }
-        }.getOrDefault(-1L)
+        }.getOrDefault(DownloadProbe(-1L, false))
+
+        if (headProbe.totalBytes > 0L && headProbe.supportsRange) {
+            return headProbe
+        }
+
+        // 2. Lightweight 1-byte Range probe (handles CDNs that omit Accept-Ranges on HEAD)
+        val rangeProbe = runCatching {
+            val req = Request.Builder()
+                .url(url)
+                .get()
+                .header("User-Agent", "CineCode-AI-Updater/${BuildConfig.VERSION_NAME}")
+                .header("Accept-Encoding", "identity")
+                .header("Range", "bytes=0-0")
+                .build()
+            metadataClient.newCall(req).execute().use { resp ->
+                if (resp.code == 206) {
+                    val total = parseTotalFromContentRange(resp.header("Content-Range"))
+                    DownloadProbe(
+                        totalBytes = if (total > 0L) total else headProbe.totalBytes,
+                        supportsRange = true
+                    )
+                } else if (resp.isSuccessful) {
+                    val len = resp.header("Content-Length")?.toLongOrNull() ?: headProbe.totalBytes
+                    DownloadProbe(totalBytes = len, supportsRange = false)
+                } else {
+                    headProbe
+                }
+            }
+        }.getOrDefault(headProbe)
+
+        return rangeProbe
     }
 
     private fun parseTotalFromContentRange(header: String?): Long {
@@ -421,7 +768,6 @@ object AutomaticApkDownloader {
                 val b1 = raf.read()
                 val b2 = raf.read()
                 val b3 = raf.read()
-                // Standard ZIP / APK local file header: PK\x03\x04
                 b0 == 0x50 && b1 == 0x4B && b2 == 0x03 && b3 == 0x04
             }
         }.getOrDefault(false)
@@ -430,11 +776,22 @@ object AutomaticApkDownloader {
     private fun cleanupStaleApks(updatesDir: File, keepApkFileName: String) {
         runCatching {
             val keepPartName = "$keepApkFileName.part"
+            val keepChunkPrefix = "$keepApkFileName.chunk"
             updatesDir.listFiles()?.forEach { f ->
-                if (f.name != keepApkFileName && f.name != keepPartName) {
+                if (f.name != keepApkFileName &&
+                    f.name != keepPartName &&
+                    !f.name.startsWith(keepChunkPrefix)
+                ) {
                     f.delete()
                 }
             }
+        }
+    }
+
+    private fun cleanupChunkFiles(updatesDir: File, apkFileName: String) {
+        runCatching {
+            val prefix = "$apkFileName.chunk"
+            updatesDir.listFiles()?.filter { it.name.startsWith(prefix) }?.forEach { it.delete() }
         }
     }
 
@@ -560,7 +917,9 @@ object AutomaticApkDownloader {
         if (deletePartial) {
             runCatching {
                 val updatesDir = File(context.applicationContext.externalCacheDir ?: context.applicationContext.cacheDir, "apk_updates")
-                updatesDir.listFiles()?.filter { it.name.endsWith(".part") }?.forEach { it.delete() }
+                updatesDir.listFiles()
+                    ?.filter { it.name.endsWith(".part") || it.name.contains(".chunk") }
+                    ?.forEach { it.delete() }
             }
         }
         _state.value = ApkDownloadState.Idle

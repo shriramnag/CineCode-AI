@@ -18,6 +18,8 @@ import com.shriram.cinecode.data.remote.HubMediaResolver
 import com.shriram.cinecode.domain.model.ArtifactSnapshot
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -207,7 +209,8 @@ object ArtifactDownloadHelper {
 
     private suspend fun downloadHttpToTempFile(context: Context, source: String): File? = withContext(Dispatchers.IO) {
         val fixedSource = com.shriram.cinecode.data.preferences.AuthPreferences.rebaseBridgeUrl(source)
-        val client = if (com.shriram.cinecode.data.preferences.AuthPreferences.isBridgeUrl(fixedSource)) {
+        val isBridge = com.shriram.cinecode.data.preferences.AuthPreferences.isBridgeUrl(fixedSource)
+        val client = if (isBridge) {
             com.shriram.cinecode.data.remote.AgyBridgeService.instance.client
         } else {
             streamingClient
@@ -215,15 +218,108 @@ object ArtifactDownloadHelper {
         val cacheDir = File(context.externalCacheDir ?: context.cacheDir, "artifact_downloads").apply {
             if (!exists()) mkdirs()
         }
-        val partFile = File(cacheDir, "dl_${System.currentTimeMillis()}.part")
-        var expectedTotal = -1L
+        val stamp = System.currentTimeMillis()
+        val partFile = File(cacheDir, "dl_$stamp.part")
 
+        // For non-bridge large remote assets (>= 4 MB), attempt 4-chunk parallel Range download
+        if (!isBridge) {
+            val probedTotal = runCatching {
+                val probeReq = Request.Builder()
+                    .url(fixedSource)
+                    .header("Accept-Encoding", "identity")
+                    .header("Range", "bytes=0-0")
+                    .get()
+                    .build()
+                client.newCall(probeReq).execute().use { resp ->
+                    if (resp.code == 206) {
+                        resp.header("Content-Range")?.substringAfterLast('/', "")?.trim()?.toLongOrNull() ?: -1L
+                    } else -1L
+                }
+            }.getOrDefault(-1L)
+
+            if (probedTotal >= 4L * 1024L * 1024L) {
+                val chunkFiles = (0 until 4).map { File(cacheDir, "dl_${stamp}_c$it.part") }
+                val parallelOk = runCatching {
+                    coroutineScope {
+                        val chunkSize = probedTotal / 4L
+                        val jobs = (0 until 4).map { idx ->
+                            val start = idx * chunkSize
+                            val end = if (idx == 3) probedTotal - 1L else ((idx + 1) * chunkSize) - 1L
+                            val expectedLen = end - start + 1L
+                            async(Dispatchers.IO) {
+                                var lastErr: Exception? = null
+                                for (attempt in 1..3) {
+                                    val existing = if (chunkFiles[idx].exists()) chunkFiles[idx].length() else 0L
+                                    if (existing == expectedLen) return@async
+                                    try {
+                                        val req = Request.Builder()
+                                            .url(fixedSource)
+                                            .header("Accept-Encoding", "identity")
+                                            .header("Connection", "keep-alive")
+                                            .header("Range", "bytes=${start + existing}-$end")
+                                            .get()
+                                            .build()
+                                        client.newCall(req).execute().use { resp ->
+                                            if (resp.code != 206) throw java.io.IOException("Chunk $idx HTTP ${resp.code}")
+                                            val body = resp.body ?: throw java.io.IOException("Empty chunk body")
+                                            body.byteStream().use { input ->
+                                                java.io.FileOutputStream(chunkFiles[idx], existing > 0L).use { fos ->
+                                                    java.io.BufferedOutputStream(fos, 64 * 1024).use { out ->
+                                                        val buf = ByteArray(64 * 1024)
+                                                        var read: Int
+                                                        while (input.read(buf).also { read = it } != -1) {
+                                                            out.write(buf, 0, read)
+                                                        }
+                                                        out.flush()
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        if (chunkFiles[idx].length() == expectedLen) return@async
+                                        throw java.io.IOException("Chunk $idx incomplete")
+                                    } catch (e: Exception) {
+                                        lastErr = e
+                                        if (attempt < 3) kotlinx.coroutines.delay(attempt * 1200L)
+                                    }
+                                }
+                                throw lastErr ?: java.io.IOException("Chunk $idx failed")
+                            }
+                        }
+                        jobs.forEach { it.await() }
+                    }
+                    java.io.FileOutputStream(partFile, false).use { fos ->
+                        java.io.BufferedOutputStream(fos, 64 * 1024).use { out ->
+                            val buf = ByteArray(64 * 1024)
+                            for (cf in chunkFiles) {
+                                cf.inputStream().use { input ->
+                                    var read: Int
+                                    while (input.read(buf).also { read = it } != -1) {
+                                        out.write(buf, 0, read)
+                                    }
+                                }
+                            }
+                            out.flush()
+                        }
+                    }
+                    partFile.length() == probedTotal
+                }.getOrDefault(false)
+
+                chunkFiles.forEach { runCatching { it.delete() } }
+                if (parallelOk) {
+                    return@withContext partFile
+                }
+                runCatching { partFile.delete() }
+            }
+        }
+
+        var expectedTotal = -1L
         for (attempt in 1..3) {
             val existing = if (partFile.exists()) partFile.length() else 0L
             try {
                 val reqBuilder = Request.Builder()
                     .url(fixedSource)
                     .header("Accept-Encoding", "identity")
+                    .header("Connection", "keep-alive")
                     .get()
                 if (existing > 0L) {
                     reqBuilder.header("Range", "bytes=$existing-")

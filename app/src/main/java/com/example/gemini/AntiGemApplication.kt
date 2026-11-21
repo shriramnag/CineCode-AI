@@ -16,6 +16,11 @@ class AntiGemApplication : Application(), coil.ImageLoaderFactory {
      */
     override fun newImageLoader(): coil.ImageLoader {
         val client = okhttp3.OkHttpClient.Builder()
+            .connectionPool(okhttp3.ConnectionPool(5, 30, java.util.concurrent.TimeUnit.SECONDS))
+            .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(20, java.util.concurrent.TimeUnit.SECONDS)
+            .writeTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+            .retryOnConnectionFailure(true)
             .addInterceptor { chain ->
                 val req = chain.request()
                 val bridge = com.shriram.cinecode.data.preferences.AuthPreferences.currentBridgeHttpUrl.toHttpUrlOrNull()
@@ -29,7 +34,38 @@ class AntiGemApplication : Application(), coil.ImageLoaderFactory {
                 )
             }
             .build()
-        return coil.ImageLoader.Builder(this).okHttpClient(client).build()
+        return coil.ImageLoader.Builder(this)
+            .okHttpClient(client)
+            .allowRgb565(true)
+            .memoryCache {
+                coil.memory.MemoryCache.Builder(this)
+                    .maxSizePercent(0.15)
+                    .build()
+            }
+            .diskCache {
+                coil.disk.DiskCache.Builder()
+                    .directory(cacheDir.resolve("coil_image_cache"))
+                    .maxSizeBytes(25L * 1024L * 1024L)
+                    .build()
+            }
+            .crossfade(false)
+            .build()
+    }
+
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
+            runCatching {
+                coil.Coil.imageLoader(this).memoryCache?.clear()
+            }
+        }
+    }
+
+    override fun onLowMemory() {
+        super.onLowMemory()
+        runCatching {
+            coil.Coil.imageLoader(this).memoryCache?.clear()
+        }
     }
 
     override fun onCreate() {

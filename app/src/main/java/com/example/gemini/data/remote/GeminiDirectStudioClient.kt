@@ -20,8 +20,11 @@ class GeminiDirectStudioClient(
     private val defaultModel: String = "gemini-4-hydrogen"
 ) {
     private val client = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
+        .connectTimeout(25, TimeUnit.SECONDS)
+        .readTimeout(35, TimeUnit.SECONDS)
+        .writeTimeout(25, TimeUnit.SECONDS)
+        .callTimeout(60, TimeUnit.SECONDS)
+        .retryOnConnectionFailure(true)
         .build()
 
     private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
@@ -48,28 +51,46 @@ class GeminiDirectStudioClient(
                 .header("Content-Type", "application/json")
                 .build()
 
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    val errBody = response.body?.string() ?: "Unknown error"
-                    Log.e("GeminiDirectClient", "API Error HTTP ${response.code}: $errBody")
-                    return@withContext Result.success("[Antigravity Cloud: Active 🟢] (HTTP Error Fallback)\nResponse: $errBody")
-                }
+            var lastException: Exception? = null
+            for (attempt in 1..2) {
+                try {
+                    client.newCall(request).execute().use { response ->
+                        if (!response.isSuccessful) {
+                            val errBody = response.body?.string() ?: "Unknown error"
+                            if (response.code in 502..504 && attempt < 2) {
+                                lastException = java.io.IOException("Transient HTTP ${response.code}")
+                                return@use
+                            }
+                            Log.e("GeminiDirectClient", "API Error HTTP ${response.code}: $errBody")
+                            return@withContext Result.success("[Antigravity Cloud: Active 🟢] (HTTP Error Fallback)\nResponse: $errBody")
+                        }
 
-                val responseString = response.body?.string() ?: "{}"
-                val jsonRes = JSONObject(responseString)
-                val candidates = jsonRes.optJSONArray("candidates")
-                val text = if (candidates != null && candidates.length() > 0) {
-                    candidates.getJSONObject(0)
-                        .optJSONObject("content")
-                        ?.optJSONArray("parts")
-                        ?.getJSONObject(0)
-                        ?.optString("text", "No response text") ?: "No content"
-                } else {
-                    "No candidates found"
-                }
+                        val responseString = response.body?.string() ?: "{}"
+                        val jsonRes = JSONObject(responseString)
+                        val candidates = jsonRes.optJSONArray("candidates")
+                        val text = if (candidates != null && candidates.length() > 0) {
+                            candidates.getJSONObject(0)
+                                .optJSONObject("content")
+                                ?.optJSONArray("parts")
+                                ?.getJSONObject(0)
+                                ?.optString("text", "No response text") ?: "No content"
+                        } else {
+                            "No candidates found"
+                        }
 
-                Result.success("[Antigravity Cloud: Active 🟢]\n$text")
+                        return@withContext Result.success("[Antigravity Cloud: Active 🟢]\n$text")
+                    }
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
+                } catch (e: java.io.IOException) {
+                    lastException = e
+                    Log.w("GeminiDirectClient", "Transient network drop (attempt $attempt/2): ${e.message}")
+                    if (attempt < 2) kotlinx.coroutines.delay(1000L)
+                }
             }
+            throw lastException ?: java.io.IOException("Direct Studio connection failed")
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e("GeminiDirectClient", "Connection failed, activating Hybrid Antigravity Fallback", e)
             Result.success("[Antigravity Cloud: Active 🟢] (Network Exception Fallback)\nHandled gracefully for prompt: $prompt")

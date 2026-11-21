@@ -83,16 +83,17 @@ class AgyMcpService {
 
     private val customProbeClient by lazy {
         okhttp3.OkHttpClient.Builder()
-            .connectTimeout(2500, java.util.concurrent.TimeUnit.MILLISECONDS)
-            .readTimeout(2500, java.util.concurrent.TimeUnit.MILLISECONDS)
-            .writeTimeout(2500, java.util.concurrent.TimeUnit.MILLISECONDS)
-            .retryOnConnectionFailure(false)
+            .connectTimeout(5000, java.util.concurrent.TimeUnit.MILLISECONDS)
+            .readTimeout(5000, java.util.concurrent.TimeUnit.MILLISECONDS)
+            .writeTimeout(5000, java.util.concurrent.TimeUnit.MILLISECONDS)
+            .callTimeout(10000, java.util.concurrent.TimeUnit.MILLISECONDS)
+            .retryOnConnectionFailure(true)
             .build()
     }
 
     /**
-     * Lightweight non-blocking reachability probe for a Custom MCP Server URL (HTTP/SSE/JSON-RPC).
-     * Any HTTP response < 500 confirms the server endpoint is live and accepting connections.
+     * Lightweight non-blocking reachability probe for a Custom MCP Server URL (HTTP/SSE/JSON-RPC)
+     * with smart 3G/4G timeout and 1 quick automatic retry so slow networks don't false-fail or hang.
      */
     suspend fun probeCustomMcpEndpoint(
         serverUrl: String,
@@ -108,12 +109,25 @@ class AgyMcpService {
                 .header("Accept", "text/event-stream, application/json")
                 .get()
             headers.forEach { (k, v) -> if (k.isNotBlank()) reqBuilder.header(k, v) }
-            customProbeClient.newCall(reqBuilder.build()).execute().use { resp ->
-                if (resp.code >= 500) {
-                    throw IllegalStateException("Custom MCP server returned HTTP ${resp.code}")
+            val request = reqBuilder.build()
+
+            var lastErr: Exception? = null
+            for (attempt in 1..2) {
+                try {
+                    customProbeClient.newCall(request).execute().use { resp ->
+                        if (resp.code >= 500) {
+                            throw IllegalStateException("Custom MCP server returned HTTP ${resp.code}")
+                        }
+                        return@runCatching resp.code
+                    }
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    lastErr = e
+                    if (attempt < 2) kotlinx.coroutines.delay(600L)
                 }
-                resp.code
             }
+            throw lastErr ?: IllegalStateException("Custom MCP server unreachable")
         }
     }
 }

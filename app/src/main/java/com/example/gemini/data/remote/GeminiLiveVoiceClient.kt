@@ -106,13 +106,16 @@ class GeminiLiveVoiceClient(private val context: Context) {
         .connectTimeout(20, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .writeTimeout(20, TimeUnit.SECONDS)
+        .callTimeout(45, TimeUnit.SECONDS)
+        .retryOnConnectionFailure(true)
         .build()
 
     private val wsClient = OkHttpClient.Builder()
-        .connectTimeout(15, TimeUnit.SECONDS)
+        .connectTimeout(20, TimeUnit.SECONDS)
         .readTimeout(0, TimeUnit.MILLISECONDS)
-        .writeTimeout(15, TimeUnit.SECONDS)
+        .writeTimeout(20, TimeUnit.SECONDS)
         .pingInterval(20, TimeUnit.SECONDS)
+        .retryOnConnectionFailure(true)
         .build()
 
     private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
@@ -683,25 +686,37 @@ class GeminiLiveVoiceClient(private val context: Context) {
                     .header("Content-Type", "application/json")
                     .build()
 
-                restClient.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) {
-                        lastError = RuntimeException("Live API Error HTTP ${response.code} ($model)")
-                        return@use
-                    }
-                    val bodyStr = response.body?.string() ?: "{}"
-                    val json = JSONObject(bodyStr)
-                    val candidates = json.optJSONArray("candidates")
-                    val text = if (candidates != null && candidates.length() > 0) {
-                        candidates.getJSONObject(0)
-                            .optJSONObject("content")
-                            ?.optJSONArray("parts")
-                            ?.optJSONObject(0)
-                            ?.optString("text", "")
-                            ?.trim()
-                            .orEmpty()
-                    } else ""
-                    if (text.isNotBlank()) {
-                        return@withContext Result.success(text)
+                for (attempt in 1..2) {
+                    try {
+                        restClient.newCall(request).execute().use { response ->
+                            if (!response.isSuccessful) {
+                                lastError = RuntimeException("Live API Error HTTP ${response.code} ($model)")
+                                if (response.code in 502..504 && attempt < 2) {
+                                    return@use
+                                }
+                                return@use
+                            }
+                            val bodyStr = response.body?.string() ?: "{}"
+                            val json = JSONObject(bodyStr)
+                            val candidates = json.optJSONArray("candidates")
+                            val text = if (candidates != null && candidates.length() > 0) {
+                                candidates.getJSONObject(0)
+                                    .optJSONObject("content")
+                                    ?.optJSONArray("parts")
+                                    ?.optJSONObject(0)
+                                    ?.optString("text", "")
+                                    ?.trim()
+                                    .orEmpty()
+                            } else ""
+                            if (text.isNotBlank()) {
+                                return@withContext Result.success(text)
+                            }
+                        }
+                        break
+                    } catch (e: java.io.IOException) {
+                        Log.w(TAG, "REST fallback network retry ($attempt/2) for $model: ${e.message}")
+                        lastError = e
+                        if (attempt < 2) delay(1000L)
                     }
                 }
             } catch (e: Exception) {

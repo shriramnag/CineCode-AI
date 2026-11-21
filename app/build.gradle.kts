@@ -88,10 +88,21 @@ android {
         jniLibs {
             useLegacyPackaging = true
         }
+        resources {
+            excludes += setOf(
+                "META-INF/LICENSE*",
+                "META-INF/NOTICE*",
+                "META-INF/DEPENDENCIES",
+                "META-INF/AL2.0",
+                "META-INF/LGPL2.1",
+                "META-INF/maven/**"
+            )
+        }
     }
 
     androidResources {
         noCompress += listOf("tar", "xz", "gz", "bin")
+        localeFilters += listOf("en", "hi")
     }
 
     splits {

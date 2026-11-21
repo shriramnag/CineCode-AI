@@ -9,6 +9,9 @@ import android.util.Log
 import androidx.core.content.FileProvider
 import com.shriram.cinecode.BuildConfig
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -169,8 +172,9 @@ class AppUpdateManager(private val context: Context) {
     }
 
     /**
-     * Downloads the APK file to cache directory with resumable HTTP Range streaming,
-     * automatic retries, temporary `.part` staging, and throttled progress updates.
+     * Downloads the APK file to cache directory using 4 parallel HTTP Range chunks when supported
+     * (e.g. GitHub Releases CDN), with automatic fallback to 64 KB buffered keep-alive single-stream
+     * resume and retry.
      */
     suspend fun downloadApk(
         downloadUrl: String,
@@ -186,7 +190,31 @@ class AppUpdateManager(private val context: Context) {
         val partFile = File(updatesDir, "$safeName.part")
         val finalFile = File(updatesDir, safeName)
 
-        var expectedTotalBytes = -1L
+        // Probe server Range support + Content-Length
+        val (probedTotal, supportsRange) = probeRangeSupport(downloadUrl)
+        val existingPartLen = if (partFile.exists()) partFile.length() else 0L
+
+        if (supportsRange && probedTotal >= 4L * 1024L * 1024L && existingPartLen == 0L) {
+            try {
+                val merged = downloadParallelFourChunks(
+                    downloadUrl = downloadUrl,
+                    totalBytes = probedTotal,
+                    updatesDir = updatesDir,
+                    safeName = safeName,
+                    partFile = partFile,
+                    finalFile = finalFile,
+                    onProgress = onProgress
+                )
+                return@withContext Result.success(merged)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "Parallel 4-chunk downloadApk falling back to single-stream: ${e.message}")
+                updatesDir.listFiles()?.filter { it.name.startsWith("$safeName.chunk") }?.forEach { it.delete() }
+            }
+        }
+
+        var expectedTotalBytes = probedTotal
         var lastError: Exception? = null
         val maxAttempts = 5
 
@@ -280,6 +308,8 @@ class AppUpdateManager(private val context: Context) {
                     partFile.delete()
                 }
                 return@withContext Result.success(finalFile)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 lastError = e
                 Log.w(TAG, "downloadApk attempt $attempt/$maxAttempts failed: ${e.message}")
@@ -289,6 +319,157 @@ class AppUpdateManager(private val context: Context) {
             }
         }
         Result.failure(lastError ?: Exception("Download APK failed after retries"))
+    }
+
+    private fun probeRangeSupport(downloadUrl: String): Pair<Long, Boolean> {
+        return runCatching {
+            val req = Request.Builder()
+                .url(downloadUrl)
+                .get()
+                .header("User-Agent", "CineCode-AI-Updater/${BuildConfig.VERSION_NAME}")
+                .header("Accept-Encoding", "identity")
+                .header("Range", "bytes=0-0")
+                .build()
+            httpClient.newCall(req).execute().use { resp ->
+                if (resp.code == 206) {
+                    val total = resp.header("Content-Range")
+                        ?.substringAfterLast('/', "")
+                        ?.trim()
+                        ?.toLongOrNull() ?: -1L
+                    Pair(total, total > 0L)
+                } else if (resp.isSuccessful) {
+                    Pair(resp.header("Content-Length")?.toLongOrNull() ?: -1L, false)
+                } else {
+                    Pair(-1L, false)
+                }
+            }
+        }.getOrDefault(Pair(-1L, false))
+    }
+
+    private suspend fun downloadParallelFourChunks(
+        downloadUrl: String,
+        totalBytes: Long,
+        updatesDir: File,
+        safeName: String,
+        partFile: File,
+        finalFile: File,
+        onProgress: (Float, Long, Long) -> Unit
+    ): File = coroutineScope {
+        val chunkCount = 4
+        val chunkSize = totalBytes / chunkCount
+        val chunkFiles = (0 until chunkCount).map { File(updatesDir, "$safeName.chunk$it") }
+        val ranges = (0 until chunkCount).map { idx ->
+            val start = idx * chunkSize
+            val end = if (idx == chunkCount - 1) totalBytes - 1L else ((idx + 1) * chunkSize) - 1L
+            start to end
+        }
+        val downloadedCounter = java.util.concurrent.atomic.AtomicLong(0L)
+        chunkFiles.forEachIndexed { idx, file ->
+            val expected = ranges[idx].second - ranges[idx].first + 1L
+            if (file.exists()) {
+                if (file.length() > expected) file.delete()
+                else downloadedCounter.addAndGet(file.length())
+            }
+        }
+
+        val reporter = launch {
+            while (true) {
+                kotlinx.coroutines.delay(250L)
+                val current = downloadedCounter.get().coerceAtMost(totalBytes)
+                val progress = (current.toFloat() / totalBytes.toFloat()).coerceIn(0f, 1f)
+                withContext(Dispatchers.Main) {
+                    onProgress(progress, current, totalBytes)
+                }
+            }
+        }
+
+        try {
+            val jobs = (0 until chunkCount).map { idx ->
+                val (start, end) = ranges[idx]
+                async(Dispatchers.IO) {
+                    val expectedLen = end - start + 1L
+                    var lastErr: Exception? = null
+                    for (attempt in 1..4) {
+                        var existing = if (chunkFiles[idx].exists()) chunkFiles[idx].length() else 0L
+                        if (existing == expectedLen) return@async
+                        if (existing > expectedLen) {
+                            chunkFiles[idx].delete()
+                            downloadedCounter.addAndGet(-existing)
+                            existing = 0L
+                        }
+                        try {
+                            val req = Request.Builder()
+                                .url(downloadUrl)
+                                .header("User-Agent", "CineCode-AI-Updater/${BuildConfig.VERSION_NAME}")
+                                .header("Accept-Encoding", "identity")
+                                .header("Connection", "keep-alive")
+                                .header("Range", "bytes=${start + existing}-$end")
+                                .build()
+                            downloadHttpClient.newCall(req).execute().use { resp ->
+                                if (resp.code != 206) throw java.io.IOException("Chunk $idx HTTP ${resp.code}")
+                                val body = resp.body ?: throw java.io.IOException("Empty chunk body")
+                                body.byteStream().use { input ->
+                                    java.io.FileOutputStream(chunkFiles[idx], existing > 0L).use { fos ->
+                                        java.io.BufferedOutputStream(fos, 64 * 1024).use { out ->
+                                            val buf = ByteArray(64 * 1024)
+                                            var read: Int
+                                            while (input.read(buf).also { read = it } != -1) {
+                                                out.write(buf, 0, read)
+                                                downloadedCounter.addAndGet(read.toLong())
+                                            }
+                                            out.flush()
+                                        }
+                                    }
+                                }
+                            }
+                            if (chunkFiles[idx].length() == expectedLen) return@async
+                            throw java.io.IOException("Chunk $idx incomplete")
+                        } catch (e: kotlinx.coroutines.CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            lastErr = e
+                            if (attempt < 4) kotlinx.coroutines.delay(attempt * 1200L)
+                        }
+                    }
+                    throw lastErr ?: java.io.IOException("Chunk $idx failed")
+                }
+            }
+            jobs.forEach { it.await() }
+        } finally {
+            reporter.cancel()
+        }
+
+        if (partFile.exists()) partFile.delete()
+        java.io.FileOutputStream(partFile, false).use { fos ->
+            java.io.BufferedOutputStream(fos, 64 * 1024).use { out ->
+                val buf = ByteArray(64 * 1024)
+                for (cf in chunkFiles) {
+                    cf.inputStream().use { input ->
+                        var read: Int
+                        while (input.read(buf).also { read = it } != -1) {
+                            out.write(buf, 0, read)
+                        }
+                    }
+                    cf.delete()
+                }
+                out.flush()
+            }
+            runCatching { fos.fd.sync() }
+        }
+
+        if (partFile.length() != totalBytes || partFile.length() < 1_000_000L) {
+            partFile.delete()
+            throw java.io.IOException("Merged APK size mismatch")
+        }
+        if (finalFile.exists()) finalFile.delete()
+        if (!partFile.renameTo(finalFile)) {
+            partFile.copyTo(finalFile, overwrite = true)
+            partFile.delete()
+        }
+        withContext(Dispatchers.Main) {
+            onProgress(1f, totalBytes, totalBytes)
+        }
+        finalFile
     }
 
     /**

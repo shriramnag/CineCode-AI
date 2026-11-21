@@ -63,8 +63,12 @@ object CloudBridgeStore {
     private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
     private val httpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
-            .connectTimeout(30, TimeUnit.SECONDS)
+            .connectionPool(okhttp3.ConnectionPool(5, 45, TimeUnit.SECONDS))
+            .connectTimeout(25, TimeUnit.SECONDS)
             .readTimeout(45, TimeUnit.SECONDS)
+            .writeTimeout(25, TimeUnit.SECONDS)
+            .callTimeout(70, TimeUnit.SECONDS)
+            .retryOnConnectionFailure(true)
             .build()
     }
 
@@ -315,47 +319,79 @@ object CloudBridgeStore {
                     .header("Content-Type", "application/json")
                     .build()
 
-                httpClient.newCall(request).execute().use { response ->
-                    val raw = response.body?.string().orEmpty()
-                    if (!response.isSuccessful) {
-                        if (isRateLimitError(response.code, raw)) {
-                            hitRateLimit429 = true
-                            lastErrorMsg = "HTTP ${response.code} RESOURCE_EXHAUSTED"
-                            notifyRateLimit429(candidateModel)
-                            Log.w(TAG, "API 429 hit on $candidateModel — switching to Free Fallback Cloud Engine")
-                            return@use
-                        }
-                        return@withContext Result.failure(
-                            RuntimeException("Cloud API HTTP ${response.code}: $raw")
-                        )
-                    }
+                var networkAttempt = 0
+                val maxNetworkAttempts = 2
+                var lastTransientEx: Exception? = null
+                var moveToNextModel = false
 
-                    val json = JSONObject(raw.ifBlank { "{}" })
-                    val candidates = json.optJSONArray("candidates")
-                    val parts = candidates?.optJSONObject(0)
-                        ?.optJSONObject("content")
-                        ?.optJSONArray("parts")
-                    val textBuilder = StringBuilder()
-                    if (parts != null) {
-                        for (i in 0 until parts.length()) {
-                            val partText = parts.optJSONObject(i)?.optString("text", "").orEmpty()
-                            if (partText.isNotEmpty()) {
-                                if (textBuilder.isNotEmpty()) textBuilder.append("\n")
-                                textBuilder.append(partText)
+                while (networkAttempt < maxNetworkAttempts) {
+                    networkAttempt++
+                    try {
+                        httpClient.newCall(request).execute().use { response ->
+                            val raw = response.body?.string().orEmpty()
+                            if (!response.isSuccessful) {
+                                if (isRateLimitError(response.code, raw)) {
+                                    hitRateLimit429 = true
+                                    lastErrorMsg = "HTTP ${response.code} RESOURCE_EXHAUSTED"
+                                    notifyRateLimit429(candidateModel)
+                                    Log.w(TAG, "API 429 hit on $candidateModel — switching to Free Fallback Cloud Engine")
+                                    moveToNextModel = true
+                                    return@use
+                                }
+                                if (response.code in 502..504 && networkAttempt < maxNetworkAttempts) {
+                                    lastTransientEx = RuntimeException("Transient Cloud HTTP ${response.code}")
+                                    return@use
+                                }
+                                return@withContext Result.failure(
+                                    RuntimeException("Cloud API HTTP ${response.code}: $raw")
+                                )
+                            }
+
+                            val json = JSONObject(raw.ifBlank { "{}" })
+                            val candidates = json.optJSONArray("candidates")
+                            val parts = candidates?.optJSONObject(0)
+                                ?.optJSONObject("content")
+                                ?.optJSONArray("parts")
+                            val textBuilder = StringBuilder()
+                            if (parts != null) {
+                                for (i in 0 until parts.length()) {
+                                    val partText = parts.optJSONObject(i)?.optString("text", "").orEmpty()
+                                    if (partText.isNotEmpty()) {
+                                        if (textBuilder.isNotEmpty()) textBuilder.append("\n")
+                                        textBuilder.append(partText)
+                                    }
+                                }
+                            }
+                            val finalText = textBuilder.toString().ifBlank { "No response text returned." }
+                            if (index == 0) {
+                                clearRecoveryState()
+                                return@withContext Result.success(finalText)
+                            } else {
+                                _isRateLimitRecovering.value = true
+                                _activeEngineMode.value = "Free Fallback Cloud Engine 🟠 ($candidateModel)"
+                                _lastRecoveryNotice.value = "429 Autorecovery: Free Fallback Cloud Engine ($candidateModel) सक्रिय है 🟠"
+                                return@withContext Result.success("[Free Fallback Cloud Engine 🟠 · $candidateModel]\n$finalText")
                             }
                         }
-                    }
-                    val finalText = textBuilder.toString().ifBlank { "No response text returned." }
-                    if (index == 0) {
-                        clearRecoveryState()
-                        return@withContext Result.success(finalText)
-                    } else {
-                        _isRateLimitRecovering.value = true
-                        _activeEngineMode.value = "Free Fallback Cloud Engine 🟠 ($candidateModel)"
-                        _lastRecoveryNotice.value = "429 Autorecovery: Free Fallback Cloud Engine ($candidateModel) सक्रिय है 🟠"
-                        return@withContext Result.success("[Free Fallback Cloud Engine 🟠 · $candidateModel]\n$finalText")
+                        if (moveToNextModel) break
+                        if (lastTransientEx != null && networkAttempt < maxNetworkAttempts) {
+                            kotlinx.coroutines.delay(1200L)
+                        }
+                    } catch (e: kotlinx.coroutines.CancellationException) {
+                        throw e
+                    } catch (e: java.io.IOException) {
+                        lastTransientEx = e
+                        lastErrorMsg = e.message ?: "Network error"
+                        Log.w(TAG, "Transient network drop on $candidateModel (attempt $networkAttempt/$maxNetworkAttempts): ${e.message}")
+                        if (networkAttempt < maxNetworkAttempts) {
+                            kotlinx.coroutines.delay(1200L)
+                        } else if (!hitRateLimit429) {
+                            return@withContext Result.failure(e)
+                        }
                     }
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Direct cloud chat failed on $candidateModel", e)
                 lastErrorMsg = e.message ?: "Network error"
