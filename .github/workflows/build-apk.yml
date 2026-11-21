@@ -83,18 +83,171 @@ jobs:
           data["version_name"] = next_version_name
           data["url"] = f"https://github.com/{repo}/releases/download/{tag_name}/{apk_filename}"
 
-          existing_changelog = data.get("changelog")
-          if not isinstance(existing_changelog, list):
-              existing_changelog = [str(existing_changelog)] if existing_changelog else []
+          import subprocess
 
-          filtered_changelog = [
-              line for line in existing_changelog
-              if isinstance(line, str) and not line.startswith("CineCode AI v")
-          ]
-          data["changelog"] = [
-              f"CineCode AI {tag_name} का नया ऑटो-बिल्ड अपडेट",
-              *filtered_changelog[:4],
-          ]
+          def run_git(args):
+              res = subprocess.run(
+                  ["git", *args],
+                  capture_output=True,
+                  text=True,
+                  encoding="utf-8",
+                  errors="replace",
+              )
+              return res.stdout.strip() if res.returncode == 0 else ""
+
+          def is_bot_commit(msg: str) -> bool:
+              lower = msg.strip().lower()
+              return (
+                  "[skip ci]" in lower
+                  or lower.startswith("chore(version): bump")
+                  or lower.startswith("chore: bump version")
+              )
+
+          def is_plain_commit_msg(msg: str) -> bool:
+              lower = msg.strip().lower()
+              cleaned = re.sub(
+                  r"^(feat|fix|chore|refactor|docs|style|perf|ci|build|test)(\([^)]*\))?:\s*",
+                  "",
+                  lower,
+              ).strip()
+              if len(cleaned) < 16:
+                  return True
+              words = re.findall(r"[a-z0-9]+", cleaned)
+              generic_words = {
+                  "update", "updates", "updated", "fix", "fixes", "fixed",
+                  "change", "changes", "changed", "edit", "edited", "save",
+                  "saved", "sync", "wip", "test", "testing", "patch", "commit",
+                  "file", "files", "code", "app", "minor", "misc", "cleanup",
+                  "refactor", "create", "add", "added", "remove", "removed",
+                  "upload", "initial", "auto", "build", "release", "bump",
+              }
+              if words and len(words) <= 3 and all(w in generic_words for w in words):
+                  return True
+              if re.match(r"^(update|create|delete|edit|fix|add|upload)\s+\S+\.\w+$", cleaned):
+                  return True
+              return False
+
+          def filter_meaningful_files(paths):
+              ignored = {
+                  "version.json",
+                  "agy_ide_bridge/pkg/buildinfo/version.json",
+              }
+              seen = set()
+              result = []
+              for p in paths:
+                  p = p.strip()
+                  if not p or p in ignored:
+                      continue
+                  name = Path(p).name or p
+                  if name not in seen:
+                      seen.add(name)
+                      result.append(name)
+              return result
+
+          def get_commit_files(sha: str):
+              raw = run_git(["diff-tree", "--no-commit-id", "--name-only", "-r", "--root", sha])
+              return filter_meaningful_files(raw.splitlines()) if raw else []
+
+          def find_previous_tag(current_tag: str, tag_push: bool) -> str:
+              candidates = []
+              if tag_push:
+                  prev = run_git(["describe", "--tags", "--abbrev=0", f"--exclude={current_tag}", "HEAD"])
+                  if prev and prev != current_tag:
+                      candidates.append(prev)
+                  prev_parent = run_git(["describe", "--tags", "--abbrev=0", "HEAD^"])
+                  if prev_parent and prev_parent != current_tag:
+                      candidates.append(prev_parent)
+              else:
+                  prev = run_git(["describe", "--tags", "--abbrev=0", "HEAD"])
+                  if prev and prev != current_tag:
+                      candidates.append(prev)
+
+              if not candidates:
+                  merged_tags = run_git(["tag", "--merged", "HEAD", "--sort=-creatordate"]).splitlines()
+                  for t in merged_tags:
+                      t = t.strip()
+                      if t and t != current_tag:
+                          candidates.append(t)
+                          break
+              return candidates[0] if candidates else ""
+
+          def collect_commits(rev_range: str, include_merges: bool = False, limit: int = 15):
+              args = ["log", f"-n{limit}", "--pretty=format:%H%x1f%h%x1f%s"]
+              if not include_merges:
+                  args.append("--no-merges")
+              if rev_range:
+                  args.append(rev_range)
+              raw = run_git(args)
+              commits = []
+              for line in raw.splitlines():
+                  parts = line.split("\x1f", 2)
+                  if len(parts) != 3:
+                      continue
+                  full_sha, short_sha, subject = parts[0].strip(), parts[1].strip(), parts[2].strip()
+                  if not subject or is_bot_commit(subject):
+                      continue
+                  commits.append((full_sha, short_sha, subject))
+              return commits
+
+          prev_tag = find_previous_tag(tag_name, is_tag_push)
+          rev_range = f"{prev_tag}..HEAD" if prev_tag else ""
+
+          commits = collect_commits(rev_range, include_merges=False, limit=15)
+          if not commits and rev_range:
+              commits = collect_commits(rev_range, include_merges=True, limit=15)
+          if not commits:
+              commits = collect_commits("", include_merges=False, limit=5)
+
+          release_bullets = []
+          plain_changelog = []
+          seen_subjects = set()
+          all_changed_files = []
+
+          for full_sha, short_sha, subject in commits:
+              files = get_commit_files(full_sha)
+              for f in files:
+                  if f not in all_changed_files:
+                      all_changed_files.append(f)
+
+              key = subject.lower()
+              if key in seen_subjects:
+                  continue
+              seen_subjects.add(key)
+
+              if is_plain_commit_msg(subject) and files:
+                  top_files = files[:4]
+                  extra = f" (+{len(files) - 4} और)" if len(files) > 4 else ""
+                  files_md = ", ".join(f"`{f}`" for f in top_files) + extra
+                  files_plain = ", ".join(top_files) + extra
+                  release_bullets.append(f"- {subject} — बदली गई फ़ाइलें: {files_md} (`{short_sha}`)")
+                  plain_changelog.append(f"{subject} (फ़ाइलें: {files_plain})")
+              else:
+                  release_bullets.append(f"- {subject} (`{short_sha}`)")
+                  plain_changelog.append(subject)
+
+          if not all_changed_files and rev_range:
+              diff_raw = run_git(["diff", "--name-only", rev_range])
+              all_changed_files = filter_meaningful_files(diff_raw.splitlines()) if diff_raw else []
+
+          if not release_bullets:
+              if all_changed_files:
+                  top_files = all_changed_files[:6]
+                  extra = f" (+{len(all_changed_files) - 6} और)" if len(all_changed_files) > 6 else ""
+                  files_md = ", ".join(f"`{f}`" for f in top_files) + extra
+                  files_plain = ", ".join(top_files) + extra
+                  release_bullets.append(f"- बदली गई मुख्य फ़ाइलें: {files_md}")
+                  plain_changelog.append(f"बदली गई मुख्य फ़ाइलें: {files_plain}")
+              else:
+                  release_bullets.append(f"- CineCode AI {tag_name} का नया ऑटो-बिल्ड अपडेट")
+                  plain_changelog.append(f"CineCode AI {tag_name} का नया ऑटो-बिल्ड अपडेट")
+          elif all_changed_files:
+              top_files = all_changed_files[:8]
+              extra = f" (+{len(all_changed_files) - 8} और)" if len(all_changed_files) > 8 else ""
+              files_md = ", ".join(f"`{f}`" for f in top_files) + extra
+              release_bullets.append("")
+              release_bullets.append(f"**बदली गई मुख्य फ़ाइलें:** {files_md}")
+
+          data["changelog"] = plain_changelog[:6]
 
           version_file.write_text(
               json.dumps(data, indent=2, ensure_ascii=False) + "\n",
@@ -114,12 +267,13 @@ jobs:
               out_f.write(f"version_name={next_version_name}\n")
               out_f.write(f"tag_name={tag_name}\n")
               out_f.write(f"apk_filename={apk_filename}\n")
-              out_f.write("changelog<<EOF\n")
-              for line in data["changelog"]:
-                  out_f.write(f"- {line}\n")
-              out_f.write("EOF\n")
+              out_f.write("changelog<<RELEASE_NOTES_EOF\n")
+              for line in release_bullets:
+                  out_f.write(f"{line}\n")
+              out_f.write("RELEASE_NOTES_EOF\n")
 
           print(f"Bumped version: {raw_name} ({current_code}) -> {next_version_name} ({next_version_code})")
+          print(f"Previous tag: {prev_tag or 'none'} | Dynamic release notes lines: {len(release_bullets)}")
           PY
 
       - name: Set up JDK 21
@@ -232,13 +386,14 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: "CineCode-AI ${{ github.ref_name }}"
           draft: true
-          generate_release_notes: true
+          generate_release_notes: false
           body: |
             ### CineCode-AI Release Draft (${{ github.ref_name }})
             - **Version Code:** `${{ env.VERSION_CODE }}`
             - **Version Name:** `${{ env.VERSION_NAME }}`
-            - **APK Asset:** `${{ env.APK_FILENAME }}`
+            - **APK File:** `${{ env.APK_FILENAME }}`
 
+            #### इस रिलीज़ में किए गए मुख्य सुधार / अपडेट:
             ${{ steps.version.outputs.changelog }}
           files: app/build/outputs/apk/${{ env.APK_FILENAME }}
         env:
@@ -258,6 +413,7 @@ jobs:
             - **Version Name:** `${{ env.VERSION_NAME }}`
             - **APK File:** `${{ env.APK_FILENAME }}`
 
+            #### इस रिलीज़ में किए गए मुख्य सुधार / अपडेट:
             ${{ steps.version.outputs.changelog }}
           files: app/build/outputs/apk/${{ env.APK_FILENAME }}
         env:
