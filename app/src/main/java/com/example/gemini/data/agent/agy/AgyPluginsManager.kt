@@ -36,6 +36,7 @@ import org.json.JSONObject
 import java.util.UUID
 import com.shriram.cinecode.data.agent.ChatSessionStore
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.sync.withLock
 
 /** Antigravity skills, installed plugins and the Google plugins catalog. Moved out of ChatViewModel unchanged. */
 class AgyPluginsManager(
@@ -81,6 +82,20 @@ class AgyPluginsManager(
 
     private val _pluginActionErrorMessage = MutableStateFlow<String?>(null)
     val pluginActionErrorMessage: StateFlow<String?> = _pluginActionErrorMessage.asStateFlow()
+
+    data class PluginBootstrapSummary(
+        val isRunning: Boolean = false,
+        val isCompleted: Boolean = false,
+        val browserExtensionCount: Int = 0,
+        val miniAppCount: Int = 0,
+        val agyPluginCount: Int = 0,
+        val skillCount: Int = 0,
+        val statusMessage: String = "प्रतीक्षारत (Ready to initialize)"
+    )
+
+    private val bootstrapMutex = kotlinx.coroutines.sync.Mutex()
+    private val _pluginBootstrapSummary = MutableStateFlow(PluginBootstrapSummary())
+    val pluginBootstrapSummary: StateFlow<PluginBootstrapSummary> = _pluginBootstrapSummary.asStateFlow()
 
     fun clearPluginActionStatus() {
         _pluginActionStatusMessage.value = null
@@ -208,6 +223,86 @@ class AgyPluginsManager(
             } finally {
                 _deletingPluginId.value = null
             }
+        }
+    }
+
+    /**
+     * Sequentially loads and connects all plugins (Browser Extensions, Mini Apps, and Antigravity
+     * Plugins/Skills) with light delays between steps to avoid memory spikes on 4GB RAM devices.
+     */
+    suspend fun initializeAllPluginsSequentially(
+        context: Context,
+        isHubReachable: Boolean
+    ): PluginBootstrapSummary = bootstrapMutex.withLock {
+        withContext(Dispatchers.IO) {
+            _pluginBootstrapSummary.value = _pluginBootstrapSummary.value.copy(
+                isRunning = true,
+                isCompleted = false,
+                statusMessage = "1/3: क्रिएटर व ब्राउज़र प्लगइन्स लोड हो रहे हैं…"
+            )
+
+            // Step 1: Browser Extensions + Built-in CineCode Creator Studio Plugin
+            val extCount = runCatching {
+                com.shriram.cinecode.ui.browser.BrowserExtensionManager.instance.initAndAwaitReady(context)
+            }.getOrDefault(com.shriram.cinecode.ui.browser.BrowserExtensionManager.instance.extensions.size)
+            delay(120)
+
+            // Step 2: Mini Apps Store (manifest-only lightweight discovery)
+            _pluginBootstrapSummary.value = _pluginBootstrapSummary.value.copy(
+                browserExtensionCount = extCount,
+                statusMessage = "2/3: Mini Apps रजिस्टर हो रहे हैं…"
+            )
+            runCatching {
+                com.shriram.cinecode.data.miniapps.MiniAppStore.refresh(context)
+            }
+            val miniAppCount = com.shriram.cinecode.data.miniapps.MiniAppStore.apps.value.size
+            delay(120)
+
+            // Step 3: Antigravity Plugins & Skills (only if Hub is reachable; safe fallback otherwise)
+            var agyPluginCount = _installedPlugins.value.size
+            var skillCount = _allSkills.value.size
+            if (isHubReachable) {
+                _pluginBootstrapSummary.value = _pluginBootstrapSummary.value.copy(
+                    browserExtensionCount = extCount,
+                    miniAppCount = miniAppCount,
+                    statusMessage = "3/3: Antigravity प्लगइन्स व स्किल्स कनेक्ट हो रहे हैं…"
+                )
+                val pluginsRes = withTimeoutOrNull(3500L) { agyHubClient.getAllPlugins() }
+                if (pluginsRes != null && pluginsRes.isSuccess) {
+                    val list = pluginsRes.getOrDefault(emptyList())
+                    _installedPlugins.value = list
+                    agyPluginCount = list.size
+                }
+                delay(120)
+                val skillsRes = withTimeoutOrNull(3500L) { agyHubClient.getAllSkills(emptyList()) }
+                if (skillsRes != null && skillsRes.isSuccess) {
+                    val list = skillsRes.getOrDefault(emptyList())
+                    _allSkills.value = list
+                    skillCount = list.size
+                }
+            }
+
+            val totalLocalSkills = runCatching {
+                com.shriram.cinecode.data.media.CineCodeSkillsMcp.tools().length()
+            }.getOrDefault(0)
+            val totalSkills = maxOf(skillCount, totalLocalSkills)
+
+            val summary = PluginBootstrapSummary(
+                isRunning = false,
+                isCompleted = true,
+                browserExtensionCount = extCount,
+                miniAppCount = miniAppCount,
+                agyPluginCount = agyPluginCount,
+                skillCount = totalSkills,
+                statusMessage = buildString {
+                    append("सभी प्लगइन्स सक्रिय: ")
+                    append("$extCount Extensions, $miniAppCount Mini Apps")
+                    if (agyPluginCount > 0) append(", $agyPluginCount Hub Plugins")
+                    append(", $totalSkills Skills")
+                }
+            )
+            _pluginBootstrapSummary.value = summary
+            summary
         }
     }
 

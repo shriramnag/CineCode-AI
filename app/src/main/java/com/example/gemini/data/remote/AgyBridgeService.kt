@@ -199,6 +199,26 @@ class AgyBridgeService(
         } ?: false
     }
 
+    /**
+     * Quick non-blocking bridge reachability check (bounded to 1.8s local / 4s remote)
+     * so Sign Up / Connect never freezes when local binaries are blocked by Android W^X.
+     */
+    suspend fun probeBridgeFast(
+        bridgeUrl: String = AuthPreferences.currentBridgeHttpUrl
+    ): Boolean = withContext(Dispatchers.IO) {
+        if (_systemConnectionState.value.isBridgeOnline) return@withContext true
+        val budgetMs = if (AuthPreferences.isRemoteEndpoint()) 4000L else 1800L
+        withTimeoutOrNull(budgetMs) {
+            runCatching {
+                val req = Request.Builder()
+                    .url("${bridgeUrl.trimEnd('/')}/api/health")
+                    .get()
+                    .build()
+                fastClient.newCall(req).execute().use { it.isSuccessful }
+            }.getOrDefault(false)
+        } ?: false
+    }
+
     private var isBridgeConnected: Boolean = false
     private var currentAuthState: Boolean = true
     private var currentAuthChecking: Boolean = false

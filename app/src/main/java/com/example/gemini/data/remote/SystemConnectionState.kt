@@ -115,10 +115,16 @@ sealed class SystemConnectionState {
     fun effectiveCanSend(hasCloudApiKey: Boolean): Boolean =
         isReady || hasCloudApiKey || (canSend && status != SystemStatus.UNAUTHENTICATED)
 
-    fun effectiveLabel(hasCloudApiKey: Boolean): String = when {
+    fun isCloudFallbackActive(hasCloudApiKey: Boolean, isWxRestricted: Boolean = false): Boolean =
+        !isReady && (hasCloudApiKey || isWxRestricted) &&
+            (status == SystemStatus.OFFLINE || status == SystemStatus.UNAUTHENTICATED || status == SystemStatus.ERROR)
+
+    fun effectiveLabel(hasCloudApiKey: Boolean, isWxRestricted: Boolean = false): String = when {
         isReady -> status.label
         hasCloudApiKey && (status == SystemStatus.OFFLINE || status == SystemStatus.UNAUTHENTICATED || status == SystemStatus.ERROR) ->
             "Cloud API Ready"
+        isWxRestricted && (status == SystemStatus.OFFLINE || status == SystemStatus.ERROR) ->
+            "In-App / Cloud Fallback"
         else -> status.label
     }
 

@@ -78,6 +78,11 @@ class AuthPreferences(private val context: Context) {
         val HAS_SEEN_TERMINAL_LAUNCHER_ONBOARDING = androidx.datastore.preferences.core.booleanPreferencesKey("has_seen_terminal_launcher_onboarding")
         val TERMINAL_LAUNCHER_STYLE = stringPreferencesKey("terminal_launcher_style") // "ANTITERM" or "TERMUX"
         val IS_TERMINAL_LAUNCHER_ENABLED = androidx.datastore.preferences.core.booleanPreferencesKey("is_terminal_launcher_enabled")
+        val HAS_COMPLETED_POST_SETUP_CONNECT = androidx.datastore.preferences.core.booleanPreferencesKey("has_completed_post_setup_connect")
+        val POST_SETUP_PROFILE_NAME = stringPreferencesKey("post_setup_profile_name")
+        val POST_SETUP_PROFILE_EMAIL = stringPreferencesKey("post_setup_profile_email")
+        val CUSTOM_MCP_SERVER_NAME = stringPreferencesKey("custom_mcp_server_name")
+        val CUSTOM_MCP_SERVER_URL = stringPreferencesKey("custom_mcp_server_url")
 
         const val DEFAULT_BRIDGE_BINARY_PATH = "~/../usr/bin/agy_ide_bridge"
         const val DEFAULT_UBUNTU_BRIDGE_BINARY_PATH = "/antigem/bin/agy_ide_bridge"
@@ -1041,6 +1046,57 @@ class AuthPreferences(private val context: Context) {
 
     suspend fun setTerminalLauncherEnabled(enabled: Boolean) {
         context.dataStore.edit { it[IS_TERMINAL_LAUNCHER_ENABLED] = enabled }
+    }
+
+    val hasCompletedPostSetupConnect: Flow<Boolean> = context.dataStore.data.map {
+        it[HAS_COMPLETED_POST_SETUP_CONNECT] ?: hasCompletedPostSetupConnectSync()
+    }
+
+    fun hasCompletedPostSetupConnectSync(): Boolean =
+        syncPrefs.getBoolean("has_completed_post_setup_connect", false)
+
+    suspend fun savePostSetupConnectCompleted(completed: Boolean) {
+        syncPrefs.edit().putBoolean("has_completed_post_setup_connect", completed).apply()
+        context.dataStore.edit { it[HAS_COMPLETED_POST_SETUP_CONNECT] = completed }
+    }
+
+    fun getPostSetupProfileSync(): Pair<String, String> = Pair(
+        syncPrefs.getString("post_setup_profile_name", "") ?: "",
+        syncPrefs.getString("post_setup_profile_email", "") ?: ""
+    )
+
+    suspend fun savePostSetupProfile(name: String, email: String) {
+        val cleanName = name.trim()
+        val cleanEmail = email.trim()
+        syncPrefs.edit()
+            .putString("post_setup_profile_name", cleanName)
+            .putString("post_setup_profile_email", cleanEmail)
+            .apply()
+        context.dataStore.edit { prefs ->
+            prefs[POST_SETUP_PROFILE_NAME] = cleanName
+            prefs[POST_SETUP_PROFILE_EMAIL] = cleanEmail
+            if (cleanEmail.isNotBlank()) {
+                prefs[USER_EMAIL] = cleanEmail
+            }
+        }
+    }
+
+    fun getCustomMcpServerSync(): Pair<String, String> = Pair(
+        syncPrefs.getString("custom_mcp_server_name", "custom-mcp")?.ifBlank { "custom-mcp" } ?: "custom-mcp",
+        syncPrefs.getString("custom_mcp_server_url", "") ?: ""
+    )
+
+    suspend fun saveCustomMcpServer(name: String, url: String) {
+        val cleanName = name.trim().ifBlank { "custom-mcp" }
+        val cleanUrl = url.trim()
+        syncPrefs.edit()
+            .putString("custom_mcp_server_name", cleanName)
+            .putString("custom_mcp_server_url", cleanUrl)
+            .apply()
+        context.dataStore.edit { prefs ->
+            prefs[CUSTOM_MCP_SERVER_NAME] = cleanName
+            prefs[CUSTOM_MCP_SERVER_URL] = cleanUrl
+        }
     }
 
     suspend fun clearAuth() {

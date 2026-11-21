@@ -161,4 +161,18 @@ class AgyAuthService {
             Result.failure(e)
         }
     }
+
+    /**
+     * Fast, bounded session probe used after Sign Up / Connect so W^X or unreachable local hubs
+     * fall back cleanly to Cloud/API mode without blocking the UI.
+     */
+    suspend fun verifyOrConnectSession(
+        hubUrl: String = AuthPreferences.currentHubUrl,
+        timeoutMs: Long = 4500L
+    ): Result<AgyAuthInfo> = withContext(Dispatchers.IO) {
+        val result = kotlinx.coroutines.withTimeoutOrNull(timeoutMs) {
+            fetchDetailedAuthInfo(hubUrl)
+        }
+        result ?: Result.failure(IllegalStateException("Antigravity Hub session check timed out ($hubUrl)"))
+    }
 }

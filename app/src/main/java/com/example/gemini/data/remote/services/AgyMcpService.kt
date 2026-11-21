@@ -80,4 +80,40 @@ class AgyMcpService {
             getAgyLanguageService(hubUrl).ToggleMcpServer().executeSafely(req).map { }.getOrThrow()
         }
     }
+
+    private val customProbeClient by lazy {
+        okhttp3.OkHttpClient.Builder()
+            .connectTimeout(2500, java.util.concurrent.TimeUnit.MILLISECONDS)
+            .readTimeout(2500, java.util.concurrent.TimeUnit.MILLISECONDS)
+            .writeTimeout(2500, java.util.concurrent.TimeUnit.MILLISECONDS)
+            .retryOnConnectionFailure(false)
+            .build()
+    }
+
+    /**
+     * Lightweight non-blocking reachability probe for a Custom MCP Server URL (HTTP/SSE/JSON-RPC).
+     * Any HTTP response < 500 confirms the server endpoint is live and accepting connections.
+     */
+    suspend fun probeCustomMcpEndpoint(
+        serverUrl: String,
+        headers: Map<String, String> = emptyMap()
+    ): Result<Int> = withContext(Dispatchers.IO) {
+        runCatching {
+            val trimmed = serverUrl.trim()
+            require(trimmed.startsWith("http://", ignoreCase = true) || trimmed.startsWith("https://", ignoreCase = true)) {
+                "Custom MCP URL must start with http:// or https://"
+            }
+            val reqBuilder = okhttp3.Request.Builder()
+                .url(trimmed)
+                .header("Accept", "text/event-stream, application/json")
+                .get()
+            headers.forEach { (k, v) -> if (k.isNotBlank()) reqBuilder.header(k, v) }
+            customProbeClient.newCall(reqBuilder.build()).execute().use { resp ->
+                if (resp.code >= 500) {
+                    throw IllegalStateException("Custom MCP server returned HTTP ${resp.code}")
+                }
+                resp.code
+            }
+        }
+    }
 }

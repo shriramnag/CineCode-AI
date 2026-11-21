@@ -54,7 +54,10 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         authPrefs = authPrefs,
         store = store,
         isNetworkConnectedProvider = { isNetworkConnected() },
-        onHubOnline = { loadMcpServers() }
+        onHubOnline = {
+            loadMcpServers()
+            initializeAllPluginsSequentially(isHubReachable = true)
+        }
     )
     private val mcpManager = com.shriram.cinecode.data.agent.agy.AgyMcpManager(viewModelScope, agyBackend.agyHubClient)
     private val pluginsManager = com.shriram.cinecode.data.agent.agy.AgyPluginsManager(viewModelScope, agyBackend.agyHubClient, store, mcpManager)
@@ -500,6 +503,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     val isMcpLoading = mcpManager.isMcpLoading
     val isMcpRefreshing = mcpManager.isMcpRefreshing
     val refreshingMcpServer = mcpManager.refreshingMcpServer
+    val mcpConnectionStatus = mcpManager.mcpConnectionStatus
+    val customMcpStatus = mcpManager.customMcpStatus
+    val customMcpStatusDetail = mcpManager.customMcpStatusDetail
     val mcpErrorMessage = mcpManager.mcpErrorMessage
     val mcpStatusMessage = mcpManager.mcpStatusMessage
     fun clearMcpStatus() = mcpManager.clearMcpStatus()
@@ -514,6 +520,17 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     fun loadAvailableCascadePlugins(query: String = "") = mcpManager.loadAvailableCascadePlugins(query)
     fun installCascadeMcpPlugin(plugin: com.shriram.cinecode.data.remote.dto.AvailableCascadePluginDto) = mcpManager.installCascadeMcpPlugin(plugin)
 
+    fun connectCustomMcpServer(serverName: String? = null, serverUrl: String? = null) {
+        viewModelScope.launch {
+            mcpManager.connectCustomMcpServer(
+                context = getApplication(),
+                authPrefs = authPrefs,
+                rawName = serverName,
+                rawUrl = serverUrl
+            )
+        }
+    }
+
     val allSkills = pluginsManager.allSkills
     val isSkillsLoading = pluginsManager.isSkillsLoading
     val skillsFilterScope = pluginsManager.skillsFilterScope
@@ -525,6 +542,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     val deletingPluginId = pluginsManager.deletingPluginId
     val pluginActionStatusMessage = pluginsManager.pluginActionStatusMessage
     val pluginActionErrorMessage = pluginsManager.pluginActionErrorMessage
+    val pluginBootstrapSummary = pluginsManager.pluginBootstrapSummary
     fun clearPluginActionStatus() = pluginsManager.clearPluginActionStatus()
     fun setSkillsFilterScope(scope: String) = pluginsManager.setSkillsFilterScope(scope)
     fun loadAllSkills(scope: String = skillsFilterScope.value) = pluginsManager.loadAllSkills(scope)
@@ -532,6 +550,65 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     fun loadGooglePluginsCatalog() = pluginsManager.loadGooglePluginsCatalog()
     fun installGooglePlugin(pluginId: String, pluginName: String = pluginId) = pluginsManager.installGooglePlugin(pluginId, pluginName)
     fun deleteInstalledPlugin(pluginId: String, pluginName: String = pluginId) = pluginsManager.deleteInstalledPlugin(pluginId, pluginName)
+
+    fun initializeAllPluginsSequentially(isHubReachable: Boolean = agyBackend.systemConnectionState.value.isHubOnline) {
+        viewModelScope.launch {
+            pluginsManager.initializeAllPluginsSequentially(
+                context = getApplication(),
+                isHubReachable = isHubReachable
+            )
+        }
+    }
+
+    val postSetupPipelineState = com.shriram.cinecode.data.agent.PostSetupConnectionOrchestrator.state
+
+    fun runPostSetupConnectSequence(
+        profileName: String = "",
+        profileEmail: String = "",
+        apiKey: String = "",
+        customMcpName: String = "",
+        customMcpUrl: String = ""
+    ) {
+        viewModelScope.launch {
+            com.shriram.cinecode.data.agent.PostSetupConnectionOrchestrator.runFullConnectSequence(
+                context = getApplication(),
+                authPrefs = authPrefs,
+                agyBackend = agyBackend,
+                mcpManager = mcpManager,
+                pluginsManager = pluginsManager,
+                profileName = profileName,
+                profileEmail = profileEmail,
+                apiKey = apiKey,
+                customMcpName = customMcpName,
+                customMcpUrl = customMcpUrl
+            )
+        }
+    }
+
+    suspend fun completePostSetupWithSkipOrApiKey(
+        apiKey: String = "",
+        customMcpName: String = "",
+        customMcpUrl: String = ""
+    ) {
+        val appCtx = getApplication<Application>()
+        if (apiKey.isNotBlank()) {
+            com.shriram.cinecode.data.remote.CloudBridgeStore.saveApiKey(appCtx, apiKey)
+        }
+        if (customMcpUrl.isNotBlank()) {
+            authPrefs.saveCustomMcpServer(customMcpName, customMcpUrl)
+        }
+        authPrefs.savePostSetupConnectCompleted(true)
+        viewModelScope.launch {
+            com.shriram.cinecode.data.agent.PostSetupConnectionOrchestrator.runLightweightBackgroundConnect(
+                context = appCtx,
+                authPrefs = authPrefs,
+                agyBackend = agyBackend,
+                mcpManager = mcpManager,
+                pluginsManager = pluginsManager,
+                apiKey = apiKey
+            )
+        }
+    }
 
     val globalSecuritySettings = securityManager.globalSecuritySettings
     val globalSettingsError = securityManager.globalSettingsError
@@ -1419,6 +1496,14 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                     android.util.Log.w("GeminiApp", "[OAuth] CodeAssist loading warning: ${assistRes.exceptionOrNull()?.message}")
                 }
                 refreshQuotas()
+                // Automatically connect Google/Antigravity, Custom MCP, and all Plugins after OAuth Sign-In
+                com.shriram.cinecode.data.agent.PostSetupConnectionOrchestrator.runLightweightBackgroundConnect(
+                    context = getApplication(),
+                    authPrefs = authPrefs,
+                    agyBackend = agyBackend,
+                    mcpManager = mcpManager,
+                    pluginsManager = pluginsManager
+                )
             } else {
                 android.util.Log.e("GeminiApp", "[OAuth] Token exchange FAILED after retries: ${tokenRes?.exceptionOrNull()?.message}")
             }

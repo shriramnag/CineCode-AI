@@ -277,6 +277,40 @@ fun AccountsDialog(
                         }
                     }
                 }
+
+                // Compact live summary for Post-Setup Connect (Google/Antigravity + Custom MCP + Plugins)
+                val pipelineState by com.shriram.cinecode.data.agent.PostSetupConnectionOrchestrator.state.collectAsState()
+                Spacer(Modifier.height(12.dp))
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = "MCP & Plugins Status (100% Free)",
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "• Hub / Cloud: ${pipelineState.googleAgyDetail}",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f)
+                        )
+                        Text(
+                            text = "• MCP: ${pipelineState.mcpDetail}",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f)
+                        )
+                        Text(
+                            text = "• Plugins: ${pipelineState.pluginsDetail}",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f)
+                        )
+                    }
+                }
             }
         }
     }

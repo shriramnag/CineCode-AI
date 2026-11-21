@@ -220,24 +220,43 @@ class BrowserExtensionManager private constructor() {
         val appCtx = context.applicationContext
         appContext = appCtx
         scope.launch {
-            runCatching {
-                hostMutex.withLock { ensurePackaged(appCtx) }
-                if (AuthPreferences.currentRemoteMode || isLocalNodeAvailable(appCtx)) {
-                    isNodeEmulatedMode = false
-                    ensureHost()
-                } else {
-                    isNodeEmulatedMode = true
-                    lastError = null
-                    LocalEnvironmentManager.ensureNodeJsInBackground(appCtx)
-                    Log.i(TAG, "Node.js not installed yet — In-App NodeEmulated & JS Bridge Interpreter active.")
-                }
-            }.onFailure {
-                lastError = it.message
-                Log.w(TAG, "Extension host initialization deferred: ${it.message}")
-            }
-            loadExtensions()
-            runCatching { AutonomousSkillLoader.scanLocalAndAssets(appCtx) }
+            initAndAwaitReady(appCtx)
         }
+    }
+
+    /**
+     * Sequentially prepares bundled/installed plugins and skills in a 4GB-RAM and Android W^X-safe way.
+     */
+    suspend fun initAndAwaitReady(context: Context): Int = withContext(Dispatchers.IO) {
+        val appCtx = context.applicationContext
+        appContext = appCtx
+        runCatching {
+            hostMutex.withLock { ensurePackaged(appCtx) }
+            val wxRestricted = LocalEnvironmentManager.isLocalExecRestricted(appCtx)
+            if (AuthPreferences.currentRemoteMode || (!wxRestricted && isLocalNodeAvailable(appCtx))) {
+                isNodeEmulatedMode = false
+                ensureHost()
+            } else {
+                isNodeEmulatedMode = true
+                lastError = null
+                if (!wxRestricted) {
+                    LocalEnvironmentManager.ensureNodeJsInBackground(appCtx)
+                }
+                Log.i(TAG, "In-App NodeEmulated & JS Bridge Interpreter active (wxRestricted=$wxRestricted).")
+            }
+        }.onFailure {
+            if (LocalEnvironmentManager.isPermissionDeniedExecError(it.message)) {
+                LocalEnvironmentManager.markLocalExecRestricted(appCtx, true)
+                isNodeEmulatedMode = true
+                lastError = null
+            } else {
+                lastError = it.message
+            }
+            Log.w(TAG, "Extension host initialization deferred: ${it.message}")
+        }
+        runCatching { loadExtensions() }
+        runCatching { AutonomousSkillLoader.scanLocalAndAssets(appCtx) }
+        extensions.size
     }
 
     private fun copyAssets(context: Context, source: String, destination: File) {
@@ -302,6 +321,11 @@ class BrowserExtensionManager private constructor() {
                 throw IllegalStateException(e.message ?: "The browser-plugin host could not start on the server", e)
             }
         } else if (!isProcessAliveCompat(hostProcess)) {
+            if (LocalEnvironmentManager.isLocalExecRestricted(context)) {
+                isNodeEmulatedMode = true
+                lastError = null
+                return@withLock
+            }
             val node = File(LocalEnvironmentManager.getBinDir(context), "node")
             if (!node.canExecute()) {
                 // Silent background Node.js setup + seamless In-App NodeEmulated fallback
@@ -331,6 +355,12 @@ class BrowserExtensionManager private constructor() {
                 builder.start()
             } catch (e: Exception) {
                 runCatching { logFile.appendText("failed to launch node: ${e}\n") }
+                if (LocalEnvironmentManager.isPermissionDeniedExecError(e.message)) {
+                    LocalEnvironmentManager.markLocalExecRestricted(context, true)
+                    isNodeEmulatedMode = true
+                    lastError = null
+                    return@withLock
+                }
                 throw IllegalStateException("Extension host failed to launch: ${e.message} (log: ${logFile.absolutePath})", e)
             }
             hostProcess = process

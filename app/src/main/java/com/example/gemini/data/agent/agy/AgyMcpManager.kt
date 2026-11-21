@@ -64,6 +64,12 @@ class AgyMcpManager(
     private val _mcpConnectionStatus = MutableStateFlow(McpConnectionStatus.DISCONNECTED)
     val mcpConnectionStatus: StateFlow<McpConnectionStatus> = _mcpConnectionStatus.asStateFlow()
 
+    private val _customMcpStatus = MutableStateFlow(McpConnectionStatus.DISCONNECTED)
+    val customMcpStatus: StateFlow<McpConnectionStatus> = _customMcpStatus.asStateFlow()
+
+    private val _customMcpStatusDetail = MutableStateFlow<String?>(null)
+    val customMcpStatusDetail: StateFlow<String?> = _customMcpStatusDetail.asStateFlow()
+
     private val _mcpErrorMessage = MutableStateFlow<String?>(null)
     val mcpErrorMessage: StateFlow<String?> = _mcpErrorMessage.asStateFlow()
 
@@ -419,6 +425,142 @@ class AgyMcpManager(
                 _installingCascadePluginId.value = null
             }
         }
+    }
+
+    /**
+     * Saves and connects a Custom MCP Server URL/port with one lightweight retry and safe fallback.
+     * Never throws or blocks chat if the custom server is temporarily offline.
+     */
+    suspend fun connectCustomMcpServer(
+        context: Context,
+        authPrefs: AuthPreferences,
+        rawName: String? = null,
+        rawUrl: String? = null
+    ): McpConnectionStatus = withContext(Dispatchers.IO) {
+        val (savedName, savedUrl) = authPrefs.getCustomMcpServerSync()
+        val serverName = (rawName?.trim()?.takeIf { it.isNotBlank() } ?: savedName).ifBlank { "custom-mcp" }
+        val inputUrl = (rawUrl?.trim() ?: savedUrl).trim()
+
+        if (inputUrl.isBlank()) {
+            _customMcpStatus.value = McpConnectionStatus.DISCONNECTED
+            _customMcpStatusDetail.value = "कोई कस्टम MCP URL सेट नहीं है — In-App व Browser MCP सक्रिय हैं"
+            return@withContext McpConnectionStatus.DISCONNECTED
+        }
+
+        val normalizedUrl = AuthPreferences.normalizeServerUrl(inputUrl, 8765) ?: inputUrl
+        authPrefs.saveCustomMcpServer(serverName, normalizedUrl)
+
+        // Persist locally so config survives even when the local daemon is offline due to Android W^X
+        runCatching {
+            val localFile = java.io.File(context.applicationContext.filesDir, "cinecode_custom_mcp.json")
+            val json = JSONObject().apply {
+                put("serverName", serverName)
+                put("serverUrl", normalizedUrl)
+                put("updatedAt", System.currentTimeMillis())
+            }
+            localFile.writeText(json.toString(2))
+        }
+
+        // Also register in Antigravity mcp_config.json if IdeApiClient is reachable
+        runCatching {
+            val rawConfig = com.shriram.cinecode.data.daemon.IdeApiClient.getMcpConfig() ?: "{}"
+            val root = if (rawConfig.trim().startsWith("{")) JSONObject(rawConfig) else JSONObject()
+            val serversObj = root.optJSONObject("mcpServers") ?: JSONObject().also { root.put("mcpServers", it) }
+            serversObj.put(serverName, JSONObject().apply {
+                put("serverUrl", normalizedUrl)
+                put("disabled", false)
+            })
+            com.shriram.cinecode.data.daemon.IdeApiClient.saveMcpConfig(root.toString(2))
+        }
+
+        _customMcpStatus.value = McpConnectionStatus.RETRYING
+        _customMcpStatusDetail.value = "Connecting to $serverName ($normalizedUrl)…"
+
+        val mcpService = com.shriram.cinecode.data.remote.services.AgyMcpService.instance
+        var probe = mcpService.probeCustomMcpEndpoint(normalizedUrl)
+        if (probe.isFailure) {
+            _customMcpStatus.value = McpConnectionStatus.RETRYING
+            _customMcpStatusDetail.value = "Retrying $serverName ($normalizedUrl)…"
+            delay(650)
+            probe = mcpService.probeCustomMcpEndpoint(normalizedUrl)
+        }
+
+        val finalStatus = if (probe.isSuccess) {
+            _customMcpStatus.value = McpConnectionStatus.CONNECTED
+            _mcpConnectionStatus.value = McpConnectionStatus.CONNECTED
+            _customMcpStatusDetail.value = "Connected: $serverName ($normalizedUrl)"
+            _mcpStatusMessage.value = "Custom MCP '$serverName' connected"
+            McpConnectionStatus.CONNECTED
+        } else {
+            _customMcpStatus.value = McpConnectionStatus.DISCONNECTED
+            val err = probe.exceptionOrNull()?.message ?: "Unreachable"
+            _customMcpStatusDetail.value = "Disconnected ($err) — ऐप व चैट बिना रुके जारी हैं"
+            McpConnectionStatus.DISCONNECTED
+        }
+
+        // Refresh daemon MCP list best-effort without blocking if Hub is offline
+        runCatching {
+            val hubUrl = AuthPreferences.currentHubUrl
+            withTimeoutOrNull(2500L) {
+                agyHubClient.refreshMcpServers(hubUrl)
+            }
+        }
+        loadMcpServers()
+        finalStatus
+    }
+
+    /**
+     * Runs right after Sign Up / Connect: verifies In-App/Browser MCP, connects Custom MCP if configured,
+     * and refreshes Hub MCP servers cleanly without blocking.
+     */
+    suspend fun connectAllMcpServersAfterAuth(
+        context: Context,
+        authPrefs: AuthPreferences,
+        customServerName: String? = null,
+        customServerUrl: String? = null
+    ): Pair<McpConnectionStatus, String> = withContext(Dispatchers.IO) {
+        com.shriram.cinecode.ui.browser.mcp.BrowserMcp.ensureReady()
+        val (_, savedUrl) = authPrefs.getCustomMcpServerSync()
+        val effectiveUrl = customServerUrl?.trim().takeIf { !it.isNullOrBlank() } ?: savedUrl.trim()
+
+        val customStatus = if (effectiveUrl.isNotBlank()) {
+            connectCustomMcpServer(context, authPrefs, customServerName, effectiveUrl)
+        } else {
+            _customMcpStatus.value = McpConnectionStatus.DISCONNECTED
+            _customMcpStatusDetail.value = "In-App & Browser MCP Ready (कस्टम MCP URL वैकल्पिक)"
+            McpConnectionStatus.DISCONNECTED
+        }
+
+        val hubResult = withTimeoutOrNull(3000L) {
+            agyHubClient.getMcpServerStates(AuthPreferences.currentHubUrl)
+        }
+        if (hubResult != null && hubResult.isSuccess) {
+            val liveList = hubResult.getOrDefault(emptyList())
+            _mcpServers.value = liveList.sortedBy { it.name.lowercase() }
+            _mcpConnectionStatus.value = McpConnectionStatus.CONNECTED
+        } else if (customStatus == McpConnectionStatus.CONNECTED) {
+            _mcpConnectionStatus.value = McpConnectionStatus.CONNECTED
+        } else {
+            // Built-in CineCodeSkillsMcp + BrowserMcp remain ready in-app even when Hub is offline
+            _mcpConnectionStatus.value = McpConnectionStatus.DISCONNECTED
+        }
+
+        val summary = when {
+            customStatus == McpConnectionStatus.CONNECTED ->
+                "Custom MCP Connected + Browser/CineCode MCP Ready"
+            _mcpConnectionStatus.value == McpConnectionStatus.CONNECTED ->
+                "Antigravity Hub MCP Connected + In-App MCP Ready"
+            effectiveUrl.isNotBlank() ->
+                "Custom MCP Disconnected (Safe Fallback) • In-App & Browser MCP Ready"
+            else ->
+                "In-App & Browser MCP Ready (${com.shriram.cinecode.ui.browser.mcp.BrowserMcp.statusLabel()})"
+        }
+        val overallStatus = if (customStatus == McpConnectionStatus.CONNECTED || _mcpConnectionStatus.value == McpConnectionStatus.CONNECTED) {
+            McpConnectionStatus.CONNECTED
+        } else {
+            McpConnectionStatus.DISCONNECTED
+        }
+        overallStatus to summary
     }
 
 }

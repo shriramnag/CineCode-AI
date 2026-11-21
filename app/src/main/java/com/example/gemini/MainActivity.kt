@@ -214,10 +214,14 @@ class MainActivity : ComponentActivity() {
                 )
             }
             var hasSkippedInstaller by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+            var hasCompletedPostSetupConnect by androidx.compose.runtime.saveable.rememberSaveable {
+                mutableStateOf(chatViewModel.authPreferences.hasCompletedPostSetupConnectSync())
+            }
 
             // Remote mode runs everything on the server: nothing to install on the phone
             val showFullScreenInstaller = !isInstalledState && !hasSkippedInstaller &&
                 !com.shriram.cinecode.data.preferences.AuthPreferences.currentRemoteMode
+            val showPostSetupConnect = isInstalledState && !hasCompletedPostSetupConnect
 
             GeminiTheme(darkTheme = useDarkTheme) {
                 Surface(
@@ -243,7 +247,8 @@ class MainActivity : ComponentActivity() {
                                 isInstalledState = true
                                 hasSkippedInstaller = true
                                 // before the first agent choice the server waits (the choice dialog starts it)
-                                if (com.shriram.cinecode.data.local.LocalServerManager.hasServerScript(context) &&
+                                if (!com.shriram.cinecode.data.local.LocalEnvironmentManager.isLocalExecRestricted(context) &&
+                                    com.shriram.cinecode.data.local.LocalServerManager.hasServerScript(context) &&
                                     com.shriram.cinecode.data.agent.AgentPreferences.hasChosenSync(context)
                                 ) {
                                     com.shriram.cinecode.data.local.LocalServerManager.startServer(
@@ -251,6 +256,20 @@ class MainActivity : ComponentActivity() {
                                         forceRestart = false
                                     )
                                 }
+                            }
+                        )
+                    } else if (showPostSetupConnect) {
+                        val postSetupScope = rememberCoroutineScope()
+                        BackHandler {
+                            postSetupScope.launch {
+                                chatViewModel.completePostSetupWithSkipOrApiKey()
+                                hasCompletedPostSetupConnect = true
+                            }
+                        }
+                        com.shriram.cinecode.ui.agents.PostSetupConnectScreen(
+                            chatViewModel = chatViewModel,
+                            onFinishAndEnterApp = {
+                                hasCompletedPostSetupConnect = true
                             }
                         )
                     } else {

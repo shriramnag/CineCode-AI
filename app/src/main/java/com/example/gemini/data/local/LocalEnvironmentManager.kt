@@ -108,7 +108,7 @@ object LocalEnvironmentManager {
         }.getOrDefault(false)
     }
 
-    private fun markLocalExecRestricted(context: Context?, restricted: Boolean) {
+    fun markLocalExecRestricted(context: Context?, restricted: Boolean) {
         _localExecRestricted.value = restricted
         if (context != null) {
             runCatching {

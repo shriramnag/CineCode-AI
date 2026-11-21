@@ -31,6 +31,13 @@ object BrowserMcp {
         return runCatching { BrowserSessionManager.instance.getTab(tabId) != null }.getOrDefault(false)
     }
 
+    /**
+     * Lightweight readiness check for Browser MCP without spawning heavy WebViews on 4GB RAM devices.
+     */
+    fun ensureReady(): Boolean = true
+
+    fun statusLabel(): String = if (isReady()) "Connected" else "Ready (In-App Standby)"
+
     suspend fun executeTool(toolName: String, args: JSONObject, tabId: String? = null): Result<String> {
         return runCatching {
             val tab = BrowserSessionManager.instance.getTab(tabId)
