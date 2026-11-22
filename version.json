@@ -1,10 +1,10 @@
 {
-  "version_code": 341159,
-  "version_name": "0.227.576-beta",
+  "version_code": 341160,
+  "version_name": "0.227.577-beta",
   "min_supported_version_code": 1,
-  "url": "https://github.com/shriramnag/CineCode-AI/releases/download/v0.227.576-beta/CineCode-AI-v0.227.576-beta.apk",
+  "url": "https://github.com/shriramnag/CineCode-AI/releases/download/v0.227.577-beta/CineCode-AI-v0.227.577-beta.apk",
   "changelog": [
-    "refactor: improve network reliability and resource management"
+    "refactor: upgrade turbo APK downloader performance"
   ],
   "is_critical": false
 }
