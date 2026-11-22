@@ -12,7 +12,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
+import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.SystemUpdate
@@ -305,7 +307,12 @@ fun AppUpdateDialog(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 val turboMeta = buildString {
-                                    if (current.activeChunks > 1) append("⚡ ${current.activeChunks}x Turbo")
+                                    if (current.activeChunks > 1) {
+                                        val modeTag = if (current.routeLabel == "Mirror") "Mirror" else "Turbo"
+                                        append("⚡ ${current.activeChunks}x $modeTag")
+                                    } else if (current.routeLabel == "Mirror") {
+                                        append("⚡ Mirror")
+                                    }
                                     if (speedLabel.isNotBlank()) {
                                         if (isNotEmpty()) append(" • ")
                                         append(speedLabel)
@@ -408,14 +415,84 @@ fun AppUpdateDialog(
                     }
                     else -> {
                         Text(
-                            text = "अपडेट पर दबाने पर ऑटोमैटिकली डाउनलोड और इंस्टॉल हो जाएगा",
+                            text = "अपडेट पर दबाने पर 8x टर्बो डाउनलोड और 1-टैप इंस्टॉल हो जाएगा",
                             fontSize = 11.5.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.fillMaxWidth()
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
                     }
+                }
+
+                // Fast Mobile-Data Helpers: Turbo Mirror / Fast Proxy + Copy Link (1DM/ADM)
+                if (downloadState !is ApkDownloadState.Completed) {
+                    val activeErrorUrl = (downloadState as? ApkDownloadState.Error)?.resolvedUrl
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        FilledTonalButton(
+                            onClick = {
+                                AutomaticApkDownloader.startDownload(
+                                    context = context,
+                                    versionName = updateInfo.versionName,
+                                    preferredDownloadUrl = activeErrorUrl ?: updateInfo.downloadUrl,
+                                    useTurboMirror = true
+                                )
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .defaultMinSize(minHeight = 48.dp)
+                                .testTag("update_turbo_mirror_button"),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Bolt,
+                                contentDescription = "Turbo Mirror Fast Proxy",
+                                modifier = Modifier.size(17.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "⚡ Turbo Mirror / Fast Proxy (8x तेज़)",
+                                fontSize = 12.5.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                AutomaticApkDownloader.copyApkLinkToClipboard(
+                                    context = context,
+                                    versionName = updateInfo.versionName,
+                                    preferredDownloadUrl = activeErrorUrl ?: updateInfo.downloadUrl
+                                )
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .defaultMinSize(minHeight = 48.dp)
+                                .testTag("update_copy_link_button"),
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.45f))
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.ContentCopy,
+                                contentDescription = "APK लिंक कॉपी करें",
+                                modifier = Modifier.size(15.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "📋 APK लिंक कॉपी करें (1DM/ADM के लिए)",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
                 }
 
                 // Horizontal Bottom Action Buttons: [❌ कैंसिल] (left outline) & [📥 अपडेट करें] (right primary)

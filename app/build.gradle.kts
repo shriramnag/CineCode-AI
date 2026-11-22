@@ -101,7 +101,7 @@ android {
     }
 
     androidResources {
-        noCompress += listOf("tar", "xz", "gz", "bin")
+        noCompress += listOf("xz", "gz", "bin")
         localeFilters += listOf("en", "hi")
     }
 

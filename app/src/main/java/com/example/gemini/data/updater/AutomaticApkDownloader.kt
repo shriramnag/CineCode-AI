@@ -1,6 +1,8 @@
 package com.shriram.cinecode.data.updater
 
 import android.app.DownloadManager
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -50,7 +52,8 @@ sealed class ApkDownloadState {
         val totalBytes: Long,
         val statusText: String = "डाउनलोडिंग...",
         val speedBytesPerSec: Long = 0L,
-        val activeChunks: Int = 1
+        val activeChunks: Int = 1,
+        val routeLabel: String = "Direct"
     ) : ApkDownloadState()
     data class Completed(val file: File) : ApkDownloadState()
     data class Error(
@@ -65,44 +68,59 @@ private data class DownloadProbe(
 )
 
 /**
- * Turbo High-Speed Multi-Chunk APK Downloader for CineCode-AI (4GB RAM / 64GB storage safe):
- * - Probes server for `Accept-Ranges: bytes` (GitHub Releases CDN supported)
- * - Uses 4 lightweight parallel HTTP Range chunks with 64 KB buffered streaming and per-chunk resume/retry
- * - Falls back automatically to 64 KB keep-alive resumable single-stream if server doesn't support ranges
- * - Reports live download speed (MB/s or KB/s), exact MB progress, and verifies size + ZIP/APK header (`PK\x03\x04`)
- * - Launches 1-tap system installer upon completion and provides direct Browser/GitHub fallback
+ * 8-Chunk High-Turbo Multi-Stream APK Downloader for CineCode-AI (4GB RAM / 64GB storage safe):
+ * - Probes server for `Accept-Ranges: bytes` (GitHub Releases CDN & Fast Mirrors)
+ * - Uses 8 parallel HTTP Range streams with 128 KB buffers (~1 MB active RAM) and per-chunk resume/retry
+ * - Supports Fast GitHub Mirror / Proxy routing for slow mobile data networks + direct link copy for 1DM/ADM
+ * - Automatically falls back to 128 KB keep-alive resumable single-stream if server doesn't support ranges
+ * - Verifies exact Content-Length + ZIP/APK magic header (`PK\x03\x04`) before atomic move & 1-tap install
  */
 object AutomaticApkDownloader {
     private const val TAG = "AutomaticApkDownloader"
     private const val REPO_LATEST_RELEASE_API = "https://api.github.com/repos/shriramnag/CineCode-AI/releases/latest"
     private const val REPO_RELEASES_PAGE = "https://github.com/shriramnag/CineCode-AI/releases"
     private const val MAX_ATTEMPTS = 5
-    private const val PARALLEL_CHUNKS = 4
+    private const val PARALLEL_CHUNKS = 8
     private const val MIN_PARALLEL_BYTES = 4L * 1024L * 1024L
-    private const val IO_BUFFER_BYTES = 64 * 1024
+    private const val IO_BUFFER_BYTES = 128 * 1024
     private const val MIN_VALID_APK_BYTES = 1_000_000L
     private const val PROGRESS_EMIT_INTERVAL_MS = 250L
     private const val PROGRESS_EMIT_STEP_BYTES = 256L * 1024L
 
+    private val TURBO_MIRROR_PREFIXES = listOf(
+        "https://gh-proxy.com/",
+        "https://ghfast.top/",
+        "https://mirror.ghproxy.com/"
+    )
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private val metadataClient = OkHttpClient.Builder()
-        .connectTimeout(20, TimeUnit.SECONDS)
-        .readTimeout(25, TimeUnit.SECONDS)
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(20, TimeUnit.SECONDS)
         .retryOnConnectionFailure(true)
+        .followRedirects(true)
+        .followSslRedirects(true)
+        .build()
+
+    private val mirrorProbeClient = OkHttpClient.Builder()
+        .connectTimeout(8, TimeUnit.SECONDS)
+        .readTimeout(10, TimeUnit.SECONDS)
+        .callTimeout(12, TimeUnit.SECONDS)
+        .retryOnConnectionFailure(false)
         .followRedirects(true)
         .followSslRedirects(true)
         .build()
 
     private val streamClient = OkHttpClient.Builder()
         .dispatcher(Dispatcher().apply {
-            maxRequests = 8
-            maxRequestsPerHost = 6
+            maxRequests = 16
+            maxRequestsPerHost = 10
         })
-        .connectionPool(ConnectionPool(6, 45, TimeUnit.SECONDS))
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
-        .writeTimeout(30, TimeUnit.SECONDS)
+        .connectionPool(ConnectionPool(10, 45, TimeUnit.SECONDS))
+        .connectTimeout(25, TimeUnit.SECONDS)
+        .readTimeout(45, TimeUnit.SECONDS)
+        .writeTimeout(25, TimeUnit.SECONDS)
         .callTimeout(0, TimeUnit.MILLISECONDS)
         .pingInterval(20, TimeUnit.SECONDS)
         .retryOnConnectionFailure(true)
@@ -137,10 +155,43 @@ object AutomaticApkDownloader {
         }
     }
 
-    fun startDownload(
+    fun buildDirectDownloadUrl(versionName: String, preferredDownloadUrl: String): String {
+        val candidate = preferredDownloadUrl.trim()
+        if (candidate.startsWith("http://") || candidate.startsWith("https://")) {
+            return candidate
+        }
+        val cleanVer = versionName.trim().removePrefix("v").removePrefix("V")
+        return if (cleanVer.isNotBlank()) {
+            "https://github.com/shriramnag/CineCode-AI/releases/download/v$cleanVer/CineCode-AI-v$cleanVer.apk"
+        } else {
+            REPO_RELEASES_PAGE
+        }
+    }
+
+    fun copyApkLinkToClipboard(
         context: Context,
         versionName: String,
         preferredDownloadUrl: String
+    ): String {
+        val appContext = context.applicationContext
+        val link = buildDirectDownloadUrl(versionName, preferredDownloadUrl)
+        runCatching {
+            val clipboard = appContext.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+            clipboard?.setPrimaryClip(ClipData.newPlainText("CineCode-AI APK Link", link))
+        }
+        Toast.makeText(
+            appContext,
+            "APK लिंक कॉपी हो गया — अब 1DM / ADM में पेस्ट करें",
+            Toast.LENGTH_LONG
+        ).show()
+        return link
+    }
+
+    fun startDownload(
+        context: Context,
+        versionName: String,
+        preferredDownloadUrl: String,
+        useTurboMirror: Boolean = false
     ) {
         val appContext = context.applicationContext
         cancelDownload(appContext, deletePartial = false)
@@ -149,16 +200,22 @@ object AutomaticApkDownloader {
             progress = 0f,
             downloadedBytes = 0L,
             totalBytes = 0L,
-            statusText = "टर्बो डाउनलोड लिंक तैयार हो रहा है...",
+            statusText = if (useTurboMirror) {
+                "⚡ सबसे तेज़ Turbo Mirror खोजा जा रहा है..."
+            } else {
+                "⚡ 8x टर्बो डाउनलोड लिंक तैयार हो रहा है..."
+            },
             speedBytesPerSec = 0L,
-            activeChunks = 1
+            activeChunks = 1,
+            routeLabel = if (useTurboMirror) "Mirror" else "Direct"
         )
 
         downloadJob = scope.launch {
-            var resolvedUrl = preferredDownloadUrl.trim()
+            var directResolvedUrl = buildDirectDownloadUrl(versionName, preferredDownloadUrl)
             try {
-                resolvedUrl = resolveDownloadUrl(versionName, preferredDownloadUrl)
-                Log.i(TAG, "Starting Turbo APK download: $resolvedUrl")
+                directResolvedUrl = resolveDownloadUrl(versionName, preferredDownloadUrl)
+                val (activeUrl, routeLabel, probe) = selectFastestRoute(directResolvedUrl, useTurboMirror)
+                Log.i(TAG, "Starting 8x Turbo APK download [$routeLabel]: $activeUrl (size=${probe.totalBytes}, range=${probe.supportsRange})")
 
                 val cleanVer = versionName.trim()
                     .removePrefix("v")
@@ -175,8 +232,6 @@ object AutomaticApkDownloader {
                 val partFile = File(updatesDir, "$apkFileName.part")
                 val finalFile = File(updatesDir, apkFileName)
 
-                val probe = probeDownloadCapabilities(resolvedUrl)
-
                 // Reuse already-verified cached APK if size matches remote
                 if (finalFile.exists() && finalFile.length() >= MIN_VALID_APK_BYTES && hasValidApkHeader(finalFile)) {
                     if (probe.totalBytes <= 0L || finalFile.length() == probe.totalBytes) {
@@ -191,12 +246,13 @@ object AutomaticApkDownloader {
                     }
                 }
 
-                // Prefer 4-chunk parallel Turbo mode when Range is supported & file >= 4MB & no large single-stream resume exists
                 val existingSinglePart = if (partFile.exists()) partFile.length() else 0L
                 val downloadedApk = if (probe.supportsRange && probe.totalBytes >= MIN_PARALLEL_BYTES && existingSinglePart == 0L) {
                     try {
                         downloadParallelChunks(
-                            downloadUrl = resolvedUrl,
+                            downloadUrl = activeUrl,
+                            fallbackDirectUrl = directResolvedUrl,
+                            routeLabel = routeLabel,
                             totalBytes = probe.totalBytes,
                             apkFileName = apkFileName,
                             partFile = partFile,
@@ -206,10 +262,12 @@ object AutomaticApkDownloader {
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
-                        Log.w(TAG, "Parallel 4-chunk mode fell back to single-stream: ${e.message}")
+                        Log.w(TAG, "Parallel 8-chunk mode fell back to single-stream: ${e.message}")
                         cleanupChunkFiles(updatesDir, apkFileName)
                         downloadSingleStreamWithResume(
-                            downloadUrl = resolvedUrl,
+                            downloadUrl = activeUrl,
+                            fallbackDirectUrl = directResolvedUrl,
+                            routeLabel = routeLabel,
                             initialExpectedBytes = probe.totalBytes,
                             partFile = partFile,
                             finalFile = finalFile,
@@ -218,7 +276,9 @@ object AutomaticApkDownloader {
                     }
                 } else {
                     downloadSingleStreamWithResume(
-                        downloadUrl = resolvedUrl,
+                        downloadUrl = activeUrl,
+                        fallbackDirectUrl = directResolvedUrl,
+                        routeLabel = routeLabel,
                         initialExpectedBytes = probe.totalBytes,
                         partFile = partFile,
                         finalFile = finalFile,
@@ -244,18 +304,45 @@ object AutomaticApkDownloader {
                 val friendlyReason = buildFriendlyError(e)
                 _state.value = ApkDownloadState.Error(
                     message = friendlyReason,
-                    resolvedUrl = resolvedUrl.ifBlank { REPO_RELEASES_PAGE }
+                    resolvedUrl = directResolvedUrl.ifBlank { REPO_RELEASES_PAGE }
                 )
             }
         }
     }
 
     /**
-     * Downloads the APK in 4 lightweight parallel HTTP Range chunks and merges them sequentially
-     * with a 64 KB buffer (zero RAM spikes on 4GB RAM devices).
+     * Resolves the best active route:
+     * - If `useTurboMirror` is true and URL is on GitHub, tests fast GitHub mirrors with short timeouts
+     *   and picks the first verified healthy mirror; falls back safely to Direct GitHub if mirrors fail.
+     * - Otherwise probes Direct GitHub directly.
+     */
+    private fun selectFastestRoute(
+        directUrl: String,
+        useTurboMirror: Boolean
+    ): Triple<String, String, DownloadProbe> {
+        if (useTurboMirror && directUrl.startsWith("https://github.com/", ignoreCase = true)) {
+            for (prefix in TURBO_MIRROR_PREFIXES) {
+                val mirrorUrl = prefix + directUrl
+                val mirrorProbe = probeDownloadCapabilities(mirrorUrl, client = mirrorProbeClient)
+                if (mirrorProbe.totalBytes >= MIN_VALID_APK_BYTES) {
+                    Log.i(TAG, "Selected fast Turbo Mirror: $prefix (${mirrorProbe.totalBytes} bytes, range=${mirrorProbe.supportsRange})")
+                    return Triple(mirrorUrl, "Mirror", mirrorProbe)
+                }
+            }
+            Log.w(TAG, "All Turbo Mirrors unavailable, falling back to Direct GitHub")
+        }
+        val directProbe = probeDownloadCapabilities(directUrl, client = metadataClient)
+        return Triple(directUrl, "Direct", directProbe)
+    }
+
+    /**
+     * Downloads the APK in 8 lightweight parallel HTTP Range streams (128 KB buffer each = ~1 MB active RAM)
+     * and merges them sequentially into the final verified APK.
      */
     private suspend fun downloadParallelChunks(
         downloadUrl: String,
+        fallbackDirectUrl: String,
+        routeLabel: String,
         totalBytes: Long,
         apkFileName: String,
         partFile: File,
@@ -266,7 +353,16 @@ object AutomaticApkDownloader {
             File(updatesDir, "$apkFileName.chunk$idx")
         }
 
-        // Compute 4 contiguous byte ranges
+        // Remove stale chunks if a previous run used a different chunk count
+        updatesDir.listFiles()?.forEach { f ->
+            if (f.name.startsWith("$apkFileName.chunk")) {
+                val idx = f.name.substringAfter("$apkFileName.chunk").toIntOrNull()
+                if (idx == null || idx !in 0 until PARALLEL_CHUNKS) {
+                    f.delete()
+                }
+            }
+        }
+
         val baseChunkSize = totalBytes / PARALLEL_CHUNKS
         val ranges = (0 until PARALLEL_CHUNKS).map { idx ->
             val start = idx * baseChunkSize
@@ -274,7 +370,6 @@ object AutomaticApkDownloader {
             start to end
         }
 
-        // Validate any resumed chunk files from a previous interrupted Turbo session
         var initialResumed = 0L
         for (idx in 0 until PARALLEL_CHUNKS) {
             val expectedChunkLen = ranges[idx].second - ranges[idx].first + 1L
@@ -289,11 +384,9 @@ object AutomaticApkDownloader {
             }
         }
 
-        // Storage safety check (need remaining + merge space + 15 MB safety margin)
         val remainingDownload = (totalBytes - initialResumed).coerceAtLeast(0L)
         val requiredFree = remainingDownload + totalBytes + (15L * 1024L * 1024L)
         if (updatesDir.usableSpace in 1L until requiredFree) {
-            // If storage is tight for parallel merge, let caller fall back to single-stream (needs only 1x file size)
             throw IOException("Parallel merge needs ${formatMb(requiredFree)}, switching to single-stream")
         }
 
@@ -302,15 +395,17 @@ object AutomaticApkDownloader {
             downloadedBytes = initialResumed,
             totalBytes = totalBytes,
             statusText = if (initialResumed > 0L) {
-                "टर्बो 4x रीज़्यूम (${formatMb(initialResumed)} से)..."
+                "⚡ 8x टर्बो रीज़्यूम (${formatMb(initialResumed)} से)..."
+            } else if (routeLabel == "Mirror") {
+                "⚡ 8x Turbo Mirror हाई-स्पीड डाउनलोड..."
             } else {
-                "टर्बो 4x हाई-स्पीड डाउनलोड..."
+                "⚡ 8x टर्बो हाई-स्पीड डाउनलोड..."
             },
             speedBytesPerSec = 0L,
-            activeChunks = PARALLEL_CHUNKS
+            activeChunks = PARALLEL_CHUNKS,
+            routeLabel = routeLabel
         )
 
-        // Live progress + smoothed speed reporter coroutine
         val progressReporter = launch {
             var lastBytes = totalDownloaded.get()
             var lastTime = System.currentTimeMillis()
@@ -332,9 +427,10 @@ object AutomaticApkDownloader {
                 emitProgress(
                     downloadedBytes = currentBytes,
                     totalBytes = totalBytes,
-                    statusText = "टर्बो 4x डाउनलोडिंग...",
+                    statusText = if (routeLabel == "Mirror") "⚡ 8x Turbo Mirror डाउनलोडिंग..." else "⚡ 8x टर्बो डाउनलोडिंग...",
                     speedBytesPerSec = smoothedSpeed,
-                    activeChunks = PARALLEL_CHUNKS
+                    activeChunks = PARALLEL_CHUNKS,
+                    routeLabel = routeLabel
                 )
             }
         }
@@ -344,7 +440,8 @@ object AutomaticApkDownloader {
                 val (rangeStart, rangeEnd) = ranges[idx]
                 async(Dispatchers.IO) {
                     downloadSingleChunkWithRetry(
-                        downloadUrl = downloadUrl,
+                        primaryUrl = downloadUrl,
+                        fallbackDirectUrl = fallbackDirectUrl,
                         chunkIndex = idx,
                         rangeStart = rangeStart,
                         rangeEnd = rangeEnd,
@@ -358,7 +455,6 @@ object AutomaticApkDownloader {
             progressReporter.cancel()
         }
 
-        // Verify all 4 chunks match exact expected sizes
         for (idx in 0 until PARALLEL_CHUNKS) {
             val expectedLen = ranges[idx].second - ranges[idx].first + 1L
             val actualLen = chunkFiles[idx].length()
@@ -372,10 +468,10 @@ object AutomaticApkDownloader {
             totalBytes = totalBytes,
             statusText = "फ़ाइल जोड़ी और सत्यापित हो रही है...",
             speedBytesPerSec = 0L,
-            activeChunks = PARALLEL_CHUNKS
+            activeChunks = PARALLEL_CHUNKS,
+            routeLabel = routeLabel
         )
 
-        // Stream-merge the 4 chunks sequentially into partFile using 64 KB buffer
         if (partFile.exists()) partFile.delete()
         FileOutputStream(partFile, false).use { fos ->
             BufferedOutputStream(fos, IO_BUFFER_BYTES).use { out ->
@@ -405,7 +501,8 @@ object AutomaticApkDownloader {
     }
 
     private suspend fun downloadSingleChunkWithRetry(
-        downloadUrl: String,
+        primaryUrl: String,
+        fallbackDirectUrl: String,
         chunkIndex: Int,
         rangeStart: Long,
         rangeEnd: Long,
@@ -427,10 +524,12 @@ object AutomaticApkDownloader {
                 existingLen = 0L
             }
 
+            // If mirror fails twice on a chunk, transparently fall back to direct GitHub URL for remaining bytes
+            val activeUrl = if (attempt >= 3 && primaryUrl != fallbackDirectUrl) fallbackDirectUrl else primaryUrl
             val reqStart = rangeStart + existingLen
             try {
                 val request = Request.Builder()
-                    .url(downloadUrl)
+                    .url(activeUrl)
                     .header("User-Agent", "CineCode-AI-Updater/${BuildConfig.VERSION_NAME}")
                     .header("Accept", "application/octet-stream, */*")
                     .header("Accept-Encoding", "identity")
@@ -472,7 +571,7 @@ object AutomaticApkDownloader {
                 lastError = e
                 Log.w(TAG, "Chunk #$chunkIndex attempt $attempt/$MAX_ATTEMPTS failed: ${e.message}")
                 if (attempt < MAX_ATTEMPTS) {
-                    delay((attempt * 1200L).coerceAtMost(5000L))
+                    delay((attempt * 1000L).coerceAtMost(4500L))
                 }
             }
         }
@@ -481,6 +580,8 @@ object AutomaticApkDownloader {
 
     private suspend fun downloadSingleStreamWithResume(
         downloadUrl: String,
+        fallbackDirectUrl: String,
+        routeLabel: String,
         initialExpectedBytes: Long,
         partFile: File,
         finalFile: File,
@@ -498,7 +599,6 @@ object AutomaticApkDownloader {
                 existingBytes = 0L
             }
 
-            // Storage safety check (important on 64GB devices)
             val remainingNeeded = if (expectedTotalBytes > 0L) {
                 (expectedTotalBytes - existingBytes).coerceAtLeast(0L) + (15L * 1024L * 1024L)
             } else {
@@ -509,6 +609,9 @@ object AutomaticApkDownloader {
                     "फ़ोन में पर्याप्त स्टोरेज खाली नहीं है (कम से कम ${formatMb(remainingNeeded)} खाली जगह चाहिए)।"
                 )
             }
+
+            val activeUrl = if (attempt >= 3 && downloadUrl != fallbackDirectUrl) fallbackDirectUrl else downloadUrl
+            val currentRouteLabel = if (activeUrl == fallbackDirectUrl) "Direct" else routeLabel
 
             try {
                 val statusPrefix = when {
@@ -521,10 +624,10 @@ object AutomaticApkDownloader {
                     else ->
                         "डाउनलोड हो रहा है..."
                 }
-                emitProgress(existingBytes, expectedTotalBytes, statusPrefix, 0L, 1)
+                emitProgress(existingBytes, expectedTotalBytes, statusPrefix, 0L, 1, currentRouteLabel)
 
                 val reqBuilder = Request.Builder()
-                    .url(downloadUrl)
+                    .url(activeUrl)
                     .header("User-Agent", "CineCode-AI-Updater/${BuildConfig.VERSION_NAME}")
                     .header("Accept", "application/octet-stream, */*")
                     .header("Accept-Encoding", "identity")
@@ -601,7 +704,8 @@ object AutomaticApkDownloader {
                                             expectedTotalBytes,
                                             if (attempt > 1) "डाउनलोडिंग (प्रयास $attempt/$MAX_ATTEMPTS)..." else "डाउनलोडिंग...",
                                             smoothedSpeed,
-                                            1
+                                            1,
+                                            currentRouteLabel
                                         )
                                     }
                                 }
@@ -611,7 +715,7 @@ object AutomaticApkDownloader {
                         }
                     }
 
-                    emitProgress(downloadedBytes, expectedTotalBytes, "APK सत्यापित हो रहा है...", 0L, 1)
+                    emitProgress(downloadedBytes, expectedTotalBytes, "APK सत्यापित हो रहा है...", 0L, 1, currentRouteLabel)
                 }
 
                 val actualLen = partFile.length()
@@ -634,13 +738,14 @@ object AutomaticApkDownloader {
                 Log.w(TAG, "Attempt $attempt/$MAX_ATTEMPTS interrupted at $currentSaved/$expectedTotalBytes bytes: ${e.message}")
 
                 if (attempt < MAX_ATTEMPTS) {
-                    val backoffMs = (attempt * 1800L).coerceAtMost(8000L)
+                    val backoffMs = (attempt * 1500L).coerceAtMost(6000L)
                     emitProgress(
                         currentSaved,
                         expectedTotalBytes,
                         "नेटवर्क रुका — ${formatMb(currentSaved)} से रीज़्यूम (${attempt + 1}/$MAX_ATTEMPTS)...",
                         0L,
-                        1
+                        1,
+                        currentRouteLabel
                     )
                     delay(backoffMs)
                 }
@@ -681,7 +786,8 @@ object AutomaticApkDownloader {
         totalBytes: Long,
         statusText: String,
         speedBytesPerSec: Long = 0L,
-        activeChunks: Int = 1
+        activeChunks: Int = 1,
+        routeLabel: String = "Direct"
     ) {
         val progress = if (totalBytes > 0L) {
             (downloadedBytes.toFloat() / totalBytes.toFloat()).coerceIn(0f, 1f)
@@ -694,12 +800,12 @@ object AutomaticApkDownloader {
             totalBytes = totalBytes,
             statusText = statusText,
             speedBytesPerSec = speedBytesPerSec,
-            activeChunks = activeChunks
+            activeChunks = activeChunks,
+            routeLabel = routeLabel
         )
     }
 
-    private fun probeDownloadCapabilities(url: String): DownloadProbe {
-        // 1. Fast HEAD probe
+    private fun probeDownloadCapabilities(url: String, client: OkHttpClient = metadataClient): DownloadProbe {
         val headProbe = runCatching {
             val req = Request.Builder()
                 .url(url)
@@ -707,7 +813,7 @@ object AutomaticApkDownloader {
                 .header("User-Agent", "CineCode-AI-Updater/${BuildConfig.VERSION_NAME}")
                 .header("Accept-Encoding", "identity")
                 .build()
-            metadataClient.newCall(req).execute().use { resp ->
+            client.newCall(req).execute().use { resp ->
                 if (resp.isSuccessful) {
                     val len = resp.header("Content-Length")?.toLongOrNull() ?: -1L
                     val acceptRanges = resp.header("Accept-Ranges").orEmpty()
@@ -721,11 +827,10 @@ object AutomaticApkDownloader {
             }
         }.getOrDefault(DownloadProbe(-1L, false))
 
-        if (headProbe.totalBytes > 0L && headProbe.supportsRange) {
+        if (headProbe.totalBytes >= MIN_VALID_APK_BYTES && headProbe.supportsRange) {
             return headProbe
         }
 
-        // 2. Lightweight 1-byte Range probe (handles CDNs that omit Accept-Ranges on HEAD)
         val rangeProbe = runCatching {
             val req = Request.Builder()
                 .url(url)
@@ -734,7 +839,7 @@ object AutomaticApkDownloader {
                 .header("Accept-Encoding", "identity")
                 .header("Range", "bytes=0-0")
                 .build()
-            metadataClient.newCall(req).execute().use { resp ->
+            client.newCall(req).execute().use { resp ->
                 if (resp.code == 206) {
                     val total = parseTotalFromContentRange(resp.header("Content-Range"))
                     DownloadProbe(
@@ -799,28 +904,22 @@ object AutomaticApkDownloader {
         val raw = e.message.orEmpty()
         return when {
             raw.contains("स्टोरेज") || raw.contains("ENOSPC", ignoreCase = true) ->
-                "स्टोरेज कम होने के कारण डाउनलोड रुका। कृपया थोड़ी जगह खाली करें या ब्राउज़र से डाउनलोड करें।"
+                "स्टोरेज कम होने के कारण डाउनलोड रुका। कृपया थोड़ी जगह खाली करें या लिंक कॉपी करके डाउनलोड करें।"
             raw.contains("timeout", ignoreCase = true) || raw.contains("SocketTimeout", ignoreCase = true) ->
-                "नेटवर्क धीमा होने से कनेक्शन टाइमआउट हुआ। 'पुनः प्रयास' दबाएँ — डाउनलोड वहीं से आगे बढ़ेगा (या ब्राउज़र से डाउनलोड करें)।"
+                "मोबाइल डेटा धीमा होने से टाइमआउट हुआ। '⚡ Turbo Mirror' आज़माएँ या 'पुनः प्रयास (Resume)' दबाएँ।"
             raw.contains("कनेक्शन बीच में टूट गया") || raw.contains("EOF", ignoreCase = true) || raw.contains("reset", ignoreCase = true) ->
-                "नेटवर्क ड्रॉप हुआ ($raw)। अधूरी फ़ाइल सुरक्षित है — 'पुनः प्रयास' दबाने पर वहीं से रीज़्यूम होगा।"
+                "नेटवर्क ड्रॉप हुआ ($raw)। अधूरी फ़ाइल सुरक्षित है — 'पुनः प्रयास' या '⚡ Turbo Mirror' से आगे रीज़्यूम करें।"
             raw.isNotBlank() ->
-                "डाउनलोड रुका: $raw (पुनः प्रयास करें या ब्राउज़र से डाउनलोड करें)"
+                "डाउनलोड रुका: $raw ('⚡ Turbo Mirror' या 1DM/ADM लिंक कॉपी आज़माएँ)"
             else ->
-                "नेटवर्क समस्या के कारण डाउनलोड पूरा नहीं हो सका। पुनः प्रयास करें या ब्राउज़र से डाउनलोड करें।"
+                "नेटवर्क समस्या के कारण डाउनलोड पूरा नहीं हो सका। '⚡ Turbo Mirror' या पुनः प्रयास करें।"
         }
     }
 
     fun openReleaseFallback(context: Context, versionName: String, preferredDownloadUrl: String) {
         val appContext = context.applicationContext
         val cleanVer = versionName.trim().removePrefix("v").removePrefix("V")
-        val targetUrl = preferredDownloadUrl.trim().ifBlank {
-            if (cleanVer.isNotBlank()) {
-                "https://github.com/shriramnag/CineCode-AI/releases/download/v$cleanVer/CineCode-AI-v$cleanVer.apk"
-            } else {
-                REPO_RELEASES_PAGE
-            }
-        }
+        val targetUrl = buildDirectDownloadUrl(versionName, preferredDownloadUrl)
         val opened = openInBrowser(appContext, targetUrl)
         if (!opened) {
             runCatching {

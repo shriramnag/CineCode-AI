@@ -51,9 +51,14 @@ class AppUpdateManager(private val context: Context) {
         .build()
 
     private val downloadHttpClient = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
-        .writeTimeout(30, TimeUnit.SECONDS)
+        .dispatcher(okhttp3.Dispatcher().apply {
+            maxRequests = 16
+            maxRequestsPerHost = 10
+        })
+        .connectionPool(okhttp3.ConnectionPool(10, 45, TimeUnit.SECONDS))
+        .connectTimeout(25, TimeUnit.SECONDS)
+        .readTimeout(45, TimeUnit.SECONDS)
+        .writeTimeout(25, TimeUnit.SECONDS)
         .callTimeout(0, TimeUnit.MILLISECONDS)
         .pingInterval(20, TimeUnit.SECONDS)
         .retryOnConnectionFailure(true)
@@ -263,8 +268,8 @@ class AppUpdateManager(private val context: Context) {
 
                     body.byteStream().use { input ->
                         java.io.FileOutputStream(partFile, isPartial).use { fos ->
-                            java.io.BufferedOutputStream(fos, 64 * 1024).use { output ->
-                                val buffer = ByteArray(64 * 1024)
+                            java.io.BufferedOutputStream(fos, 128 * 1024).use { output ->
+                                val buffer = ByteArray(128 * 1024)
                                 var bytesRead: Int
                                 while (input.read(buffer).also { bytesRead = it } != -1) {
                                     output.write(buffer, 0, bytesRead)
@@ -355,7 +360,7 @@ class AppUpdateManager(private val context: Context) {
         finalFile: File,
         onProgress: (Float, Long, Long) -> Unit
     ): File = coroutineScope {
-        val chunkCount = 4
+        val chunkCount = 8
         val chunkSize = totalBytes / chunkCount
         val chunkFiles = (0 until chunkCount).map { File(updatesDir, "$safeName.chunk$it") }
         val ranges = (0 until chunkCount).map { idx ->
@@ -410,8 +415,8 @@ class AppUpdateManager(private val context: Context) {
                                 val body = resp.body ?: throw java.io.IOException("Empty chunk body")
                                 body.byteStream().use { input ->
                                     java.io.FileOutputStream(chunkFiles[idx], existing > 0L).use { fos ->
-                                        java.io.BufferedOutputStream(fos, 64 * 1024).use { out ->
-                                            val buf = ByteArray(64 * 1024)
+                                        java.io.BufferedOutputStream(fos, 128 * 1024).use { out ->
+                                            val buf = ByteArray(128 * 1024)
                                             var read: Int
                                             while (input.read(buf).also { read = it } != -1) {
                                                 out.write(buf, 0, read)
@@ -428,7 +433,7 @@ class AppUpdateManager(private val context: Context) {
                             throw e
                         } catch (e: Exception) {
                             lastErr = e
-                            if (attempt < 4) kotlinx.coroutines.delay(attempt * 1200L)
+                            if (attempt < 4) kotlinx.coroutines.delay(attempt * 1000L)
                         }
                     }
                     throw lastErr ?: java.io.IOException("Chunk $idx failed")
@@ -441,8 +446,8 @@ class AppUpdateManager(private val context: Context) {
 
         if (partFile.exists()) partFile.delete()
         java.io.FileOutputStream(partFile, false).use { fos ->
-            java.io.BufferedOutputStream(fos, 64 * 1024).use { out ->
-                val buf = ByteArray(64 * 1024)
+            java.io.BufferedOutputStream(fos, 128 * 1024).use { out ->
+                val buf = ByteArray(128 * 1024)
                 for (cf in chunkFiles) {
                     cf.inputStream().use { input ->
                         var read: Int
