@@ -250,6 +250,13 @@ object JarvisTasks {
                 if (vm.openCodeBackend.currentConversation.value?.id != t.id) vm.openCodeBackend.selectConversation(t.id)
                 vm.openCodeBackend.sendMessage(PromptExpansion.expand(text))
             }
+            AgentKind.GEMINI -> {
+                if (vm.geminiBackend.currentConversation.value?.id != t.id) vm.geminiBackend.selectConversation(t.id)
+                vm.geminiBackend.sendMessage(PromptExpansion.expand(text))
+            }
+            AgentKind.TERMINAL, AgentKind.JARVIS -> {
+                return "Tasks for ${t.agent.name} do not support replies."
+            }
         }
         val now = System.currentTimeMillis()
         put(t.copy(state = State.STARTING, turnAt = now, updatedAt = now, progressAt = now, seenRunning = false,
@@ -268,6 +275,8 @@ object JarvisTasks {
             AgentKind.AGY -> hub.cancelCascadeInvocation(t.id).onFailure { return "Could not stop: ${it.message}" }
             AgentKind.CODEX -> vm.codexBackend.stopStreaming()
             AgentKind.OPENCODE -> vm.openCodeBackend.stopStreaming()
+            AgentKind.GEMINI -> vm.geminiBackend.stopStreaming()
+            AgentKind.TERMINAL, AgentKind.JARVIS -> Unit
         }
         if (!quiet) put(t.copy(state = State.STOPPED, updatedAt = System.currentTimeMillis(), note = "Stopped", reported = true))
         return "Stopped."
@@ -306,6 +315,9 @@ object JarvisTasks {
                 ?: runCatching { JarvisController.readChat(t.id) }.getOrDefault(emptyList())
             AgentKind.OPENCODE -> vm.openCodeBackend.messages.value.takeIf { vm.openCodeBackend.currentConversation.value?.id == t.id && it.isNotEmpty() }
                 ?: runCatching { JarvisController.readChat(t.id) }.getOrDefault(emptyList())
+            AgentKind.GEMINI -> vm.geminiBackend.messages.value.takeIf { vm.geminiBackend.currentConversation.value?.id == t.id && it.isNotEmpty() }
+                ?: runCatching { JarvisController.readChat(t.id) }.getOrDefault(emptyList())
+            AgentKind.TERMINAL, AgentKind.JARVIS -> emptyList()
         }
         val text = msgs.lastOrNull { it.role == MessageRole.ASSISTANT && it.content.isNotBlank() }?.content.orEmpty()
         return PromptExpansion.collapse(text).trim().let { if (it.length > max) "…" + it.takeLast(max) else it }
