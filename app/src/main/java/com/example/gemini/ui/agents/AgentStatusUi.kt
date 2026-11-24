@@ -214,9 +214,12 @@ fun AgentMark(agent: AgentKind, modifier: Modifier = Modifier, size: Dp = 32.dp,
         ) {
             when (agent) {
                 AgentKind.AGY -> Icon(Icons.Outlined.RocketLaunch, null, tint = accent, modifier = Modifier.size(size * 0.52f))
+                AgentKind.GEMINI -> Text("✦", color = accent, fontWeight = FontWeight.Bold, fontSize = (size.value * 0.52f).sp)
                 AgentKind.CLAUDE -> Text("✻", color = accent, fontWeight = FontWeight.Bold, fontSize = (size.value * 0.5f).sp)
                 AgentKind.CODEX -> Text("⚡", color = accent, fontWeight = FontWeight.Bold, fontSize = (size.value * 0.46f).sp)
                 AgentKind.OPENCODE -> Text("∞", color = accent, fontWeight = FontWeight.Bold, fontSize = (size.value * 0.52f).sp)
+                AgentKind.TERMINAL -> Text(">", color = accent, fontWeight = FontWeight.Bold, fontSize = (size.value * 0.48f).sp)
+                AgentKind.JARVIS -> Text("🎙", color = accent, fontWeight = FontWeight.Bold, fontSize = (size.value * 0.46f).sp)
             }
         }
         if (statusColor != null) {

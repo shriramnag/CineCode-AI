@@ -58,6 +58,11 @@ private val ALL_AGENT_CARDS = listOf(
         "Google AI Studio API & Antigravity hub with Gemini models and local tools."
     ),
     AgentCardInfo(
+        AgentKind.GEMINI,
+        "Gemini Agent",
+        "Direct Google AI Studio SSE streaming with multimodal & bilingual Hindi/English intelligence."
+    ),
+    AgentCardInfo(
         AgentKind.CODEX,
         "Codex (Free OpenAI-Compatible)",
         "OpenRouter Free, Groq Free, Google AI Studio Free, and local Ollama — 100% paywall-free."

@@ -619,6 +619,9 @@ object JarvisMcp {
     private fun agentArg(raw: String): AgentKind = when (raw.lowercase()) {
         "claude" -> AgentKind.CLAUDE
         "agy", "antigravity" -> AgentKind.AGY
+        "gemini" -> AgentKind.GEMINI
+        "codex" -> AgentKind.CODEX
+        "opencode" -> AgentKind.OPENCODE
         else -> vm.newChatAgent.value.takeIf { it in vm.enabledAgents.value } ?: vm.enabledAgents.value.firstOrNull() ?: AgentKind.CLAUDE
     }
 
@@ -695,7 +698,14 @@ object JarvisMcp {
             })
             put("chat_on_screen", conv?.let {
                 convJson(it).put("busy", vm.isStreaming.value)
-                    .put("model", (if (it.agent == AgentKind.CLAUDE) vm.claudeBackend.selectedModelId.value else vm.agyBackend.selectedModelId.value))
+                    .put("model", when (it.agent) {
+                        AgentKind.CLAUDE -> vm.claudeBackend.selectedModelId.value
+                        AgentKind.GEMINI -> vm.geminiBackend.selectedModel.value
+                        AgentKind.CODEX -> vm.codexBackend.selectedModelId.value
+                        AgentKind.OPENCODE -> vm.openCodeBackend.selectedModelId.value
+                        AgentKind.AGY -> vm.agyBackend.selectedModelId.value
+                        AgentKind.TERMINAL, AgentKind.JARVIS -> ""
+                    })
             } ?: JSONObject.NULL)
             put("tasks", JSONArray().apply { JarvisTasks.tasks.value.take(8).forEach { put(taskJson(it)) } })
             put("running_chats", JSONArray().apply {
@@ -972,7 +982,9 @@ object JarvisMcp {
         AgentKind.CLAUDE -> vm.claudeBackend.availableModels.value
         AgentKind.CODEX -> vm.codexBackend.availableModels.value
         AgentKind.OPENCODE -> vm.openCodeBackend.availableModels.value
+        AgentKind.GEMINI -> vm.geminiBackend.availableModels.value
         AgentKind.AGY -> vm.agyBackend.enabledModels.value
+        AgentKind.TERMINAL, AgentKind.JARVIS -> emptyList()
     }
 
     private fun findModel(text: String, models: List<AiModel>): AiModel? {
@@ -994,6 +1006,7 @@ object JarvisMcp {
             if (which == "all" || which == "agy") section("antigravity", AgentKind.AGY, vm.agyBackend.selectedModelId.value)
             if (which == "all" || which == "codex") section("codex", AgentKind.CODEX, vm.codexBackend.selectedModelId.value)
             if (which == "all" || which == "opencode") section("opencode", AgentKind.OPENCODE, vm.openCodeBackend.selectedModelId.value)
+            if (which == "all" || which == "gemini") section("gemini", AgentKind.GEMINI, vm.geminiBackend.selectedModel.value)
             put("jarvis_chat_model", JarvisPreferences.modelId.value.ifBlank { "default" })
         })
     }

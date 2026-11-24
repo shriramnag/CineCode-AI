@@ -30,21 +30,30 @@ val ClaudeAccent = Color(0xFFD97757)
 
 /** Antigravity's color across the app (same blue as its settings group). */
 val AgyAccent = Color(0xFF3B82F6)
+val GeminiAccent = Color(0xFF4285F4)
 val CodexAccent = Color(0xFF10B981)
 val OpenCodeAccent = Color(0xFF8B5CF6)
+val TerminalAccent = Color(0xFF10B981)
+val JarvisAccent = Color(0xFF38BDF8)
 
 fun AgentKind.label(): String = when (this) {
     AgentKind.AGY -> "Antigravity"
+    AgentKind.GEMINI -> "Gemini"
     AgentKind.CLAUDE -> "Claude Code"
     AgentKind.CODEX -> "Codex"
     AgentKind.OPENCODE -> "OpenCode"
+    AgentKind.TERMINAL -> "Terminal"
+    AgentKind.JARVIS -> "Jarvis"
 }
 
 fun AgentKind.accent(): Color = when (this) {
     AgentKind.AGY -> AgyAccent
+    AgentKind.GEMINI -> GeminiAccent
     AgentKind.CLAUDE -> ClaudeAccent
     AgentKind.CODEX -> CodexAccent
     AgentKind.OPENCODE -> OpenCodeAccent
+    AgentKind.TERMINAL -> TerminalAccent
+    AgentKind.JARVIS -> JarvisAccent
 }
 
 /**
@@ -105,9 +114,12 @@ fun ClaudeBadge(
     val accent = agent.accent()
     val badgeText = when (agent) {
         AgentKind.AGY -> "AGY"
+        AgentKind.GEMINI -> "Gemini"
         AgentKind.CLAUDE -> "Claude"
         AgentKind.CODEX -> "Codex"
         AgentKind.OPENCODE -> "OpenCode"
+        AgentKind.TERMINAL -> "Term"
+        AgentKind.JARVIS -> "Jarvis"
     }
     Box(
         modifier = modifier

@@ -178,6 +178,17 @@ object JarvisTasks {
                 b.sendMessage(PromptExpansion.expand(text))
                 id
             }
+            AgentKind.GEMINI -> {
+                val b = vm.geminiBackend
+                b.startNewChat()
+                val id = b.currentConversation.value?.id ?: error("Could not create the Gemini chat")
+                modelId?.takeIf { it.isNotBlank() }?.let { b.selectModel(it) }
+                b.sendMessage(PromptExpansion.expand(text))
+                id
+            }
+            AgentKind.TERMINAL, AgentKind.JARVIS -> {
+                error("Background tasks are not supported for ${agent.name} yet.")
+            }
         }
         val task = Task(
             id = id, agent = agent,
@@ -356,6 +367,8 @@ object JarvisTasks {
         AgentKind.AGY -> agyBusy(t.id)
         AgentKind.CODEX -> vm.codexBackend.currentConversation.value?.id == t.id && vm.codexBackend.isStreaming.value
         AgentKind.OPENCODE -> vm.openCodeBackend.currentConversation.value?.id == t.id && vm.openCodeBackend.isStreaming.value
+        AgentKind.GEMINI -> vm.geminiBackend.currentConversation.value?.id == t.id && vm.geminiBackend.isStreaming.value
+        AgentKind.TERMINAL, AgentKind.JARVIS -> false
     }
 
     private fun agyBusy(id: String): Boolean {
@@ -419,6 +432,16 @@ object JarvisTasks {
                 error = vm.openCodeBackend.conversationError.value
                 val msgs = vm.openCodeBackend.messages.value
                 sig = "${msgs.size}:${msgs.lastOrNull()?.content?.length}"
+            }
+            AgentKind.GEMINI -> {
+                running = vm.geminiBackend.currentConversation.value?.id == t.id && vm.geminiBackend.isStreaming.value
+                error = vm.geminiBackend.conversationError.value
+                val msgs = vm.geminiBackend.messages.value
+                sig = "${msgs.size}:${msgs.lastOrNull()?.content?.length}"
+            }
+            AgentKind.TERMINAL, AgentKind.JARVIS -> {
+                running = false
+                sig = ""
             }
         }
         if (progressSig.put(t.id, sig) != sig) t = t.copy(progressAt = now)

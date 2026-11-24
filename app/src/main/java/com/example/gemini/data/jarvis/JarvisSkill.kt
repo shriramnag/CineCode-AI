@@ -252,16 +252,18 @@ description: Use when a message comes from the CineCode-AI Jarvis voice mode (ha
 """.trimStart() + guide() + "\n\n## jarvis_mcp tools\n" + catalog() + "\n"
 
     /** Where each agent keeps skills (the daemon expands `~`). */
-    private fun skillDir(agent: AgentKind) = when (agent) {
+    private fun skillDir(agent: AgentKind): String? = when (agent) {
         AgentKind.CLAUDE -> "~/.claude/skills/$SKILL_NAME"
         AgentKind.AGY -> "~/.gemini/antigravity/skills/$SKILL_NAME"
         AgentKind.CODEX -> "~/.codex/skills/$SKILL_NAME"
         AgentKind.OPENCODE -> "~/.opencode/skills/$SKILL_NAME"
+        AgentKind.GEMINI -> "~/.gemini/skills/$SKILL_NAME"
+        AgentKind.TERMINAL, AgentKind.JARVIS -> null
     }
 
     /** Writes the skill file for [agent]. Returns the path on success. */
     suspend fun install(agent: AgentKind): Result<String> {
-        val dir = skillDir(agent)
+        val dir = skillDir(agent) ?: return Result.failure(UnsupportedOperationException("Skills are not supported for ${agent.name}"))
         val file = "$dir/SKILL.md"
         return runCatching {
             // create each level (the file API may not create parents)
@@ -280,6 +282,8 @@ description: Use when a message comes from the CineCode-AI Jarvis voice mode (ha
     }
 
     /** Whether the skill file exists for [agent]. */
-    suspend fun isInstalled(agent: AgentKind): Boolean =
-        !IdeApiClient.readFile("${skillDir(agent)}/SKILL.md").isNullOrBlank()
+    suspend fun isInstalled(agent: AgentKind): Boolean {
+        val dir = skillDir(agent) ?: return false
+        return !IdeApiClient.readFile("$dir/SKILL.md").isNullOrBlank()
+    }
 }

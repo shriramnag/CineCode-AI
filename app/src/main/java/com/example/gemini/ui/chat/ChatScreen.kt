@@ -2415,6 +2415,13 @@ fun ChatScreen(
                             )
                             return@ChatInputBar
                         }
+                        if (currentAgent == com.shriram.cinecode.domain.model.AgentKind.GEMINI && isStreaming) {
+                            com.shriram.cinecode.ui.components.AppToastHelper.showToast(
+                                "Gemini is generating a response. Tap Stop before sending another message.",
+                                com.shriram.cinecode.ui.components.ChatToastType.WARNING
+                            )
+                            return@ChatInputBar
+                        }
                         if (appCmd != null) {
                             handleClaudeCommand(appCmd)
                         } else {

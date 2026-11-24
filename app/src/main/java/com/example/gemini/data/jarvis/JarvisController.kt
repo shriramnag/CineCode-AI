@@ -1300,11 +1300,19 @@ object JarvisController {
         val prompt = PromptExpansion.hidden(note) + m.text
         val existingId = if (freshChat) "" else chatId
         val errorBefore = if (agent == AgentKind.CLAUDE) jarvisClaude.conversationError.value else null
+        if (agent == AgentKind.TERMINAL || agent == AgentKind.JARVIS) {
+            turnOpen = false
+            throw UnsupportedOperationException("Agent ${agent.name} is not supported for Jarvis conversation yet.")
+        }
         try {
             when (agent) {
                 AgentKind.CLAUDE -> sendClaude(prompt)
                 AgentKind.AGY -> sendAgy(prompt)
                 AgentKind.CODEX, AgentKind.OPENCODE -> sendClaude(prompt)
+                AgentKind.GEMINI -> sendGemini(prompt)
+                AgentKind.TERMINAL, AgentKind.JARVIS -> {
+                    error("Agent ${agent.name} is not supported for Jarvis conversation yet.")
+                }
             }
         } catch (e: Exception) {
             // the saved Jarvis chat was deleted: start a new one and send this message there (once)
@@ -1385,6 +1393,24 @@ object JarvisController {
         scope.launch { delay(2500); runCatching { vm.agyBackend.syncAgyConversations(force = true) } }
     }
 
+    private suspend fun sendGemini(prompt: String) {
+        val b = vm.geminiBackend
+        var id = JarvisPreferences.currentChatId.value
+        if (id.isBlank() || JarvisPreferences.currentChatAgent.value != AgentKind.GEMINI.name) {
+            b.startNewChat()
+            delay(150)
+            id = b.currentConversation.value?.id ?: error("Could not create the Gemini Jarvis chat")
+            JarvisPreferences.currentChatId.set(id)
+            JarvisPreferences.currentChatAgent.set(AgentKind.GEMINI.name)
+            JarvisPreferences.addChatId(id)
+            JarvisPreferences.modelId.value.takeIf { it.isNotBlank() }?.let { b.selectModel(it) }
+        } else if (b.currentConversation.value?.id != id) {
+            b.selectConversation(id)
+            delay(300)
+        }
+        b.sendMessage(prompt)
+    }
+
     private fun defaultWorkspace(): String {
         val p = com.shriram.cinecode.data.daemon.TermuxDaemonManager.activeProject.value?.path
             ?: com.shriram.cinecode.data.local.LocalEnvironmentManager.getHomeDir(app).absolutePath
@@ -1415,6 +1441,7 @@ object JarvisController {
             AgentKind.AGY -> vm.agyBackend.rememberChatModel(id, modelId)
             AgentKind.CODEX -> vm.codexBackend.selectModel(modelId)
             AgentKind.OPENCODE -> vm.openCodeBackend.selectModel(modelId)
+            AgentKind.GEMINI -> vm.geminiBackend.selectModel(modelId)
             AgentKind.CLAUDE -> {
                 val task = JarvisTasks.backendOf(id)
                 when {
@@ -1427,6 +1454,7 @@ object JarvisController {
                     }
                 }
             }
+            AgentKind.TERMINAL, AgentKind.JARVIS -> Unit
         }
     }
 
@@ -1449,6 +1477,8 @@ object JarvisController {
             AgentKind.AGY -> hub.cancelCascadeInvocation(id).fold({ "Stopped." }, { "Could not stop: ${it.message}" })
             AgentKind.CODEX -> { vm.codexBackend.stopStreaming(); "Stopped." }
             AgentKind.OPENCODE -> { vm.openCodeBackend.stopStreaming(); "Stopped." }
+            AgentKind.GEMINI -> { vm.geminiBackend.stopStreaming(); "Stopped." }
+            AgentKind.TERMINAL, AgentKind.JARVIS -> "Not supported."
         }
     }
 
@@ -1457,10 +1487,12 @@ object JarvisController {
         AgentKind.CLAUDE -> vm.claudeBackend.loadMessages(id)
         AgentKind.CODEX -> vm.codexBackend.loadMessages(id)
         AgentKind.OPENCODE -> vm.openCodeBackend.loadMessages(id)
+        AgentKind.GEMINI -> vm.geminiBackend.loadMessages(id)
         AgentKind.AGY -> {
             val steps = hub.getCascadeTrajectorySteps(id).getOrNull().orEmpty()
             com.shriram.cinecode.domain.chat.TrajectoryEngine().ingestStepsDirect(steps, id)
         }
+        AgentKind.TERMINAL, AgentKind.JARVIS -> emptyList()
     }
 
     // ------------------------------------------------------------------ speaking and asking
