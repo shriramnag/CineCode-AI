@@ -1,10 +1,14 @@
 {
-  "version_code": 341160,
-  "version_name": "0.227.577-beta",
+  "version_code": 341161,
+  "version_name": "0.227.578-beta",
   "min_supported_version_code": 1,
-  "url": "https://github.com/shriramnag/CineCode-AI/releases/download/v0.227.577-beta/CineCode-AI-v0.227.577-beta.apk",
+  "url": "https://github.com/shriramnag/CineCode-AI/releases/download/v0.227.578-beta/CineCode-AI-v0.227.578-beta.apk",
   "changelog": [
-    "refactor: upgrade turbo APK downloader performance"
+    "Fix remaining Kotlin compile errors in JarvisTasks and ChatScreen",
+    "ci: trigger automatic APK build on feature/cinecode-v2-upgrade branch",
+    "Fix Kotlin compile errors, exhaustive AgentKind checks, and Gemini state routing",
+    "fix: prevent workflow_dispatch from publishing releases",
+    "feat(agent): implement unified AgentManager and genuine GeminiChatBackend (Phase 3)"
   ],
   "is_critical": false
 }
