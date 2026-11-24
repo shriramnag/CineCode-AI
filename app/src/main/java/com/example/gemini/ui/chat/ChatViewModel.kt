@@ -161,22 +161,33 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     private val alwaysFalse = MutableStateFlow(false)
     private val noQueued = MutableStateFlow<List<com.shriram.cinecode.domain.model.QueuedMessage>>(emptyList())
 
+    private data class AgentBundle<T>(
+        val claude: T,
+        val codex: T,
+        val openCode: T,
+        val gemini: T
+    )
+
     private fun <T> byAgent(
         agy: StateFlow<T>,
         claude: StateFlow<T>,
         codex: StateFlow<T> = agy,
         openCode: StateFlow<T> = agy,
         gemini: StateFlow<T> = agy
-    ): StateFlow<T> =
-        combine(store.currentConversation, agy, claude, codex, openCode, gemini) { conv, a, c, cx, oc, g ->
+    ): StateFlow<T> {
+        val nonAgy = combine(claude, codex, openCode, gemini) { c, cx, oc, g ->
+            AgentBundle(c, cx, oc, g)
+        }
+        return combine(store.currentConversation, agy, nonAgy) { conv: Conversation?, a: T, bundle: AgentBundle<T> ->
             when (conv?.agent) {
-                AgentKind.CLAUDE -> c
-                AgentKind.CODEX -> cx
-                AgentKind.OPENCODE -> oc
-                AgentKind.GEMINI -> g
+                AgentKind.CLAUDE -> bundle.claude
+                AgentKind.CODEX -> bundle.codex
+                AgentKind.OPENCODE -> bundle.openCode
+                AgentKind.GEMINI -> bundle.gemini
                 else -> a
             }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, agy.value)
+    }
 
     private fun isoUtc(epochSeconds: Long): String =
         java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US)
@@ -237,9 +248,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 )
             )
         }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
-    val quotas = byAgent(agyBackend.quotas, claudeQuotas, noQuotas, noQuotas)
+    val quotas = byAgent(agyBackend.quotas, claudeQuotas, noQuotas, noQuotas, noQuotas)
     val quotaSummary = agyBackend.quotaSummary
-    val isLoadingConversation = byAgent(agyBackend.isLoadingConversation, claudeBackend.isLoadingConversation, codexBackend.isLoadingConversation, openCodeBackend.isLoadingConversation)
+    val isLoadingConversation = byAgent(agyBackend.isLoadingConversation, claudeBackend.isLoadingConversation, codexBackend.isLoadingConversation, openCodeBackend.isLoadingConversation, geminiBackend.isLoadingConversation)
     fun setModelEnabled(modelId: String, isEnabled: Boolean) = agyBackend.setModelEnabled(modelId, isEnabled)
     fun enableAllModels() = agyBackend.enableAllModels()
     val bridgeStatusMessage = agyBackend.bridgeStatusMessage
@@ -311,8 +322,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             )
         }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
-    val isCurrentChatActivelyRunning = byAgent(agyBackend.isCurrentChatActivelyRunning, claudeBackend.isCurrentChatActivelyRunning, codexBackend.isStreaming, openCodeBackend.isStreaming)
-    val isCurrentChatBackgroundActive = byAgent(agyBackend.isCurrentChatBackgroundActive, alwaysFalse, alwaysFalse, alwaysFalse)
+    val isCurrentChatActivelyRunning = byAgent(agyBackend.isCurrentChatActivelyRunning, claudeBackend.isCurrentChatActivelyRunning, codexBackend.isStreaming, openCodeBackend.isStreaming, geminiBackend.isStreaming)
+    val isCurrentChatBackgroundActive = byAgent(agyBackend.isCurrentChatBackgroundActive, alwaysFalse, alwaysFalse, alwaysFalse, alwaysFalse)
     val connectionState = agyBackend.connectionState
     fun refreshActiveInstances() = agyBackend.refreshActiveInstances()
     fun terminateInstance(conversationId: String) = agyBackend.terminateInstance(conversationId)
@@ -449,7 +460,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             AgentKind.TERMINAL, AgentKind.JARVIS -> {
                 com.shriram.cinecode.ui.components.AppToastHelper.showToast(
                     "${currentAgentKind.name} agent messaging is not supported yet. Supported agents: Antigravity, Gemini, Claude, Codex, OpenCode.",
-                    com.shriram.cinecode.ui.components.ChatToastType.WARNING
+                    com.shriram.cinecode.ui.components.ChatToastType.INFO
                 )
             }
         }
@@ -459,9 +470,10 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     fun retryMessage(messageId: String) {
         when (currentAgentKind) {
             AgentKind.CLAUDE -> claudeBackend.regenerate(messageId)
-            AgentKind.CODEX -> Unit
-            AgentKind.OPENCODE -> Unit
             AgentKind.AGY -> agyBackend.retryMessage(messageId)
+            AgentKind.CODEX, AgentKind.OPENCODE, AgentKind.GEMINI, AgentKind.TERMINAL, AgentKind.JARVIS -> {
+                claudeNotSupported("Retrying or regenerating a message")
+            }
         }
     }
     fun prepareEditMessage(messageId: String): String? {
@@ -475,7 +487,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         when (currentAgentKind) {
             AgentKind.CLAUDE -> claudeBackend.editMessage(targetMsg.id, restoreCode = false) { onRestored(PromptExpansion.collapse(it)) }
             AgentKind.AGY -> agyBackend.revertAndEditLastUserMessage(targetMsg) { onRestored(PromptExpansion.collapse(it)) }
-            AgentKind.CODEX, AgentKind.OPENCODE -> claudeNotSupported("Editing a sent message")
+            AgentKind.CODEX, AgentKind.OPENCODE, AgentKind.GEMINI, AgentKind.TERMINAL, AgentKind.JARVIS -> claudeNotSupported("Editing a sent message")
         }
     }
 
@@ -501,12 +513,14 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /** Messages sent while the agent was working, waiting to be delivered (queued-messages card). */
-    val queuedMessages = byAgent(agyBackend.queuedMessages, claudeBackend.queuedMessages, noQueued, noQueued)
+    val queuedMessages = byAgent(agyBackend.queuedMessages, claudeBackend.queuedMessages, noQueued, noQueued, noQueued)
     fun sendQueuedNow(id: String) {
         when (currentAgentKind) {
             AgentKind.CLAUDE -> claudeBackend.sendQueuedNow(id)
             AgentKind.AGY -> agyBackend.sendQueuedNow(id)
-            AgentKind.CODEX, AgentKind.OPENCODE -> Unit
+            AgentKind.CODEX, AgentKind.OPENCODE, AgentKind.GEMINI, AgentKind.TERMINAL, AgentKind.JARVIS -> {
+                claudeNotSupported("Sending queued messages")
+            }
         }
     }
     fun deleteQueued(id: String) { if (currentAgentKind == AgentKind.AGY) agyBackend.deleteQueued(id) }

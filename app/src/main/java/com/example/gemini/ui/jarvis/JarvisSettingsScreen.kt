@@ -35,6 +35,8 @@ import com.shriram.cinecode.domain.model.McpServerSpec
 import kotlinx.coroutines.launch
 
 private val JarvisCyan = Color(0xFF22D3EE)
+private val noModelsFlow: kotlinx.coroutines.flow.StateFlow<List<com.shriram.cinecode.domain.model.AiModel>> =
+    kotlinx.coroutines.flow.MutableStateFlow(emptyList())
 
 /** The sections of Settings → Jarvis: each opens on its own page (Settings → Jarvis → section). */
 enum class JarvisSettingsPage { AGENT, PERSONALITY, SETUP, WAKE, LISTEN, VOICE, TASKS, APPROVALS, SCREEN, CHAT }
@@ -138,7 +140,8 @@ fun JarvisSettingsSectionPage(page: JarvisSettingsPage, cardBg: Color, cardBorde
                             AgentKind.CLAUDE.name to "Claude Code",
                             AgentKind.AGY.name to "Antigravity",
                             AgentKind.CODEX.name to "Codex",
-                            AgentKind.OPENCODE.name to "OpenCode"
+                            AgentKind.OPENCODE.name to "OpenCode",
+                            AgentKind.GEMINI.name to "Gemini"
                         ),
                         agentName
                     ) { P.agent.set(it); P.modelId.set("") }
@@ -146,7 +149,9 @@ fun JarvisSettingsSectionPage(page: JarvisSettingsPage, cardBg: Color, cardBorde
                         AgentKind.CLAUDE -> vm.claudeBackend.availableModels
                         AgentKind.CODEX -> vm.codexBackend.availableModels
                         AgentKind.OPENCODE -> vm.openCodeBackend.availableModels
+                        AgentKind.GEMINI -> vm.geminiBackend.availableModels
                         AgentKind.AGY -> vm.agyBackend.enabledModels
+                        AgentKind.TERMINAL, AgentKind.JARVIS -> noModelsFlow
                     }.collectAsState()
                     val modelId by P.modelId.state.collectAsState()
                     var menu by remember { mutableStateOf(false) }
@@ -192,7 +197,10 @@ fun JarvisSettingsSectionPage(page: JarvisSettingsPage, cardBg: Color, cardBorde
                         AgentKind.CLAUDE -> "Claude Code"
                         AgentKind.CODEX -> "Codex"
                         AgentKind.OPENCODE -> "OpenCode"
+                        AgentKind.GEMINI -> "Gemini"
                         AgentKind.AGY -> "Antigravity"
+                        AgentKind.TERMINAL -> "Terminal"
+                        AgentKind.JARVIS -> "Jarvis"
                     }
                     JCard(cardBg, cardBorder, "Setup for $agentDisplay") {
                         val deviceId = remember(context) {
