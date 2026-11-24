@@ -2,7 +2,7 @@ name: Build and Sign CineCode Beta APK
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ "main", "master", "feature/cinecode-v2-upgrade" ]
     tags: [ "*" ]
   workflow_dispatch:
 
