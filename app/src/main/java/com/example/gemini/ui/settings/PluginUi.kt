@@ -73,21 +73,27 @@ fun VersionChange(installed: String, incoming: String, incomingLabel: String = "
 /** The repository setup guide bundled with the plugin SDK docs. */
 const val PLUGIN_REPOSITORY_GUIDE = "plugin-repository.md"
 
-fun readBundledGuide(context: Context): String = context.assets.open("extension-docs/$PLUGIN_REPOSITORY_GUIDE").bufferedReader().use { it.readText() }
+fun readBundledGuide(context: Context): String = runCatching {
+    context.assets.open("extension-docs/$PLUGIN_REPOSITORY_GUIDE").bufferedReader().use { it.readText() }
+}.getOrElse { "Plugin repository guide is not bundled in this build (${it.message})." }
 
 /** The whole plugin SDK (all bundled docs and examples) as a ZIP, for building plugins on a PC; start with pc-development.md. */
 fun bundledSdkZip(context: Context): ByteArray {
     val out = java.io.ByteArrayOutputStream()
     java.util.zip.ZipOutputStream(out).use { zip ->
         fun add(asset: String, entry: String) {
-            val children = context.assets.list(asset).orEmpty()
+            val children = runCatching { context.assets.list(asset) }.getOrNull().orEmpty()
             if (children.isEmpty()) {
-                zip.putNextEntry(java.util.zip.ZipEntry(entry))
-                context.assets.open(asset).use { it.copyTo(zip) }
-                zip.closeEntry()
+                runCatching {
+                    context.assets.open(asset).use { input ->
+                        zip.putNextEntry(java.util.zip.ZipEntry(entry))
+                        input.copyTo(zip)
+                        zip.closeEntry()
+                    }
+                }
             } else children.sorted().forEach { add("$asset/$it", "$entry/$it") }
         }
-        add("extension-docs", "antigem-plugin-sdk")
+        add("extension-docs", "cinecode-plugin-sdk")
     }
     return out.toByteArray()
 }

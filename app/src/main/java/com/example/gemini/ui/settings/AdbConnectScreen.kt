@@ -30,18 +30,31 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.NotificationManagerCompat
+import com.shriram.cinecode.data.adb.AccessMode
 import com.shriram.cinecode.data.adb.AdbConnectManager
 import com.shriram.cinecode.data.adb.AdbConnectManager.Pairing
+import com.shriram.cinecode.data.adb.DeviceAccess
+import com.shriram.cinecode.data.adb.RootProbeState
+import com.shriram.cinecode.data.adb.RootShell
+import com.shriram.cinecode.data.adb.ShizukuShell
 import com.shriram.cinecode.theme.QuotaGreen
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 internal val Amber: androidx.compose.ui.graphics.Color get() = com.shriram.cinecode.theme.AppColors.warning
 
 @Composable
 fun AdbConnectScreen(cardBg: Color, cardBorder: BorderStroke) {
     val context = LocalContext.current
-    LaunchedEffect(Unit) { AdbConnectManager.init(context) }
+    val scope = rememberCoroutineScope()
+    LaunchedEffect(Unit) {
+        AdbConnectManager.init(context)
+        DeviceAccess.init(context)
+    }
     val state by AdbConnectManager.state.collectAsState()
+    val selectedMode by DeviceAccess.selectedMode.collectAsState()
+    val shizukuStatus by ShizukuShell.status.collectAsState()
+    val rootStatus by RootShell.status.collectAsState()
 
     // System settings can change while the user is away in Developer options; keep them live
     var devOptionsOn by remember { mutableStateOf(AdbConnectManager.isDeveloperOptionsOn(context)) }
@@ -49,12 +62,14 @@ fun AdbConnectScreen(cardBg: Color, cardBorder: BorderStroke) {
     var notificationsOn by remember { mutableStateOf(NotificationManagerCompat.from(context).areNotificationsEnabled()) }
     LaunchedEffect(Unit) {
         AdbConnectManager.refresh()
+        ShizukuShell.refresh()
         var tick = 0
         while (true) {
             delay(1500)
             devOptionsOn = AdbConnectManager.isDeveloperOptionsOn(context)
             wirelessOn = AdbConnectManager.isWirelessDebuggingOn(context)
             notificationsOn = NotificationManagerCompat.from(context).areNotificationsEnabled()
+            ShizukuShell.refresh()
             val s = AdbConnectManager.state.value
             if (++tick % 4 == 0 && s.adbInstalled == true && s.busy == null && !s.installing) AdbConnectManager.refresh(quiet = true)
         }
@@ -67,6 +82,100 @@ fun AdbConnectScreen(cardBg: Color, cardBorder: BorderStroke) {
         Modifier.fillMaxSize().bouncyVerticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        // Privilege Escalation Mode Selector: ADB / Shizuku / Root
+        Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = cardBg), border = cardBorder) {
+            Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Shell Access Mode", fontSize = 14.5.sp, fontWeight = FontWeight.Bold)
+                Hint("Choose how CineCode-AI runs privileged commands, Android automation, APK installs, and terminal wrappers (`rish` / `android-su`).")
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    AccessMode.entries.forEach { mode ->
+                        val active = selectedMode == mode
+                        FilterChip(
+                            selected = active,
+                            onClick = { DeviceAccess.setMode(mode) },
+                            label = { Text(mode.displayName, fontSize = 12.5.sp, fontWeight = if (active) FontWeight.Bold else FontWeight.Medium) },
+                            leadingIcon = if (active) {
+                                { Icon(Icons.Default.Check, null, modifier = Modifier.size(16.dp)) }
+                            } else null,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+        }
+
+        if (selectedMode == AccessMode.SHIZUKU) {
+            Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = cardBg), border = cardBorder) {
+                Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Shizuku Shell Access", fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                        Pill(
+                            if (shizukuStatus.isReady) "Ready (${shizukuStatus.uidLabel})" else if (shizukuStatus.running) "Permission needed" else "Not running",
+                            if (shizukuStatus.isReady) QuotaGreen else Amber
+                        )
+                    }
+                    CheckRow("Shizuku app installed", shizukuStatus.installed)
+                    CheckRow("Shizuku service running (v${shizukuStatus.version})", shizukuStatus.running && !shizukuStatus.tooOld)
+                    CheckRow("Permission granted to CineCode-AI", shizukuStatus.granted)
+                    Hint(
+                        when {
+                            !shizukuStatus.installed -> "Install Shizuku first, start it once via Wireless debugging or PC ADB, then grant permission here."
+                            !shizukuStatus.running -> "Open Shizuku and tap Start (required after reboot on non-rooted phones)."
+                            shizukuStatus.tooOld -> "Shizuku is below v11. Update Shizuku to continue."
+                            !shizukuStatus.granted -> "Tap Grant Shizuku Permission so CineCode-AI can run commands as ${shizukuStatus.uidLabel}."
+                            else -> "Active as ${shizukuStatus.uidLabel}. You can also run `rish -c '...'` directly from the local terminal."
+                        }
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(onClick = { ShizukuShell.openShizukuApp(context) }) {
+                            Text(if (shizukuStatus.installed) "Open Shizuku" else "Get Shizuku")
+                        }
+                        if (shizukuStatus.running && !shizukuStatus.tooOld && !shizukuStatus.granted) {
+                            Button(onClick = { ShizukuShell.requestPermission() }) { Text("Grant Permission") }
+                        }
+                        IconButton(onClick = { ShizukuShell.refresh() }) { Icon(Icons.Outlined.Refresh, "Refresh Shizuku") }
+                    }
+                    if (shizukuStatus.isReady) {
+                        Mono("rish -c 'id'\nrish -c 'pm list packages -3'")
+                    }
+                }
+            }
+        }
+
+        if (selectedMode == AccessMode.ROOT) {
+            Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = cardBg), border = cardBorder) {
+                Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Root (`su`) Access", fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                        Pill(
+                            when (rootStatus.state) {
+                                RootProbeState.GRANTED -> "Granted (uid 0)"
+                                RootProbeState.PROBING -> "Checking..."
+                                RootProbeState.NO_SU -> "No su binary"
+                                else -> "Not granted"
+                            },
+                            if (rootStatus.isReady) QuotaGreen else Amber
+                        )
+                    }
+                    rootStatus.suBinary?.let { Mono("su binary: $it\n${rootStatus.detail.orEmpty()}") }
+                    Hint(
+                        rootStatus.detail ?: "Tap Check / Grant Root to prompt Magisk / KernelSU / APatch for uid=0 shell access and enable `android-su`."
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            enabled = rootStatus.state != RootProbeState.PROBING,
+                            onClick = { scope.launch { RootShell.probe(force = true) } }
+                        ) {
+                            Text(if (rootStatus.isReady) "Re-verify Root" else "Check / Grant Root")
+                        }
+                    }
+                    if (rootStatus.isReady) {
+                        Mono("android-su -c 'id'\nsu -c 'id'")
+                    }
+                }
+            }
+        }
+
         StatusCard(state, cardBg, cardBorder)
 
         state.message?.let { msg ->

@@ -186,8 +186,21 @@ object JarvisTasks {
                 b.sendMessage(PromptExpansion.expand(text))
                 id
             }
-            AgentKind.TERMINAL, AgentKind.JARVIS -> {
-                error("Background tasks are not supported for ${agent.name} yet.")
+            AgentKind.TERMINAL -> {
+                val b = vm.terminalBackend
+                b.startNewChat()
+                val id = b.currentConversation.value?.id ?: error("Could not create the Terminal chat")
+                modelId?.takeIf { it.isNotBlank() }?.let { b.selectModel(it) }
+                b.sendMessage(PromptExpansion.expand(text))
+                id
+            }
+            AgentKind.JARVIS -> {
+                val b = vm.jarvisBackend
+                b.startNewChat()
+                val id = b.currentConversation.value?.id ?: error("Could not create the Jarvis chat")
+                modelId?.takeIf { it.isNotBlank() }?.let { b.selectModel(it) }
+                b.sendMessage(PromptExpansion.expand(text))
+                id
             }
         }
         val task = Task(
@@ -254,8 +267,13 @@ object JarvisTasks {
                 if (vm.geminiBackend.currentConversation.value?.id != t.id) vm.geminiBackend.selectConversation(t.id)
                 vm.geminiBackend.sendMessage(PromptExpansion.expand(text))
             }
-            AgentKind.TERMINAL, AgentKind.JARVIS -> {
-                return "Tasks for ${t.agent.name} do not support replies."
+            AgentKind.TERMINAL -> {
+                if (vm.terminalBackend.currentConversation.value?.id != t.id) vm.terminalBackend.selectConversation(t.id)
+                vm.terminalBackend.sendMessage(PromptExpansion.expand(text))
+            }
+            AgentKind.JARVIS -> {
+                if (vm.jarvisBackend.currentConversation.value?.id != t.id) vm.jarvisBackend.selectConversation(t.id)
+                vm.jarvisBackend.sendMessage(PromptExpansion.expand(text))
             }
         }
         val now = System.currentTimeMillis()
@@ -276,7 +294,8 @@ object JarvisTasks {
             AgentKind.CODEX -> vm.codexBackend.stopStreaming()
             AgentKind.OPENCODE -> vm.openCodeBackend.stopStreaming()
             AgentKind.GEMINI -> vm.geminiBackend.stopStreaming()
-            AgentKind.TERMINAL, AgentKind.JARVIS -> Unit
+            AgentKind.TERMINAL -> vm.terminalBackend.stopStreaming()
+            AgentKind.JARVIS -> vm.jarvisBackend.stopStreaming()
         }
         if (!quiet) put(t.copy(state = State.STOPPED, updatedAt = System.currentTimeMillis(), note = "Stopped", reported = true))
         return "Stopped."
@@ -317,7 +336,10 @@ object JarvisTasks {
                 ?: runCatching { JarvisController.readChat(t.id) }.getOrDefault(emptyList())
             AgentKind.GEMINI -> vm.geminiBackend.messages.value.takeIf { vm.geminiBackend.currentConversation.value?.id == t.id && it.isNotEmpty() }
                 ?: runCatching { JarvisController.readChat(t.id) }.getOrDefault(emptyList())
-            AgentKind.TERMINAL, AgentKind.JARVIS -> emptyList()
+            AgentKind.TERMINAL -> vm.terminalBackend.messages.value.takeIf { vm.terminalBackend.currentConversation.value?.id == t.id && it.isNotEmpty() }
+                ?: runCatching { JarvisController.readChat(t.id) }.getOrDefault(emptyList())
+            AgentKind.JARVIS -> vm.jarvisBackend.messages.value.takeIf { vm.jarvisBackend.currentConversation.value?.id == t.id && it.isNotEmpty() }
+                ?: runCatching { JarvisController.readChat(t.id) }.getOrDefault(emptyList())
         }
         val text = msgs.lastOrNull { it.role == MessageRole.ASSISTANT && it.content.isNotBlank() }?.content.orEmpty()
         return PromptExpansion.collapse(text).trim().let { if (it.length > max) "…" + it.takeLast(max) else it }
@@ -380,7 +402,8 @@ object JarvisTasks {
         AgentKind.CODEX -> vm.codexBackend.currentConversation.value?.id == t.id && vm.codexBackend.isStreaming.value
         AgentKind.OPENCODE -> vm.openCodeBackend.currentConversation.value?.id == t.id && vm.openCodeBackend.isStreaming.value
         AgentKind.GEMINI -> vm.geminiBackend.currentConversation.value?.id == t.id && vm.geminiBackend.isStreaming.value
-        AgentKind.TERMINAL, AgentKind.JARVIS -> false
+        AgentKind.TERMINAL -> vm.terminalBackend.currentConversation.value?.id == t.id && vm.terminalBackend.isStreaming.value
+        AgentKind.JARVIS -> vm.jarvisBackend.currentConversation.value?.id == t.id && vm.jarvisBackend.isStreaming.value
     }
 
     private fun agyBusy(id: String): Boolean {
@@ -451,9 +474,17 @@ object JarvisTasks {
                 val msgs = vm.geminiBackend.messages.value
                 sig = "${msgs.size}:${msgs.lastOrNull()?.content?.length}"
             }
-            AgentKind.TERMINAL, AgentKind.JARVIS -> {
-                running = false
-                sig = ""
+            AgentKind.TERMINAL -> {
+                running = vm.terminalBackend.currentConversation.value?.id == t.id && vm.terminalBackend.isStreaming.value
+                error = vm.terminalBackend.conversationError.value
+                val msgs = vm.terminalBackend.messages.value
+                sig = "${msgs.size}:${msgs.lastOrNull()?.content?.length}"
+            }
+            AgentKind.JARVIS -> {
+                running = vm.jarvisBackend.currentConversation.value?.id == t.id && vm.jarvisBackend.isStreaming.value
+                error = vm.jarvisBackend.conversationError.value
+                val msgs = vm.jarvisBackend.messages.value
+                sig = "${msgs.size}:${msgs.lastOrNull()?.content?.length}"
             }
         }
         if (progressSig.put(t.id, sig) != sig) t = t.copy(progressAt = now)

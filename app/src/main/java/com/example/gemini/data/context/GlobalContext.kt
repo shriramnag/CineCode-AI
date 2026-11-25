@@ -28,11 +28,22 @@ object GlobalContext {
     @Volatile
     private var initialized = false
 
+    @Volatile
+    var appPackageName: String = "com.shriramnag.cinecodeai"
+        private set
+
+    @Volatile
+    var filesRootPath: String = "/data/data/com.shriramnag.cinecodeai/files"
+        private set
+
     fun init(context: Context) {
-        AgentMemory.init(context)
+        val appCtx = context.applicationContext
+        appPackageName = appCtx.packageName.ifBlank { appPackageName }
+        filesRootPath = appCtx.filesDir.absolutePath.ifBlank { "/data/data/$appPackageName/files" }
+        AgentMemory.init(appCtx)
         if (initialized) return
         initialized = true
-        val am = context.applicationContext.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+        val am = appCtx.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
         val memInfo = ActivityManager.MemoryInfo()
         runCatching { am?.getMemoryInfo(memInfo) }
         val totalMb = if (memInfo.totalMem > 0L) memInfo.totalMem / (1024L * 1024L) else 4096L

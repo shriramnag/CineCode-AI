@@ -111,6 +111,7 @@ object AdbConnectManager {
     fun init(context: Context) {
         if (::appContext.isInitialized) return
         appContext = context.applicationContext
+        DeviceAccess.init(appContext)
         _state.update {
             it.copy(
                 host = prefs.getString("host", DEFAULT_HOST) ?: DEFAULT_HOST,

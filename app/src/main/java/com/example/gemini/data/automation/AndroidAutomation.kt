@@ -20,6 +20,7 @@ import android.view.WindowManager
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction
 import com.shriram.cinecode.data.adb.AdbConnectManager
+import com.shriram.cinecode.data.adb.DeviceAccess
 import kotlinx.coroutines.delay
 import org.json.JSONArray
 import org.json.JSONObject
@@ -35,12 +36,12 @@ object AndroidAutomation {
     const val INSTRUCTIONS = "Controls this Android phone. Look first: android_get_ui_tree lists on-screen elements with ids like e12 and their centers; " +
         "android_screenshot shows what it looks like. Then act on element ids (android_tap, android_type_text, android_scroll), or on screen-pixel " +
         "coordinates when an element has no id. Ids are only valid for the latest tree, so read it again after the screen changes. " +
-        "For anything the tools don't cover, use android_adb_shell (or adb in the terminal). Ask the user before anything destructive or " +
-        "outward-facing: uninstalling, deleting, sending messages, payments, changing security settings. " +
-        "If a tool says a permission or ADB is missing, tell the user exactly what to do and stop."
+        "For anything the tools don't cover, use android_adb_shell: it runs through the access the user picked in CineCode-AI (ADB, Shizuku or Root). " +
+        "In the terminal: `adb shell ...` (ADB), `rish -c '...'` (Shizuku), `android-su -c '...'` (Root). " +
+        "Ask the user before anything destructive or outward-facing: uninstalling, deleting, sending messages, payments, changing security settings. " +
+        "If a tool says a permission, ADB, Shizuku or Root is missing, tell the user exactly what to do and stop."
 
-    private const val ADB_NEEDED = "This needs ADB. Ask the user to open CineCode-AI → Settings → ADB Connect and connect " +
-        "(pair once, with Wireless debugging on), then try again."
+    private const val ADB_NEEDED = "This needs ADB, Shizuku, or Root access. Ask the user to open CineCode-AI → Settings → ADB Connect and enable ADB (Wireless debugging), Shizuku, or Root, then try again."
 
     /** Elements of the latest android_get_ui_tree, by id. */
     private val elements = ConcurrentHashMap<String, AccessibilityNodeInfo>()
@@ -72,15 +73,16 @@ object AndroidAutomation {
         runCatching { context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
     }
 
-    /** Turns the accessibility service on through adb, which also works when Android blocks it as a restricted setting. */
+    /** Turns the accessibility service on through active device shell (ADB / Shizuku / Root). */
     suspend fun enableViaAdb(context: Context): Result<Unit> {
-        val device = AdbConnectManager.ensureConnected() ?: return Result.failure(IllegalStateException("ADB is not connected"))
+        DeviceAccess.init(context)
+        DeviceAccess.ensureReadyError()?.let { return Result.failure(IllegalStateException(it)) }
         val name = component(context).flattenToString()
-        val current = AdbConnectManager.deviceShell(device, "settings get secure enabled_accessibility_services").output.trim()
+        val current = DeviceAccess.exec("settings get secure enabled_accessibility_services", 15).output.trim()
         val services = current.split(':').filter { it.isNotBlank() && it != "null" }.toMutableList()
         if (services.none { it.equals(name, true) }) services += name
-        AdbConnectManager.deviceShell(device, "settings put secure enabled_accessibility_services ${services.joinToString(":")}")
-        AdbConnectManager.deviceShell(device, "settings put secure accessibility_enabled 1")
+        DeviceAccess.exec("settings put secure enabled_accessibility_services ${services.joinToString(":")}", 15)
+        DeviceAccess.exec("settings put secure accessibility_enabled 1", 15)
         repeat(20) {
             if (isServiceRunning()) return Result.success(Unit)
             delay(250)
@@ -233,19 +235,21 @@ object AndroidAutomation {
                 "android_open_intent" -> openIntent(svc, args)
                 "android_wait_for" -> waitFor(svc, args)
                 "android_press_key" -> pressKey(svc, args.getString("key"))
-                "android_install_apk" -> withAdb { d ->
-                    val out = AdbConnectManager.runAdb(d, "install -r ${AdbConnectManager.shellQuote(args.getString("path"))}", 240).output.trim()
-                    if (out.contains("Success")) text("Installed.\n$out") else error(out.ifBlank { "adb install failed" })
+                "android_install_apk" -> withShellAccess {
+                    val res = DeviceAccess.installApk(context, args.getString("path"))
+                    val out = res.output.trim()
+                    if (res.exitCode == 0 && out.contains("Success")) text("Installed.\n$out")
+                    else error(out.ifBlank { "install failed (exit ${res.exitCode})" })
                 }
                 "android_uninstall_app" -> uninstall(context, svc, args)
-                "android_force_stop_app" -> withAdb { d ->
+                "android_force_stop_app" -> withShellAccess {
                     val pkg = packageArg(args)
-                    AdbConnectManager.deviceShell(d, "am force-stop $pkg")
+                    DeviceAccess.exec("am force-stop $pkg", 20)
                     text("Force-stopped $pkg.")
                 }
-                "android_adb_shell" -> withAdb { d ->
+                "android_adb_shell" -> withShellAccess {
                     val seconds = args.optInt("timeout_seconds", 30).coerceIn(1, 300)
-                    val result = AdbConnectManager.deviceShell(d, args.getString("command"), seconds)
+                    val result = DeviceAccess.exec(args.getString("command"), seconds)
                     val out = result.output.ifBlank { "(no output)" }.let { if (it.length > 60_000) it.take(60_000) + "\n…(truncated)" else it }
                     if (result.exitCode == 0) text(out) else error("Exit code ${result.exitCode}\n$out")
                 }
@@ -254,9 +258,9 @@ object AndroidAutomation {
         }.getOrElse { error("$name failed: ${it.message ?: it.javaClass.simpleName}") }
     }
 
-    private suspend fun withAdb(block: suspend (AdbConnectManager.Device) -> JSONObject): JSONObject {
-        val device = AdbConnectManager.ensureConnected() ?: return error(ADB_NEEDED)
-        return block(device)
+    private suspend fun withShellAccess(block: suspend () -> JSONObject): JSONObject {
+        DeviceAccess.ensureReadyError()?.let { return error(it) }
+        return block()
     }
 
     private fun packageArg(args: JSONObject): String {
@@ -280,6 +284,7 @@ object AndroidAutomation {
     private fun status(context: Context, svc: AutomationAccessibilityService): JSONObject {
         val (w, h) = screenSize(context)
         val adb = AdbConnectManager.state.value.connectedDevice
+        val shellLabel = DeviceAccess.activeModeLabel()
         val power = context.getSystemService(PowerManager::class.java)
         val keyguard = context.getSystemService(KeyguardManager::class.java)
         return text(JSONObject().apply {
@@ -290,8 +295,9 @@ object AndroidAutomation {
             put("locked", keyguard.isKeyguardLocked)
             put("foreground_package", svc.rootInActiveWindow?.packageName ?: svc.foregroundPackage ?: JSONObject.NULL)
             put("foreground_activity", svc.foregroundClass ?: JSONObject.NULL)
-            put("screenshots", if (canTakeScreenshots()) "yes" else if (adb != null) "via ADB" else "no (needs Android 11+ or ADB)")
-            put("adb", adb?.serial ?: "not connected (adb-only tools will fail)")
+            put("screenshots", if (canTakeScreenshots()) "yes" else if (DeviceAccess.isReady()) "via $shellLabel" else "no (needs Android 11+ or shell access)")
+            put("shell_access", shellLabel)
+            put("adb", adb?.serial ?: "not connected")
         }.toString(2))
     }
 
@@ -452,6 +458,7 @@ object AndroidAutomation {
             put("time_zone", java.util.TimeZone.getDefault().id)
             put("local_time", java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z", java.util.Locale.US).format(java.util.Date()))
             put("uptime", android.os.SystemClock.elapsedRealtime().let { "%dd %02dh %02dm".format(it / 86_400_000, it / 3_600_000 % 24, it / 60_000 % 60) })
+            put("shell_access", DeviceAccess.activeModeLabel())
             put("adb", AdbConnectManager.state.value.connectedDevice?.serial ?: "not connected")
         })
 
@@ -584,8 +591,8 @@ object AndroidAutomation {
                 target.performAction(AccessibilityAction.ACTION_IME_ENTER.id)
             note = when {
                 submitted -> " Submitted."
-                AdbConnectManager.ensureConnected()?.let { AdbConnectManager.deviceShell(it, "input keyevent 66").exitCode == 0 } == true -> " Pressed enter."
-                else -> " Couldn't press enter (needs Android 11+ or ADB); tap the send/search button instead."
+                DeviceAccess.ensureReadyError() == null && DeviceAccess.exec("input keyevent 66", 15).exitCode == 0 -> " Pressed enter."
+                else -> " Couldn't press enter (needs Android 11+ or shell access); tap the send/search button instead."
             }
         }
         svc.awaitIdle()
@@ -711,18 +718,17 @@ object AndroidAutomation {
     private suspend fun pressKey(svc: AutomationAccessibilityService, key: String): JSONObject {
         val name = key.trim().uppercase().removePrefix("KEYCODE_")
         if (!Regex("^[A-Z0-9_]+$").matches(name)) return error("Invalid key \"$key\".")
-        val device = AdbConnectManager.ensureConnected()
-        if (device == null) {
+        if (DeviceAccess.ensureReadyError() != null) {
             val global = when (name) {
                 "BACK", "4" -> AccessibilityService.GLOBAL_ACTION_BACK
                 "HOME", "3" -> AccessibilityService.GLOBAL_ACTION_HOME
                 "APP_SWITCH", "187" -> AccessibilityService.GLOBAL_ACTION_RECENTS
-                else -> return error("Pressing $name needs ADB. ${ADB_NEEDED.substringAfter("This needs ADB. ")}")
+                else -> return error("Pressing $name needs shell access. ${ADB_NEEDED.substringAfter("This needs ADB, Shizuku, or Root access. ")}")
             }
             svc.performGlobalAction(global)
         } else {
             val code = if (name.all(Char::isDigit)) name else "KEYCODE_$name"
-            val result = AdbConnectManager.deviceShell(device, "input keyevent $code", 15)
+            val result = DeviceAccess.exec("input keyevent $code", 15)
             if (result.exitCode != 0) return error(result.output.ifBlank { "input keyevent failed" })
         }
         svc.awaitIdle()
@@ -732,16 +738,15 @@ object AndroidAutomation {
     private suspend fun uninstall(context: Context, svc: AutomationAccessibilityService, args: JSONObject): JSONObject {
         val pkg = packageArg(args)
         if (pkg == context.packageName) return error("Refusing to uninstall CineCode-AI itself.")
-        val device = AdbConnectManager.ensureConnected()
-        if (device != null) {
+        if (DeviceAccess.ensureReadyError() == null) {
             val keep = if (args.optBoolean("keep_data")) "-k " else ""
-            val out = AdbConnectManager.deviceShell(device, "pm uninstall $keep$pkg", 60).output.trim()
+            val out = DeviceAccess.exec("pm uninstall $keep$pkg", 60).output.trim()
             return if (out.contains("Success")) text("Uninstalled $pkg.") else error(out.ifBlank { "pm uninstall failed" })
         }
         @Suppress("DEPRECATION")
         svc.startActivity(Intent(Intent.ACTION_DELETE, Uri.parse("package:$pkg")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         svc.awaitIdle(500, 3_000)
-        return text("ADB isn't connected, so Android's uninstall dialog is open for $pkg. Read the UI tree and tap OK/Uninstall to confirm.")
+        return text("Shell access isn't ready, so Android's uninstall dialog is open for $pkg. Read the UI tree and tap OK/Uninstall to confirm.")
     }
 
     // ---------------- screenshot ----------------
@@ -750,11 +755,12 @@ object AndroidAutomation {
         val bitmap: Bitmap = if (canTakeScreenshots()) {
             svc.screenshot().getOrElse { return error("Screenshot failed: ${it.message}") }
         } else {
-            val device = AdbConnectManager.ensureConnected()
-                ?: return error("Screenshots need Android 11+ or ADB. ${ADB_NEEDED.substringAfter("This needs ADB. ")}")
-            val b64 = AdbConnectManager.runAdb(device, "exec-out screencap -p | base64 | tr -d '\\n'", 30).output.trim()
+            DeviceAccess.ensureReadyError()?.let { err ->
+                return error("Screenshots need Android 11+ or shell access ($err)")
+            }
+            val b64 = DeviceAccess.exec("screencap -p | base64 | tr -d '\\n'", 30).output.trim()
             val bytes = runCatching { Base64.decode(b64, Base64.DEFAULT) }.getOrNull()
-            bytes?.let { BitmapFactory.decodeByteArray(it, 0, it.size) } ?: return error("adb screencap failed")
+            bytes?.let { BitmapFactory.decodeByteArray(it, 0, it.size) } ?: return error("screencap failed")
         }
         val (screenW, screenH) = screenSize(context)
         val scaled = if (bitmap.width > maxWidth) Bitmap.createScaledBitmap(bitmap, maxWidth, bitmap.height * maxWidth / bitmap.width, true) else bitmap

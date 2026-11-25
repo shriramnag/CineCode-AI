@@ -84,6 +84,46 @@ data class BrowserNetworkError(
 }
 
 /**
+ * Captured HTTP/resource request log for Browser MCP network inspection.
+ */
+data class BrowserNetworkRecord(
+    val timestamp: Long = System.currentTimeMillis(),
+    val url: String,
+    val method: String = "GET",
+    val resourceType: String = "other",
+    @Volatile var status: Int = 200,
+    @Volatile var errorDescription: String? = null,
+    val isMainFrame: Boolean = false
+)
+
+/**
+ * Pending JavaScript alert/confirm/prompt/beforeunload dialog captured on a WebView tab.
+ */
+class BrowserJsDialog(
+    val type: String, // "alert", "confirm", "prompt", "beforeunload"
+    val message: String,
+    val defaultPrompt: String = "",
+    val url: String = "",
+    private val result: JsResult
+) {
+    @Volatile
+    var answered: Boolean = false
+        private set
+
+    fun answer(accept: Boolean, promptText: String? = null) {
+        if (answered) return
+        answered = true
+        if (!accept) {
+            result.cancel()
+        } else if (result is JsPromptResult) {
+            result.confirm(promptText ?: defaultPrompt)
+        } else {
+            result.confirm()
+        }
+    }
+}
+
+/**
  * Model representing a persistent browser tab.
  */
 class BrowserTabSession(
@@ -117,9 +157,18 @@ class BrowserTabSession(
     val blocksUserInput: Boolean
         get() = aiBusy || (aiLocked && !userUnlocked)
 
-    // Circular buffers for real-time telemetry (capped to 300 entries each)
+    // Circular buffers for real-time telemetry (capped to 300/500 entries)
     val consoleLogs = ConcurrentLinkedDeque<BrowserConsoleMessage>()
     val networkErrors = ConcurrentLinkedDeque<BrowserNetworkError>()
+    val networkRequests = ConcurrentLinkedDeque<BrowserNetworkRecord>()
+    var pendingDialog by mutableStateOf<BrowserJsDialog?>(null)
+    @Volatile var latestScreenshotWidth: Int = 0
+    @Volatile var latestScreenshotHeight: Int = 0
+
+    fun addNetworkRecord(rec: BrowserNetworkRecord) {
+        if (networkRequests.size >= 500) networkRequests.pollFirst()
+        networkRequests.addLast(rec)
+    }
 
     private var stallWatchdogRunnable: Runnable? = null
 
@@ -210,6 +259,10 @@ class BrowserTabSession(
         put("hasActiveWebView", webView != null)
         put("consoleErrorCount", consoleLogs.count { it.level == "ERROR" })
         put("networkErrorCount", networkErrors.size)
+        if (aiLocked && !userUnlocked) put("lockedByAgent", true)
+        pendingDialog?.takeIf { !it.answered }?.let { dlg ->
+            put("dialog", JSONObject().put("type", dlg.type).put("message", dlg.message.take(300)))
+        }
     }
 }
 
@@ -982,7 +1035,7 @@ class BrowserSessionManager private constructor() {
                     if (tab.isDesktopMode && tab.aiBusy) {
                         view?.postDelayed({ zoomOutFully(tab) }, 800)
                     }
-                    setAutomationInput(tab, tab.aiBusy)
+                    setAutomationInput(tab, tab.blocksUserInput)
                     view?.postDelayed({
                         tab.capturePreview()
                     }, 400)
@@ -993,7 +1046,33 @@ class BrowserSessionManager private constructor() {
                     if (tab.isDesktopMode) {
                         injectDesktopSpoofing(view, url)
                     }
-                    setAutomationInput(tab, tab.aiBusy)
+                    setAutomationInput(tab, tab.blocksUserInput)
+                }
+
+                override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
+                    val reqUrl = request?.url?.toString()
+                    if (!reqUrl.isNullOrBlank() && (reqUrl.startsWith("http://") || reqUrl.startsWith("https://"))) {
+                        val isMain = request.isForMainFrame
+                        val accept = request.requestHeaders?.get("Accept") ?: ""
+                        val resType = when {
+                            isMain -> "document"
+                            accept.contains("json") -> "xhr/fetch"
+                            reqUrl.contains(".js") -> "script"
+                            reqUrl.contains(".css") -> "stylesheet"
+                            reqUrl.contains(".png") || reqUrl.contains(".jpg") || reqUrl.contains(".webp") || reqUrl.contains(".svg") -> "image"
+                            else -> "other"
+                        }
+                        tab.addNetworkRecord(
+                            BrowserNetworkRecord(
+                                url = reqUrl,
+                                method = request.method ?: "GET",
+                                resourceType = resType,
+                                status = 200,
+                                isMainFrame = isMain
+                            )
+                        )
+                    }
+                    return super.shouldInterceptRequest(view, request)
                 }
 
                 override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
@@ -1005,9 +1084,14 @@ class BrowserSessionManager private constructor() {
                     val reqUrl = request?.url?.toString() ?: tab.url
                     val isMain = request?.isForMainFrame ?: true
 
+                    val code = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) error?.errorCode ?: 0 else 0
+                    tab.networkRequests.descendingIterator().asSequence().firstOrNull { it.url == reqUrl }?.let {
+                        it.status = if (code != 0) code else -1
+                        it.errorDescription = desc
+                    }
                     val err = BrowserNetworkError(
                         url = reqUrl,
-                        errorCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) error?.errorCode ?: 0 else 0,
+                        errorCode = code,
                         description = desc,
                         isMainFrame = isMain
                     )
@@ -1026,6 +1110,10 @@ class BrowserSessionManager private constructor() {
                     val reason = errorResponse?.reasonPhrase ?: "HTTP Error"
                     val isMain = request?.isForMainFrame ?: false
 
+                    tab.networkRequests.descendingIterator().asSequence().firstOrNull { it.url == reqUrl }?.let {
+                        it.status = status
+                        it.errorDescription = "HTTP $status: $reason"
+                    }
                     val err = BrowserNetworkError(
                         url = reqUrl,
                         errorCode = status,
@@ -1181,6 +1269,38 @@ class BrowserSessionManager private constructor() {
                     tabs.firstOrNull { it.webView === window }?.let { closeTab(it.id) }
                 }
 
+                override fun onJsAlert(view: WebView?, url: String?, message: String?, result: JsResult?): Boolean {
+                    if (result != null && (tab.aiLocked || tab.aiBusy || !tab.isOnScreen)) {
+                        tab.pendingDialog = BrowserJsDialog("alert", message.orEmpty(), "", url.orEmpty(), result)
+                        return true
+                    }
+                    return super.onJsAlert(view, url, message, result)
+                }
+
+                override fun onJsConfirm(view: WebView?, url: String?, message: String?, result: JsResult?): Boolean {
+                    if (result != null && (tab.aiLocked || tab.aiBusy || !tab.isOnScreen)) {
+                        tab.pendingDialog = BrowserJsDialog("confirm", message.orEmpty(), "", url.orEmpty(), result)
+                        return true
+                    }
+                    return super.onJsConfirm(view, url, message, result)
+                }
+
+                override fun onJsPrompt(view: WebView?, url: String?, message: String?, defaultValue: String?, result: JsPromptResult?): Boolean {
+                    if (result != null && (tab.aiLocked || tab.aiBusy || !tab.isOnScreen)) {
+                        tab.pendingDialog = BrowserJsDialog("prompt", message.orEmpty(), defaultValue.orEmpty(), url.orEmpty(), result)
+                        return true
+                    }
+                    return super.onJsPrompt(view, url, message, defaultValue, result)
+                }
+
+                override fun onJsBeforeUnload(view: WebView?, url: String?, message: String?, result: JsResult?): Boolean {
+                    if (result != null && (tab.aiLocked || tab.aiBusy || !tab.isOnScreen)) {
+                        tab.pendingDialog = BrowserJsDialog("beforeunload", message.orEmpty(), "", url.orEmpty(), result)
+                        return true
+                    }
+                    return super.onJsBeforeUnload(view, url, message, result)
+                }
+
                 override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
                     if (consoleMessage != null) {
                         val level = when (consoleMessage.messageLevel()) {
@@ -1319,6 +1439,8 @@ class BrowserSessionManager private constructor() {
                 val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
                 val canvas = Canvas(bmp)
                 wv.draw(canvas)
+                tab.latestScreenshotWidth = bmp.width
+                tab.latestScreenshotHeight = bmp.height
                 bmp
             }
 
@@ -1689,10 +1811,10 @@ class BrowserSessionManager private constructor() {
         return context as? Activity
     }
 
-    /** Native input/gesture lock for Flow automation; JavaScript focus and trusted touch still work. */
+    /** Native input/gesture lock for Flow / agent automation; JavaScript focus and trusted touch still work. */
     fun setAutomationInput(tab: BrowserTabSession, enabled: Boolean) {
         mainHandler.post {
-            if (!enabled || !tab.aiBusy) {
+            if (!enabled || !tab.blocksUserInput) {
                 restoreAutomationInput(tab.id)
                 return@post
             }
@@ -2004,5 +2126,131 @@ class BrowserSessionManager private constructor() {
     ): List<BrowserNetworkError> {
         val tab = getTab(tabId) ?: return emptyList()
         return tab.networkErrors.toList().takeLast(limit.coerceIn(1, 200))
+    }
+
+    fun getNetworkRecords(
+        tabId: String? = null,
+        urlPattern: String? = null,
+        onlyFailed: Boolean = false,
+        limit: Int = 100,
+        clear: Boolean = false
+    ): List<BrowserNetworkRecord> {
+        val tab = getTab(tabId) ?: return emptyList()
+        val snapshot = tab.networkRequests.toList()
+        if (clear) {
+            tab.networkRequests.clear()
+        }
+        val filtered = snapshot.filter { rec ->
+            (urlPattern.isNullOrBlank() || rec.url.contains(urlPattern, ignoreCase = true)) &&
+                (!onlyFailed || rec.status >= 400 || rec.status < 0 || !rec.errorDescription.isNullOrBlank())
+        }
+        return filtered.takeLast(limit.coerceIn(1, 500))
+    }
+
+    fun findTabWithDialog(): BrowserTabSession? {
+        return tabs.firstOrNull { it.pendingDialog != null && it.pendingDialog?.answered == false }
+    }
+
+    suspend fun setAgentLock(tabId: String?, locked: Boolean): Result<String> = withContext(Dispatchers.Main) {
+        if (locked) {
+            val tab = getTab(tabId) ?: return@withContext Result.failure(Exception("No active tab found"))
+            tab.aiLocked = true
+            tab.userUnlocked = false
+            setAutomationInput(tab, true)
+            Result.success("Locked tab ${tab.id} (${tab.url.ifBlank { "about:blank" }}) for agent control.")
+        } else if (tabId.isNullOrBlank()) {
+            var count = 0
+            tabs.forEach { t ->
+                if (t.aiLocked) {
+                    t.aiLocked = false
+                    t.userUnlocked = false
+                    setAutomationInput(t, t.blocksUserInput)
+                    count++
+                }
+            }
+            Result.success("Unlocked $count tab(s).")
+        } else {
+            val tab = getTab(tabId) ?: return@withContext Result.failure(Exception("Tab $tabId not found"))
+            tab.aiLocked = false
+            tab.userUnlocked = false
+            setAutomationInput(tab, tab.blocksUserInput)
+            Result.success("Unlocked tab ${tab.id}.")
+        }
+    }
+
+    suspend fun handleJsDialog(tabId: String?, accept: Boolean, promptText: String?): Result<String> = withContext(Dispatchers.Main) {
+        val tab = (if (tabId.isNullOrBlank()) findTabWithDialog() else getTab(tabId))
+            ?: return@withContext Result.failure(Exception("No open JavaScript dialog on this tab."))
+        val dlg = tab.pendingDialog?.takeIf { !it.answered }
+            ?: return@withContext Result.failure(Exception("No pending JavaScript dialog on tab ${tab.id}."))
+        dlg.answer(accept, promptText)
+        tab.pendingDialog = null
+        val verb = if (accept) "Accepted" else "Dismissed"
+        Result.success("$verb ${dlg.type} dialog on tab ${tab.id}.")
+    }
+
+    suspend fun dispatchDragPx(
+        tabId: String?,
+        x0: Float,
+        y0: Float,
+        x1: Float,
+        y1: Float,
+        steps: Int = 12
+    ): Result<Boolean> = withContext(Dispatchers.Main) {
+        val tab = getTab(tabId) ?: return@withContext Result.failure(Exception("Tab not found"))
+        val wv = tab.webView ?: return@withContext Result.failure(Exception("WebView not initialized"))
+        val downTime = SystemClock.uptimeMillis()
+        wv.dispatchTouchEvent(MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, x0, y0, 0).apply {
+            source = InputDevice.SOURCE_TOUCHSCREEN
+        })
+        for (i in 1..steps.coerceIn(2, 40)) {
+            val t = i.toFloat() / steps.toFloat()
+            val cx = x0 + (x1 - x0) * t
+            val cy = y0 + (y1 - y0) * t
+            val evTime = downTime + (i * 16L)
+            wv.dispatchTouchEvent(MotionEvent.obtain(downTime, evTime, MotionEvent.ACTION_MOVE, cx, cy, 0).apply {
+                source = InputDevice.SOURCE_TOUCHSCREEN
+            })
+        }
+        val upTime = downTime + (steps + 1) * 16L
+        wv.dispatchTouchEvent(MotionEvent.obtain(downTime, upTime, MotionEvent.ACTION_UP, x1, y1, 0).apply {
+            source = InputDevice.SOURCE_TOUCHSCREEN
+        })
+        Result.success(true)
+    }
+
+    suspend fun dispatchTapPx(tabId: String?, xPx: Float, yPx: Float, clicks: Int = 1): Result<Boolean> = withContext(Dispatchers.Main) {
+        val tab = getTab(tabId) ?: return@withContext Result.failure(Exception("Tab not found"))
+        val wv = tab.webView ?: return@withContext Result.failure(Exception("WebView not initialized"))
+        repeat(clicks.coerceIn(1, 3)) { idx ->
+            val downTime = SystemClock.uptimeMillis()
+            wv.dispatchTouchEvent(MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, xPx, yPx, 0).apply {
+                source = InputDevice.SOURCE_TOUCHSCREEN
+            })
+            wv.dispatchTouchEvent(MotionEvent.obtain(downTime, downTime + 25L, MotionEvent.ACTION_UP, xPx, yPx, 0).apply {
+                source = InputDevice.SOURCE_TOUCHSCREEN
+            })
+            if (idx + 1 < clicks) kotlinx.coroutines.delay(55)
+        }
+        Result.success(true)
+    }
+
+    suspend fun dispatchKeyModified(tabId: String?, keyCode: Int, metaState: Int = 0): Result<Boolean> = withContext(Dispatchers.Main) {
+        val tab = getTab(tabId) ?: return@withContext Result.failure(Exception("Tab not found"))
+        val wv = tab.webView ?: return@withContext Result.failure(Exception("WebView not initialized"))
+        val now = SystemClock.uptimeMillis()
+        wv.dispatchKeyEvent(KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0, metaState))
+        wv.dispatchKeyEvent(KeyEvent(now, now + 15L, KeyEvent.ACTION_UP, keyCode, 0, metaState))
+        Result.success(true)
+    }
+
+    suspend fun evalMainJs(tabId: String?, script: String): Result<String> = withContext(Dispatchers.Main) {
+        val tab = getTab(tabId) ?: return@withContext Result.failure(Exception("Tab not found"))
+        val wv = tab.webView ?: return@withContext Result.failure(Exception("WebView not initialized"))
+        suspendCancellableCoroutine { cont ->
+            wv.evaluateJavascript(script) { value ->
+                if (cont.isActive) cont.resume(Result.success(value ?: "null"))
+            }
+        }
     }
 }

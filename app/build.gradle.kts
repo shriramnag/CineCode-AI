@@ -165,6 +165,8 @@ dependencies {
     implementation(libs.jsoup)
     implementation(libs.jlatexmath)
     implementation(libs.termux.terminal.emulator)
+    implementation(libs.shizuku.api)
+    implementation(libs.shizuku.provider)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

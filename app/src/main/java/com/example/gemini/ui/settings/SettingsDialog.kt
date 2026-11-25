@@ -4773,9 +4773,13 @@ private fun ProjectsBackupRestoreDialog(
     // Filter out root $HOME, root filesystem paths, and duplicates
     val validProjects = remember(allProjects, homeDir) {
         val normHome = normalizeProjectPath(homeDir, homeDir)
+        val appFiles = normalizeProjectPath(context.filesDir.absolutePath, normHome)
+        val appRoot = normalizeProjectPath(context.filesDir.parent ?: "", normHome)
         allProjects.filter { proj ->
             val p = normalizeProjectPath(proj.path, normHome)
-            p.isNotBlank() && p != normHome && p != "/" && p != "/data/data/com.shriram.cinecode/files" && p != "/data/data/com.shriram.cinecode"
+            p.isNotBlank() && p != normHome && p != "/" &&
+                p != appFiles && p != appRoot &&
+                p != "/data/data/com.shriram.cinecode/files" && p != "/data/data/com.shriram.cinecode"
         }.distinctBy { normalizeProjectPath(it.path, normHome) }
     }
 
@@ -5541,7 +5545,7 @@ private fun ProjectsBackupRestoreDialog(
                                 value = customRestoreDir,
                                 onValueChange = { customRestoreDir = it },
                                 label = { Text("Custom Restore Directory") },
-                                placeholder = { Text("/data/data/com.shriram.cinecode/files/home/restored_projects") },
+                                placeholder = { Text("${homeDir}/restored_projects") },
                                 singleLine = true,
                                 modifier = Modifier.fillMaxWidth()
                             )

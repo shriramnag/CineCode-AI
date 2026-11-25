@@ -214,6 +214,7 @@ object JarvisController {
         JarvisVoice.init(app)
         // the microphone is never open after a restart until the user starts it again
         JarvisPreferences.handsFree.set(false)
+        JarvisMissionStore.init(application)
         JarvisTasks.start(application, scope)
         scope.launch { pollLoop() }
         scope.launch { sendLoop() }
@@ -1300,19 +1301,14 @@ object JarvisController {
         val prompt = PromptExpansion.hidden(note) + m.text
         val existingId = if (freshChat) "" else chatId
         val errorBefore = if (agent == AgentKind.CLAUDE) jarvisClaude.conversationError.value else null
-        if (agent == AgentKind.TERMINAL || agent == AgentKind.JARVIS) {
-            turnOpen = false
-            throw UnsupportedOperationException("Agent ${agent.name} is not supported for Jarvis conversation yet.")
-        }
         try {
             when (agent) {
                 AgentKind.CLAUDE -> sendClaude(prompt)
                 AgentKind.AGY -> sendAgy(prompt)
                 AgentKind.CODEX, AgentKind.OPENCODE -> sendClaude(prompt)
                 AgentKind.GEMINI -> sendGemini(prompt)
-                AgentKind.TERMINAL, AgentKind.JARVIS -> {
-                    error("Agent ${agent.name} is not supported for Jarvis conversation yet.")
-                }
+                AgentKind.TERMINAL -> sendTerminal(prompt)
+                AgentKind.JARVIS -> sendJarvis(prompt)
             }
         } catch (e: Exception) {
             // the saved Jarvis chat was deleted: start a new one and send this message there (once)
@@ -1411,6 +1407,42 @@ object JarvisController {
         b.sendMessage(prompt)
     }
 
+    private suspend fun sendTerminal(prompt: String) {
+        val b = vm.terminalBackend
+        var id = JarvisPreferences.currentChatId.value
+        if (id.isBlank() || JarvisPreferences.currentChatAgent.value != AgentKind.TERMINAL.name) {
+            b.startNewChat()
+            delay(150)
+            id = b.currentConversation.value?.id ?: error("Could not create the Terminal Jarvis chat")
+            JarvisPreferences.currentChatId.set(id)
+            JarvisPreferences.currentChatAgent.set(AgentKind.TERMINAL.name)
+            JarvisPreferences.addChatId(id)
+            JarvisPreferences.modelId.value.takeIf { it.isNotBlank() }?.let { b.selectModel(it) }
+        } else if (b.currentConversation.value?.id != id) {
+            b.selectConversation(id)
+            delay(200)
+        }
+        b.sendMessage(prompt)
+    }
+
+    private suspend fun sendJarvis(prompt: String) {
+        val b = vm.jarvisBackend
+        var id = JarvisPreferences.currentChatId.value
+        if (id.isBlank() || JarvisPreferences.currentChatAgent.value != AgentKind.JARVIS.name) {
+            b.startNewChat()
+            delay(150)
+            id = b.currentConversation.value?.id ?: error("Could not create the Jarvis chat")
+            JarvisPreferences.currentChatId.set(id)
+            JarvisPreferences.currentChatAgent.set(AgentKind.JARVIS.name)
+            JarvisPreferences.addChatId(id)
+            JarvisPreferences.modelId.value.takeIf { it.isNotBlank() }?.let { b.selectModel(it) }
+        } else if (b.currentConversation.value?.id != id) {
+            b.selectConversation(id)
+            delay(200)
+        }
+        b.sendMessage(prompt)
+    }
+
     private fun defaultWorkspace(): String {
         val p = com.shriram.cinecode.data.daemon.TermuxDaemonManager.activeProject.value?.path
             ?: com.shriram.cinecode.data.local.LocalEnvironmentManager.getHomeDir(app).absolutePath
@@ -1442,6 +1474,8 @@ object JarvisController {
             AgentKind.CODEX -> vm.codexBackend.selectModel(modelId)
             AgentKind.OPENCODE -> vm.openCodeBackend.selectModel(modelId)
             AgentKind.GEMINI -> vm.geminiBackend.selectModel(modelId)
+            AgentKind.TERMINAL -> vm.terminalBackend.selectModel(modelId)
+            AgentKind.JARVIS -> vm.jarvisBackend.selectModel(modelId)
             AgentKind.CLAUDE -> {
                 val task = JarvisTasks.backendOf(id)
                 when {
@@ -1454,7 +1488,6 @@ object JarvisController {
                     }
                 }
             }
-            AgentKind.TERMINAL, AgentKind.JARVIS -> Unit
         }
     }
 
@@ -1478,7 +1511,8 @@ object JarvisController {
             AgentKind.CODEX -> { vm.codexBackend.stopStreaming(); "Stopped." }
             AgentKind.OPENCODE -> { vm.openCodeBackend.stopStreaming(); "Stopped." }
             AgentKind.GEMINI -> { vm.geminiBackend.stopStreaming(); "Stopped." }
-            AgentKind.TERMINAL, AgentKind.JARVIS -> "Not supported."
+            AgentKind.TERMINAL -> { vm.terminalBackend.stopStreaming(); "Stopped." }
+            AgentKind.JARVIS -> { vm.jarvisBackend.stopStreaming(); "Stopped." }
         }
     }
 
@@ -1488,11 +1522,12 @@ object JarvisController {
         AgentKind.CODEX -> vm.codexBackend.loadMessages(id)
         AgentKind.OPENCODE -> vm.openCodeBackend.loadMessages(id)
         AgentKind.GEMINI -> vm.geminiBackend.loadMessages(id)
+        AgentKind.TERMINAL -> vm.terminalBackend.loadMessages(id)
+        AgentKind.JARVIS -> vm.jarvisBackend.loadMessages(id)
         AgentKind.AGY -> {
             val steps = hub.getCascadeTrajectorySteps(id).getOrNull().orEmpty()
             com.shriram.cinecode.domain.chat.TrajectoryEngine().ingestStepsDirect(steps, id)
         }
-        AgentKind.TERMINAL, AgentKind.JARVIS -> emptyList()
     }
 
     // ------------------------------------------------------------------ speaking and asking

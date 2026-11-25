@@ -18,7 +18,9 @@ object WebViewExtensionDeveloper {
     private val draftsMutex = Mutex()
     private val manager get() = BrowserExtensionManager.instance
 
-    fun tools(context: Context) = context.assets.open("$DOCS/developer-tools.json").bufferedReader().use { JSONArray(it.readText()) }
+    fun tools(context: Context): JSONArray = runCatching {
+        context.assets.open("$DOCS/developer-tools.json").bufferedReader().use { JSONArray(it.readText()) }
+    }.getOrElse { JSONArray() }
 
     suspend fun call(context: Context, name: String, args: JSONObject): JSONObject = withContext(Dispatchers.IO) {
         try {
@@ -68,10 +70,11 @@ object WebViewExtensionDeveloper {
     }
 
     private fun assetFiles(context: Context, path: String = ""): List<String> {
-        val entries = context.assets.list(if (path.isEmpty()) DOCS else "$DOCS/$path").orEmpty()
+        val entries = runCatching { context.assets.list(if (path.isEmpty()) DOCS else "$DOCS/$path") }.getOrNull().orEmpty()
         return entries.flatMap { child ->
             val name = if (path.isEmpty()) child else "$path/$child"
-            if (context.assets.list("$DOCS/$name").orEmpty().isEmpty()) listOf(name) else assetFiles(context, name)
+            val sub = runCatching { context.assets.list("$DOCS/$name") }.getOrNull().orEmpty()
+            if (sub.isEmpty()) listOf(name) else assetFiles(context, name)
         }.sorted()
     }
 
@@ -91,7 +94,8 @@ object WebViewExtensionDeveloper {
         if (args.optBoolean("list_only")) return result
         val path = args.optString("path", "README.md")
         require(path in files) { "Unknown SDK document. Use list_only=true to list available paths" }
-        val text = context.assets.open("$DOCS/$path").bufferedReader().use { it.readText() }
+        val text = runCatching { context.assets.open("$DOCS/$path").bufferedReader().use { it.readText() } }
+            .getOrElse { error("Missing bundled SDK document: $path (${it.message})") }
         val content = page(text, args)
         content.keys().forEach { key -> result.put(key, content.get(key)) }
         return result.put("path", path)
@@ -107,10 +111,14 @@ object WebViewExtensionDeveloper {
         val name = args.getString("name").trim()
         require(name.isNotEmpty()) { "name is required" }
         val tool = projectId(args.optString("tool_name", "hello"))
-        val manifest = context.assets.open("$DOCS/examples/hello-mcp/manifest.json").bufferedReader().use { JSONObject(it.readText()) }
+        val manifest = runCatching {
+            context.assets.open("$DOCS/examples/hello-mcp/manifest.json").bufferedReader().use { JSONObject(it.readText()) }
+        }.getOrElse { error("Missing bundled extension template manifest: ${it.message}") }
         manifest.put("id", id).put("name", name).put("description", args.optString("description", "MCP extension for $name"))
         manifest.getJSONArray("mcp_tools").getJSONObject(0).put("name", tool)
-        val worker = context.assets.open("$DOCS/examples/hello-mcp/worker.js").bufferedReader().use { it.readText() }
+        val worker = runCatching {
+            context.assets.open("$DOCS/examples/hello-mcp/worker.js").bufferedReader().use { it.readText() }
+        }.getOrElse { error("Missing bundled extension template worker: ${it.message}") }
         val files = JSONArray()
             .put(JSONObject().put("path", "manifest.json").put("content", manifest.toString(2)))
             .put(JSONObject().put("path", "worker.js").put("content", worker.replace("message.tool !== 'hello'", "message.tool !== '$tool'")))

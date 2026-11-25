@@ -76,12 +76,16 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     val openCodeBackend = com.shriram.cinecode.data.agent.opencode.OpenCodeChatBackend(application, viewModelScope, store, openCodePrefs)
     val providerManager = com.shriram.cinecode.data.agent.ProviderManager.getInstance(application)
     val geminiBackend = com.shriram.cinecode.data.agent.gemini.GeminiChatBackend(application, viewModelScope, store, providerManager)
+    val terminalBackend = com.shriram.cinecode.data.agent.terminal.TerminalChatBackend(application, viewModelScope, store)
+    val jarvisBackend = com.shriram.cinecode.data.agent.jarvis.JarvisChatBackend(application, viewModelScope, store, providerManager, openCodePrefs)
     val agentManager = com.shriram.cinecode.data.agent.AgentManager(store, providerManager).apply {
         registerBackend(agyBackend)
         registerBackend(claudeBackend)
         registerBackend(codexBackend)
         registerBackend(openCodeBackend)
         registerBackend(geminiBackend)
+        registerBackend(terminalBackend)
+        registerBackend(jarvisBackend)
     }
     /** Claude account: sign-in state, plan usage, login / logout. */
     val claudeAccount = com.shriram.cinecode.data.agent.claude.ClaudeAccountManager(viewModelScope, claudeClient)
@@ -165,7 +169,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         val claude: T,
         val codex: T,
         val openCode: T,
-        val gemini: T
+        val gemini: T,
+        val terminal: T,
+        val jarvis: T
     )
 
     private fun <T> byAgent(
@@ -173,10 +179,18 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         claude: StateFlow<T>,
         codex: StateFlow<T> = agy,
         openCode: StateFlow<T> = agy,
-        gemini: StateFlow<T> = agy
+        gemini: StateFlow<T> = agy,
+        terminal: StateFlow<T> = agy,
+        jarvis: StateFlow<T> = agy
     ): StateFlow<T> {
-        val nonAgy = combine(claude, codex, openCode, gemini) { c, cx, oc, g ->
-            AgentBundle(c, cx, oc, g)
+        val nonAgy = combine(
+            claude,
+            codex,
+            openCode,
+            gemini,
+            combine(terminal, jarvis, ::Pair)
+        ) { c, cx, oc, g, (t, j) ->
+            AgentBundle(c, cx, oc, g, t, j)
         }
         return combine(store.currentConversation, agy, nonAgy) { conv: Conversation?, a: T, bundle: AgentBundle<T> ->
             when (conv?.agent) {
@@ -184,7 +198,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 AgentKind.CODEX -> bundle.codex
                 AgentKind.OPENCODE -> bundle.openCode
                 AgentKind.GEMINI -> bundle.gemini
-                else -> a
+                AgentKind.TERMINAL -> bundle.terminal
+                AgentKind.JARVIS -> bundle.jarvis
+                AgentKind.AGY, null -> a
             }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, agy.value)
     }
@@ -221,12 +237,12 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     val isConversationsLoading = agyBackend.isConversationsLoading
     val artifacts = agyBackend.artifacts
     val pendingApprovals = agyBackend.pendingApprovals
-    val isStreaming = byAgent(agyBackend.isStreaming, claudeBackend.isStreaming, codexBackend.isStreaming, openCodeBackend.isStreaming, geminiBackend.isStreaming)
-    val availableModels = byAgent(agyBackend.availableModels, claudeBackend.availableModels, codexBackend.availableModels, openCodeBackend.availableModels, geminiBackend.availableModels)
+    val isStreaming = byAgent(agyBackend.isStreaming, claudeBackend.isStreaming, codexBackend.isStreaming, openCodeBackend.isStreaming, geminiBackend.isStreaming, terminalBackend.isStreaming, jarvisBackend.isStreaming)
+    val availableModels = byAgent(agyBackend.availableModels, claudeBackend.availableModels, codexBackend.availableModels, openCodeBackend.availableModels, geminiBackend.availableModels, terminalBackend.availableModels, jarvisBackend.availableModels)
     val enabledModelIds = agyBackend.enabledModelIds
-    val enabledModels = byAgent(agyBackend.enabledModels, claudeBackend.availableModels, codexBackend.availableModels, openCodeBackend.availableModels, geminiBackend.availableModels)
-    val isRefreshingModels = byAgent(agyBackend.isRefreshingModels, claudeBackend.isRefreshingModels, codexBackend.isRefreshingModels, openCodeBackend.isRefreshingModels, geminiBackend.isStreaming)
-    val selectedModelId = byAgent(agyBackend.selectedModelId, claudeBackend.selectedModelId, codexBackend.selectedModelId, openCodeBackend.selectedModelId, geminiBackend.selectedModel)
+    val enabledModels = byAgent(agyBackend.enabledModels, claudeBackend.availableModels, codexBackend.availableModels, openCodeBackend.availableModels, geminiBackend.availableModels, terminalBackend.availableModels, jarvisBackend.availableModels)
+    val isRefreshingModels = byAgent(agyBackend.isRefreshingModels, claudeBackend.isRefreshingModels, codexBackend.isRefreshingModels, openCodeBackend.isRefreshingModels, geminiBackend.isStreaming, terminalBackend.isRefreshingModels, jarvisBackend.isRefreshingModels)
+    val selectedModelId = byAgent(agyBackend.selectedModelId, claudeBackend.selectedModelId, codexBackend.selectedModelId, openCodeBackend.selectedModelId, geminiBackend.selectedModel, terminalBackend.selectedModelId, jarvisBackend.selectedModelId)
     val preferredModelName = agyBackend.preferredModelName
     /** Claude's plan windows as the model pill's quota (remaining share of the 5-hour and weekly limits). */
     private val claudeQuotas: StateFlow<List<ModelQuota>> =
@@ -248,9 +264,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 )
             )
         }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
-    val quotas = byAgent(agyBackend.quotas, claudeQuotas, noQuotas, noQuotas, noQuotas)
+    val quotas = byAgent(agyBackend.quotas, claudeQuotas, noQuotas, noQuotas, noQuotas, noQuotas, noQuotas)
     val quotaSummary = agyBackend.quotaSummary
-    val isLoadingConversation = byAgent(agyBackend.isLoadingConversation, claudeBackend.isLoadingConversation, codexBackend.isLoadingConversation, openCodeBackend.isLoadingConversation, geminiBackend.isLoadingConversation)
+    val isLoadingConversation = byAgent(agyBackend.isLoadingConversation, claudeBackend.isLoadingConversation, codexBackend.isLoadingConversation, openCodeBackend.isLoadingConversation, geminiBackend.isLoadingConversation, terminalBackend.isLoadingConversation, jarvisBackend.isLoadingConversation)
     fun setModelEnabled(modelId: String, isEnabled: Boolean) = agyBackend.setModelEnabled(modelId, isEnabled)
     fun enableAllModels() = agyBackend.enableAllModels()
     val bridgeStatusMessage = agyBackend.bridgeStatusMessage
@@ -322,8 +338,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             )
         }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
-    val isCurrentChatActivelyRunning = byAgent(agyBackend.isCurrentChatActivelyRunning, claudeBackend.isCurrentChatActivelyRunning, codexBackend.isStreaming, openCodeBackend.isStreaming, geminiBackend.isStreaming)
-    val isCurrentChatBackgroundActive = byAgent(agyBackend.isCurrentChatBackgroundActive, alwaysFalse, alwaysFalse, alwaysFalse, alwaysFalse)
+    val isCurrentChatActivelyRunning = byAgent(agyBackend.isCurrentChatActivelyRunning, claudeBackend.isCurrentChatActivelyRunning, codexBackend.isStreaming, openCodeBackend.isStreaming, geminiBackend.isStreaming, terminalBackend.isStreaming, jarvisBackend.isStreaming)
+    val isCurrentChatBackgroundActive = byAgent(agyBackend.isCurrentChatBackgroundActive, alwaysFalse, alwaysFalse, alwaysFalse, alwaysFalse, alwaysFalse, alwaysFalse)
     val connectionState = agyBackend.connectionState
     fun refreshActiveInstances() = agyBackend.refreshActiveInstances()
     fun terminateInstance(conversationId: String) = agyBackend.terminateInstance(conversationId)
@@ -353,56 +369,42 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             ?: if (AgentKind.AGY in enabledAgents.value) AgentKind.AGY else enabledAgents.value.first()
     )
 
+    private fun detachOtherBackends(except: AgentKind) {
+        if (except != AgentKind.AGY) agyBackend.detach()
+        if (except != AgentKind.CLAUDE) claudeBackend.detach()
+        if (except != AgentKind.CODEX) codexBackend.detach()
+        if (except != AgentKind.OPENCODE) openCodeBackend.detach()
+        if (except != AgentKind.GEMINI) geminiBackend.detach()
+        if (except != AgentKind.TERMINAL) terminalBackend.detach()
+        if (except != AgentKind.JARVIS) jarvisBackend.detach()
+    }
+
     /** New chat with [agent] (e.g. `/clear` in a Claude chat), without changing the new-chat default. */
     fun startNewChat(agent: AgentKind) {
         com.shriram.cinecode.data.context.GlobalContext.updateActiveAgent(agent)
+        detachOtherBackends(agent)
         when (agent) {
-            AgentKind.CLAUDE -> {
-                agyBackend.detach(); codexBackend.detach(); openCodeBackend.detach()
-                claudeBackend.startNewChat()
-            }
-            AgentKind.CODEX -> {
-                agyBackend.detach(); claudeBackend.detach(); openCodeBackend.detach()
-                codexBackend.startNewChat()
-            }
-            AgentKind.OPENCODE -> {
-                agyBackend.detach(); claudeBackend.detach(); codexBackend.detach(); geminiBackend.detach()
-                openCodeBackend.startNewChat()
-            }
-            AgentKind.GEMINI -> {
-                agyBackend.detach(); claudeBackend.detach(); codexBackend.detach(); openCodeBackend.detach()
-                geminiBackend.startNewChat()
-            }
-            else -> {
-                claudeBackend.detach(); codexBackend.detach(); openCodeBackend.detach(); geminiBackend.detach()
-                agyBackend.startNewChat()
-            }
+            AgentKind.CLAUDE -> claudeBackend.startNewChat()
+            AgentKind.CODEX -> codexBackend.startNewChat()
+            AgentKind.OPENCODE -> openCodeBackend.startNewChat()
+            AgentKind.GEMINI -> geminiBackend.startNewChat()
+            AgentKind.TERMINAL -> terminalBackend.startNewChat()
+            AgentKind.JARVIS -> jarvisBackend.startNewChat()
+            AgentKind.AGY -> agyBackend.startNewChat()
         }
     }
     fun selectConversation(id: String) {
         val agent = agentOf(id)
         com.shriram.cinecode.data.context.GlobalContext.updateActiveAgent(agent)
+        detachOtherBackends(agent)
         when (agent) {
-            AgentKind.CLAUDE -> {
-                agyBackend.detach(); codexBackend.detach(); openCodeBackend.detach(); geminiBackend.detach()
-                claudeBackend.selectConversation(id)
-            }
-            AgentKind.CODEX -> {
-                agyBackend.detach(); claudeBackend.detach(); openCodeBackend.detach(); geminiBackend.detach()
-                codexBackend.selectConversation(id)
-            }
-            AgentKind.OPENCODE -> {
-                agyBackend.detach(); claudeBackend.detach(); codexBackend.detach(); geminiBackend.detach()
-                openCodeBackend.selectConversation(id)
-            }
-            AgentKind.GEMINI -> {
-                agyBackend.detach(); claudeBackend.detach(); codexBackend.detach(); openCodeBackend.detach()
-                geminiBackend.selectConversation(id)
-            }
-            else -> {
-                claudeBackend.detach(); codexBackend.detach(); openCodeBackend.detach(); geminiBackend.detach()
-                agyBackend.selectConversation(id)
-            }
+            AgentKind.CLAUDE -> claudeBackend.selectConversation(id)
+            AgentKind.CODEX -> codexBackend.selectConversation(id)
+            AgentKind.OPENCODE -> openCodeBackend.selectConversation(id)
+            AgentKind.GEMINI -> geminiBackend.selectConversation(id)
+            AgentKind.TERMINAL -> terminalBackend.selectConversation(id)
+            AgentKind.JARVIS -> jarvisBackend.selectConversation(id)
+            AgentKind.AGY -> agyBackend.selectConversation(id)
         }
     }
     fun startPersistentStream(conversationId: String) = agyBackend.startPersistentStream(conversationId)
@@ -412,31 +414,24 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             AgentKind.CODEX -> codexBackend.deleteConversation(id)
             AgentKind.OPENCODE -> openCodeBackend.deleteConversation(id)
             AgentKind.GEMINI -> geminiBackend.deleteConversation(id)
-            else -> agyBackend.deleteConversation(id)
+            AgentKind.TERMINAL -> terminalBackend.deleteConversation(id)
+            AgentKind.JARVIS -> jarvisBackend.deleteConversation(id)
+            AgentKind.AGY -> agyBackend.deleteConversation(id)
         }
         // Jarvis forgets it too: a deleted Jarvis chat is replaced by a new one on the next message
         com.shriram.cinecode.data.jarvis.JarvisController.onChatDeleted(id)
     }
     fun forkConversation(id: String) {
-        when (agentOf(id)) {
-            AgentKind.CLAUDE -> {
-                agyBackend.detach()
-                claudeBackend.forkConversation(id)
-            }
-            AgentKind.CODEX -> {
-                agyBackend.detach()
-                codexBackend.forkConversation(id)
-            }
-            AgentKind.OPENCODE -> {
-                agyBackend.detach()
-                openCodeBackend.forkConversation(id)
-            }
-            AgentKind.GEMINI -> {
-                agyBackend.detach()
-                geminiBackend.forkConversation(id)
-            }
+        val agent = agentOf(id)
+        if (agent != AgentKind.AGY) agyBackend.detach()
+        when (agent) {
+            AgentKind.CLAUDE -> claudeBackend.forkConversation(id)
+            AgentKind.CODEX -> codexBackend.forkConversation(id)
+            AgentKind.OPENCODE -> openCodeBackend.forkConversation(id)
+            AgentKind.GEMINI -> geminiBackend.forkConversation(id)
+            AgentKind.TERMINAL -> terminalBackend.forkConversation(id)
+            AgentKind.JARVIS -> jarvisBackend.forkConversation(id)
             AgentKind.AGY -> agyBackend.forkConversation(id)
-            AgentKind.TERMINAL, AgentKind.JARVIS -> Unit
         }
     }
     fun selectModel(modelId: String) {
@@ -445,8 +440,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             AgentKind.CODEX -> codexBackend.selectModel(modelId)
             AgentKind.OPENCODE -> openCodeBackend.selectModel(modelId)
             AgentKind.GEMINI -> geminiBackend.selectModel(modelId)
+            AgentKind.TERMINAL -> terminalBackend.selectModel(modelId)
+            AgentKind.JARVIS -> jarvisBackend.selectModel(modelId)
             AgentKind.AGY -> agyBackend.selectModel(modelId)
-            AgentKind.TERMINAL, AgentKind.JARVIS -> Unit
         }
     }
     /** `/plu:` plugin skills and custom slash commands are expanded here, for all agents. */
@@ -456,13 +452,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             AgentKind.CODEX -> codexBackend.sendMessage(it)
             AgentKind.OPENCODE -> openCodeBackend.sendMessage(it)
             AgentKind.GEMINI -> geminiBackend.sendMessage(it)
+            AgentKind.TERMINAL -> terminalBackend.sendMessage(it)
+            AgentKind.JARVIS -> jarvisBackend.sendMessage(it)
             AgentKind.AGY -> agyBackend.sendMessage(it)
-            AgentKind.TERMINAL, AgentKind.JARVIS -> {
-                com.shriram.cinecode.ui.components.AppToastHelper.showToast(
-                    "${currentAgentKind.name} agent messaging is not supported yet. Supported agents: Antigravity, Gemini, Claude, Codex, OpenCode.",
-                    com.shriram.cinecode.ui.components.ChatToastType.INFO
-                )
-            }
         }
     }
     val isTranscribingAudio = agyBackend.isTranscribingAudio
@@ -507,13 +499,14 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             AgentKind.CODEX -> codexBackend.stopStreaming()
             AgentKind.OPENCODE -> openCodeBackend.stopStreaming()
             AgentKind.GEMINI -> geminiBackend.stopStreaming()
+            AgentKind.TERMINAL -> terminalBackend.stopStreaming()
+            AgentKind.JARVIS -> jarvisBackend.stopStreaming()
             AgentKind.AGY -> agyBackend.stopStreaming()
-            AgentKind.TERMINAL, AgentKind.JARVIS -> Unit
         }
     }
 
     /** Messages sent while the agent was working, waiting to be delivered (queued-messages card). */
-    val queuedMessages = byAgent(agyBackend.queuedMessages, claudeBackend.queuedMessages, noQueued, noQueued, noQueued)
+    val queuedMessages = byAgent(agyBackend.queuedMessages, claudeBackend.queuedMessages, noQueued, noQueued, noQueued, noQueued, noQueued)
     fun sendQueuedNow(id: String) {
         when (currentAgentKind) {
             AgentKind.CLAUDE -> claudeBackend.sendQueuedNow(id)
@@ -688,15 +681,17 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         _conversations,
         claudeBackend.conversations,
         combine(codexBackend.conversations, openCodeBackend.conversations, ::Pair),
-        geminiBackend.conversations,
-        enabledAgents
-    ) { agy, claude, (codex, openCode), gemini, enabled ->
+        combine(geminiBackend.conversations, terminalBackend.conversations, ::Pair),
+        combine(jarvisBackend.conversations, enabledAgents, ::Pair)
+    ) { agy, claude, (codex, openCode), (gemini, terminal), (jarvis, enabled) ->
         // a disabled agent's chats stay on disk but are not listed
         ((if (AgentKind.AGY in enabled) agy else emptyList()) +
             (if (AgentKind.CLAUDE in enabled) claude else emptyList()) +
             (if (AgentKind.CODEX in enabled) codex else emptyList()) +
             (if (AgentKind.OPENCODE in enabled) openCode else emptyList()) +
-            (if (AgentKind.GEMINI in enabled) gemini else emptyList()))
+            (if (AgentKind.GEMINI in enabled) gemini else emptyList()) +
+            (if (AgentKind.TERMINAL in enabled) terminal else emptyList()) +
+            (if (AgentKind.JARVIS in enabled) jarvis else emptyList()))
             .sortedByDescending { it.updatedAt }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
@@ -739,7 +734,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     /** Antigravity's chat state (shared store); other agents keep their own, see [messages]. */
     private val _messages = store.messages
     /** Messages of the chat on screen, from the agent that owns it. */
-    val messages: StateFlow<List<ChatMessage>> = byAgent(_messages, claudeBackend.messages, codexBackend.messages, openCodeBackend.messages, geminiBackend.messages)
+    val messages: StateFlow<List<ChatMessage>> = byAgent(_messages, claudeBackend.messages, codexBackend.messages, openCodeBackend.messages, geminiBackend.messages, terminalBackend.messages, jarvisBackend.messages)
 
     private val _thinkingPreference = MutableStateFlow(com.shriram.cinecode.domain.model.ThinkingPreference())
     val thinkingPreference: StateFlow<com.shriram.cinecode.domain.model.ThinkingPreference> = _thinkingPreference.asStateFlow()
@@ -1243,7 +1238,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private val _conversationError = store.conversationError
-    val conversationError: StateFlow<String?> = byAgent(_conversationError, claudeBackend.conversationError, codexBackend.conversationError, openCodeBackend.conversationError, geminiBackend.conversationError)
+    val conversationError: StateFlow<String?> = byAgent(_conversationError, claudeBackend.conversationError, codexBackend.conversationError, openCodeBackend.conversationError, geminiBackend.conversationError, terminalBackend.conversationError, jarvisBackend.conversationError)
 
 
     private val _conversationDrafts = mutableMapOf<String, androidx.compose.ui.text.input.TextFieldValue>()

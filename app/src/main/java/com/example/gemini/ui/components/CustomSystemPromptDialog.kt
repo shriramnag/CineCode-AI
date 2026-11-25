@@ -66,7 +66,8 @@ fun CustomSystemPromptDialog(
         }
     }
 
-    val defaultSystemPrompt = remember(dynamicServerPrompt, conversationId, workspaceDir) {
+    val defaultSystemPrompt = remember(dynamicServerPrompt, conversationId, workspaceDir, context) {
+        val filesPath = context.filesDir.absolutePath.trimEnd('/')
         dynamicServerPrompt?.takeIf { it.isNotBlank() } ?: """
 <identity>
 You are Antigravity, a powerful agentic AI coding assistant designed by the Google Deepmind team working on Advanced Agentic Coding.
@@ -77,8 +78,8 @@ The USER will send you requests, which you must always prioritize addressing. Us
 <user_information>
 The USER's OS version is linux.
 The user has active workspace:
-${workspaceDir ?: "/data/data/com.shriram.cinecode/files/home/projects/gemini"}
-App Data Directory: /data/data/com.shriram.cinecode/files/home/.gemini/antigravity-cli
+${workspaceDir ?: "$filesPath/home/projects/gemini"}
+App Data Directory: $filesPath/home/.gemini/antigravity-cli
 Conversation ID: ${conversationId ?: "active"}
 </user_information>
 

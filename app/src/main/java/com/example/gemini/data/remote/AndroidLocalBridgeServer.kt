@@ -95,6 +95,7 @@ class AndroidLocalBridgeServer private constructor() {
         com.shriram.cinecode.ui.browser.BrowserExtensionManager.instance.init(context)
         com.shriram.cinecode.data.remote.CustomSlashCommands.init(context)
         com.shriram.cinecode.ui.browser.PluginRepositories.init(context)
+        com.shriram.cinecode.data.adb.DeviceAccess.init(context)
 
         serverScope.launch {
             try {
@@ -116,6 +117,9 @@ class AndroidLocalBridgeServer private constructor() {
                 _boundPortState.value = boundPort
                 _isRunningState.value = true
                 Log.i(TAG, "Bridge MCP / REST Server running on http://127.0.0.1:$boundPort")
+                runCatching {
+                    com.shriram.cinecode.data.adb.DeviceAccess.writeConfigAndWrappers(context, boundPort, cachedDeviceId)
+                }
                 // a server (Remote mode) reaches this MCP server through an SSH reverse tunnel: point it at the bound port
                 com.shriram.cinecode.data.remote.RemoteServerManager.resyncTunnels()
 
@@ -146,8 +150,15 @@ class AndroidLocalBridgeServer private constructor() {
         Log.i(TAG, "Bridge Server stopped")
     }
 
-    /** One HTTP/1.1 request; [body] is the raw body bytes decoded as UTF-8. */
-    private class HttpRequest(val method: String, val rawPath: String, val headers: Map<String, String>, val body: String)
+    /** One HTTP/1.1 request; [bodyBytes] preserves exact raw payload bytes (and [body] decodes UTF-8). */
+    private class HttpRequest(
+        val method: String,
+        val rawPath: String,
+        val headers: Map<String, String>,
+        val bodyBytes: ByteArray
+    ) {
+        val body: String by lazy { String(bodyBytes, Charsets.UTF_8) }
+    }
 
     /** Remembers whether anything was written, so a failure after a response never writes a second one. */
     private class TrackingOutputStream(private val out: OutputStream) : OutputStream() {
@@ -195,7 +206,7 @@ class AndroidLocalBridgeServer private constructor() {
                 readExactly(input, length.toInt())
             }
         }
-        return HttpRequest(requestLine[0].uppercase(), requestLine[1], headers, String(bodyBytes, Charsets.UTF_8))
+        return HttpRequest(requestLine[0].uppercase(), requestLine[1], headers, bodyBytes)
     }
 
     private fun readExactly(input: InputStream, length: Int): ByteArray {
@@ -276,17 +287,25 @@ class AndroidLocalBridgeServer private constructor() {
             }
 
             // Route request
+            val mcpSession = headers["mcp-session-id"]
             runBlocking {
                 when {
-                    path == "/browser" -> handleMcpHttp(McpEndpoint.BROWSER, method, body, out)
-                    path == "/terminal" -> handleMcpHttp(McpEndpoint.TERMINAL, method, body, out)
-                    path == "/extension_developer" -> handleMcpHttp(McpEndpoint.EXTENSION_DEVELOPER, method, body, out)
-                    path == "/google_flow" -> handleMcpHttp(McpEndpoint.GOOGLE_FLOW, method, body, out)
-                    path == "/android" -> handleMcpHttp(McpEndpoint.ANDROID, method, body, out)
-                    path == "/notes" -> handleMcpHttp(McpEndpoint.NOTES, method, body, out)
-                    path == "/jarvis" -> handleMcpHttp(McpEndpoint.JARVIS, method, body, out)
-                    path == "/theme" -> handleMcpHttp(McpEndpoint.THEME, method, body, out)
-                    path == "/cinecode_skills" -> handleMcpHttp(McpEndpoint.CINECODE_SKILLS, method, body, out)
+                    path == "/browser" -> handleMcpHttp(McpEndpoint.BROWSER, method, body, out, mcpSession)
+                    path == "/terminal" -> handleMcpHttp(McpEndpoint.TERMINAL, method, body, out, mcpSession)
+                    path == "/extension_developer" -> handleMcpHttp(McpEndpoint.EXTENSION_DEVELOPER, method, body, out, mcpSession)
+                    path == "/google_flow" -> handleMcpHttp(McpEndpoint.GOOGLE_FLOW, method, body, out, mcpSession)
+                    path == "/android" -> handleMcpHttp(McpEndpoint.ANDROID, method, body, out, mcpSession)
+                    path == "/notes" -> handleMcpHttp(McpEndpoint.NOTES, method, body, out, mcpSession)
+                    path == "/jarvis" -> handleMcpHttp(McpEndpoint.JARVIS, method, body, out, mcpSession)
+                    path == "/theme" -> handleMcpHttp(McpEndpoint.THEME, method, body, out, mcpSession)
+                    path == "/cinecode_skills" -> handleMcpHttp(McpEndpoint.CINECODE_SKILLS, method, body, out, mcpSession)
+                    path == "/api/device/exec" -> {
+                        socket.soTimeout = 0
+                        com.shriram.cinecode.data.adb.DeviceAccess.handleExecHttp(headers, req.bodyBytes, out)
+                    }
+                    path == "/api/device/exit" -> {
+                        com.shriram.cinecode.data.adb.DeviceAccess.handleExitHttp(queryString, out)
+                    }
                     path == "/api/health" -> {
                         val res = JSONObject().apply {
                             put("status", "ok")
@@ -337,7 +356,13 @@ class AndroidLocalBridgeServer private constructor() {
      * MCP over HTTP: a POSTed JSON-RPC request gets its response, notifications (no id) get 202 with no body, a
      * batch gets an array, and GET (the optional server-sent event stream) is not offered (405).
      */
-    private suspend fun handleMcpHttp(endpoint: McpEndpoint, method: String, body: String, out: OutputStream) {
+    private suspend fun handleMcpHttp(
+        endpoint: McpEndpoint,
+        method: String,
+        body: String,
+        out: OutputStream,
+        mcpSession: String? = null
+    ) {
         if (method != "POST") {
             sendResponse(out, 405, "application/json", jsonRpcError(null, -32600, "Use POST for MCP requests").toString(), allow = "POST, OPTIONS")
             return
@@ -357,7 +382,7 @@ class AndroidLocalBridgeServer private constructor() {
                     continue
                 }
                 if (!item.has("id")) continue
-                responses.put(runMcpRequest(item, endpoint))
+                responses.put(runMcpRequest(item, endpoint, mcpSession))
             }
             if (responses.length() == 0) sendResponse(out, 202, "application/json", "")
             else sendResponse(out, 200, "application/json", responses.toString())
@@ -368,18 +393,30 @@ class AndroidLocalBridgeServer private constructor() {
             req == null -> sendResponse(out, 200, "application/json", jsonRpcError(null, -32700, "Parse error").toString())
             // a notification (e.g. notifications/initialized) has no id and gets no response
             !req.has("id") -> sendResponse(out, 202, "application/json", "")
-            else -> sendResponse(out, 200, "application/json", runMcpRequest(req, endpoint).toString())
+            else -> sendResponse(out, 200, "application/json", runMcpRequest(req, endpoint, mcpSession).toString())
         }
     }
 
     /** One JSON-RPC request; a failure becomes a JSON-RPC error instead of a dropped connection. */
-    private suspend fun runMcpRequest(req: JSONObject, endpoint: McpEndpoint): JSONObject = try {
-        handleMcpJsonRpc(req.toString(), endpoint)
+    private suspend fun runMcpRequest(req: JSONObject, endpoint: McpEndpoint, mcpSession: String? = null): JSONObject = try {
+        val patched = injectJarvisSession(req, endpoint, mcpSession)
+        handleMcpJsonRpc(patched.toString(), endpoint)
     } catch (e: CancellationException) {
         throw e
     } catch (t: Throwable) {
         Log.w(TAG, "MCP request ${req.optString("method")} failed", t)
         jsonRpcError(req.opt("id"), -32603, "Internal error: ${t.message ?: t.javaClass.simpleName}")
+    }
+
+    private fun injectJarvisSession(req: JSONObject, endpoint: McpEndpoint, session: String?): JSONObject {
+        if (endpoint == McpEndpoint.JARVIS && !session.isNullOrBlank() && req.optString("method") == "tools/call") {
+            val params = req.optJSONObject("params")
+            if (params != null) {
+                val args = params.optJSONObject("arguments") ?: JSONObject().also { params.put("arguments", it) }
+                args.put("_mcp_session", session)
+            }
+        }
+        return req
     }
 
     private fun jsonRpcError(id: Any?, code: Int, message: String): JSONObject = JSONObject().apply {
@@ -446,6 +483,7 @@ class AndroidLocalBridgeServer private constructor() {
             "initialize" -> {
                 val result = JSONObject().apply {
                     put("protocolVersion", "2024-11-05")
+                    if (endpoint == McpEndpoint.BROWSER) put("instructions", com.shriram.cinecode.ui.browser.mcp.BrowserAgentMcp.INSTRUCTIONS)
                     if (endpoint == McpEndpoint.ANDROID) put("instructions", com.shriram.cinecode.data.automation.AndroidAutomation.INSTRUCTIONS)
                     if (endpoint == McpEndpoint.NOTES) put("instructions", com.shriram.cinecode.data.notes.NotesMcp.INSTRUCTIONS)
                     if (endpoint == McpEndpoint.JARVIS) put("instructions", com.shriram.cinecode.data.jarvis.JarvisMcp.INSTRUCTIONS)
@@ -476,7 +514,7 @@ class AndroidLocalBridgeServer private constructor() {
                 val availableTools = getMcpToolsList(endpoint)
                 val toolExists = (0 until availableTools.length()).any {
                     availableTools.getJSONObject(it).getString("name") == toolName
-                }
+                } || (endpoint == McpEndpoint.BROWSER && com.shriram.cinecode.ui.browser.mcp.BrowserAgentMcp.isBrowserTool(toolName))
                 if (!toolExists) {
                     res.put("error", JSONObject().apply {
                         put("code", -32601)
@@ -498,6 +536,7 @@ class AndroidLocalBridgeServer private constructor() {
     }
 
     private suspend fun getMcpToolsList(endpoint: McpEndpoint): JSONArray {
+        if (endpoint == McpEndpoint.BROWSER) return com.shriram.cinecode.ui.browser.mcp.BrowserAgentMcp.tools()
         if (endpoint == McpEndpoint.EXTENSION_DEVELOPER) return com.shriram.cinecode.ui.browser.WebViewExtensionDeveloper.tools(appContext!!)
         if (endpoint == McpEndpoint.ANDROID) return com.shriram.cinecode.data.automation.AndroidAutomation.tools()
         if (endpoint == McpEndpoint.NOTES) return com.shriram.cinecode.data.notes.NotesMcp.tools()
@@ -840,6 +879,9 @@ class AndroidLocalBridgeServer private constructor() {
 
         if (toolName.startsWith("flow_")) {
             return com.shriram.cinecode.ui.browser.BrowserExtensionManager.instance.callTool("google-flow", toolName, args)
+        }
+        if (com.shriram.cinecode.ui.browser.mcp.BrowserAgentMcp.isBrowserTool(toolName)) {
+            return com.shriram.cinecode.ui.browser.mcp.BrowserAgentMcp.call(appContext!!, toolName, args)
         }
 
         val bManager = BrowserSessionManager.instance

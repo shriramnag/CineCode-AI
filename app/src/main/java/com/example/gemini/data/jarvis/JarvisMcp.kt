@@ -30,10 +30,12 @@ import java.util.TimeZone
  */
 object JarvisMcp {
 
-    const val INSTRUCTIONS = "Jarvis controls the CineCode-AI app for a user who is talking hands-free. The first message of a Jarvis chat " +
+    const val INSTRUCTIONS = "Jarvis controls the CineCode-AI app for a user who is talking or managing tasks. The first message of a Jarvis chat " +
         "has the full guide and tool list; jarvis_help repeats it. Call these tools directly by name (no searching, no config reading). " +
         "Everything the user should hear goes through jarvis_speak (short, plain sentences, no markdown); jarvis_ask asks and returns the " +
-        "spoken answer. Big jobs go to jarvis_task_start (its own watched chat); the phone reports back with [Phone event] messages. " +
+        "spoken answer. Big jobs go to jarvis_task_start (its own watched chat, optionally assigned to a team); the phone reports back with [Phone event] messages. " +
+        "Keep multi-step work in jarvis_mission_set / jarvis_mission_update, and reuse roles with jarvis_team_create. " +
+        "GitHub: jarvis_github_status, jarvis_github_list_repos, jarvis_github_clone, jarvis_github_create_repo. " +
         "Before longer steps call jarvis_status with 2-6 words. App help: jarvis_app_guide, jarvis_get_config, jarvis_open_settings. " +
         "These tools change the app directly; never use tap/scroll tools for what they can do. Ask before deleting anything."
 
@@ -59,6 +61,7 @@ object JarvisMcp {
 
     private val chatId = "id" to prop("string", "Chat id from jarvis_list_chats (default: the chat on screen)")
     private val taskId = "id" to prop("string", "Task id (from the context note, jarvis_task_list or jarvis_task_start; the first 8 characters are enough)")
+    private val managerId = "manager_id" to prop("string", "Which Jarvis manages it: \"voice\" or your chat id (pass the same value to every call)")
     private val limit = "limit" to prop("integer", "Entries per page, 1-$MAX_LIMIT (default $DEFAULT_LIMIT)")
     private val offset = "offset" to prop("integer", "Entries to skip (default 0)")
 
@@ -93,29 +96,71 @@ object JarvisMcp {
         // ---- tasks (Jarvis as a manager)
         put(tool("jarvis_task_start",
             "Start a big, independent job as a TASK in its own new chat that the phone watches for you (a build, a refactor, a bug fix, a long " +
-                "investigation). The phone tells you with a [Phone event] message when it finishes, fails, gets stuck, needs an approval or asks " +
+                "investigation), optionally done by one of your teams. The phone tells you with a [Phone event] message when it finishes, fails, gets stuck, needs an approval or asks " +
                 "something. Do quick things yourself instead. Returns the task id.",
             listOf("goal"),
             "goal" to prop("string", "Full instructions for the task's agent, as clear and complete as the user's intent allows"),
             "title" to prop("string", "Short name, 2-5 words (e.g. \"Release build\")"),
-            "agent" to prop("string", "claude or agy (default: the app's new-chat agent)", listOf("claude", "agy")),
+            "team" to prop("string", "Optional team name (jarvis_team_create): inherits agent, model, project and role"),
+            "agent" to prop("string", "claude, agy, gemini, opencode, codex, terminal or jarvis (default: team's or new-chat agent)", listOf("claude", "agy", "gemini", "opencode", "codex", "terminal", "jarvis")),
             "model" to prop("string", "Model id or part of its name (default: the agent's default)"),
             "project" to prop("string", "Project name or path to work in (default: the active project)"),
-            "open" to prop("boolean", "Also show the chat on screen (default false)")))
+            "open" to prop("boolean", "Also show the chat on screen (default false)"),
+            managerId))
         put(tool("jarvis_task_list", "The tasks Jarvis manages: state (starting, running, waiting for approval, asking a question, no progress, done, failed, stopped), age and last note.",
-            emptyList(), "include_finished" to prop("boolean", "Also list finished tasks (default true)"), limit))
+            emptyList(), "include_finished" to prop("boolean", "Also list finished tasks (default true)"), limit, managerId))
         put(tool("jarvis_task_get", "One task in detail: goal, state, last note, and its latest reply or progress. Use it for \"how is X going?\".",
-            listOf("id"), taskId, "messages" to prop("integer", "Also include this many of its newest messages (default 3, 0-10)")))
+            listOf("id"), taskId, "messages" to prop("integer", "Also include this many of its newest messages (default 3, 0-10)"), managerId))
         put(tool("jarvis_task_reply",
             "Send the task a follow-up, a correction or a new direction (\"also run the tests\", \"use the other API\"). With interrupt=true a task " +
                 "that is still working is stopped first and then gets this message.",
             listOf("id", "message"), taskId, "message" to prop("string", "What to tell the task's agent"),
-            "interrupt" to prop("boolean", "Stop the running task first (default false)")))
+            "interrupt" to prop("boolean", "Stop the running task first (default false)"), managerId))
         put(tool("jarvis_task_answer", "Answer the multiple-choice question a task is asking (option number, option name, or free text; \"skip\" lets it decide).",
-            listOf("id", "answer"), taskId, "answer" to prop("string", "The answer")))
-        put(tool("jarvis_task_stop", "Stop what a task is doing right now.", listOf("id"), taskId))
+            listOf("id", "answer"), taskId, "answer" to prop("string", "The answer"), managerId))
+        put(tool("jarvis_task_stop", "Stop what a task is doing right now.", listOf("id"), taskId, managerId))
         put(tool("jarvis_task_open", "Show a task's chat on screen.", listOf("id"), taskId))
-        put(tool("jarvis_task_close", "Stop watching a task and remove it from the list (the chat itself stays).", listOf("id"), taskId))
+        put(tool("jarvis_task_close", "Stop watching a task and remove it from the list (the chat itself stays).", listOf("id"), taskId, managerId))
+        // ---- missions & teams
+        put(tool("jarvis_mission_set",
+            "Start (or replace) your mission for a multi-step job: goal, completion criteria (done_when), steps and optional autopilot.",
+            listOf("goal"),
+            "goal" to prop("string", "What the whole job must achieve"),
+            "done_when" to prop("string", "Concrete criteria for done"),
+            "steps" to prop("string", "The plan, one step per line"),
+            "autopilot" to prop("boolean", "Keep going until done"),
+            managerId))
+        put(tool("jarvis_mission_update",
+            "Update your mission: step status (todo, doing, done, blocked) & note, add_steps, mission status (active, done, paused), autopilot, notes.",
+            emptyList(),
+            "step" to prop("integer", "1-based step number to update"),
+            "step_status" to prop("string", "New status for that step", listOf("todo", "doing", "done", "blocked")),
+            "note" to prop("string", "Short note on that step"),
+            "add_steps" to prop("string", "New steps to append, one per line"),
+            "status" to prop("string", "Mission status", listOf("active", "done", "paused")),
+            "autopilot" to prop("boolean", "Turn autopilot on or off"),
+            "notes" to prop("string", "Mission notes (replaces earlier notes)"),
+            managerId))
+        put(tool("jarvis_mission_get",
+            "Your mission brief: goal, steps, teams and tasks.",
+            emptyList(), managerId))
+        put(tool("jarvis_team_create",
+            "Create or update a named team role (e.g. builders, reviewers) so jarvis_task_start(team=...) reuses its agent, model, project and role.",
+            listOf("name"),
+            "name" to prop("string", "Team name, one or two words"),
+            "agent" to prop("string", "claude, agy, gemini, opencode, codex, terminal or jarvis", listOf("claude", "agy", "gemini", "opencode", "codex", "terminal", "jarvis")),
+            "model" to prop("string", "Model id or part of its name"),
+            "role" to prop("string", "Instructions sent with each task assigned to this team"),
+            "project" to prop("string", "Project name or path for this team"),
+            managerId))
+        put(tool("jarvis_team_list",
+            "List your configured teams with agent, model, project and role.",
+            emptyList(), managerId))
+        put(tool("jarvis_team_delete",
+            "Delete a team (running tasks continue).",
+            listOf("name"),
+            "name" to prop("string", "Team name"),
+            managerId))
         // ---- everyday
         put(tool("jarvis_set_timer",
             "Set a timer that Jarvis announces out loud when it ends (cooking, laundry, breaks). Give seconds or minutes.",
@@ -151,13 +196,13 @@ object JarvisMcp {
             "Plan usage: the 5-hour window and the 7-day window with percent used, percent left and when each resets (Claude Code and Antigravity), " +
                 "plus context use and cost of the Claude chat on screen. Always name both windows when answering.",
             emptyList(),
-            "agent" to prop("string", "Which agent (default both)", listOf("all", "claude", "agy")),
+            "agent" to prop("string", "Which agent (default all)", listOf("all", "claude", "agy", "codex")),
             "refresh" to prop("boolean", "Fetch fresh numbers first (default true)")))
         // ---- chats
         put(tool("jarvis_list_chats",
-            "List chats of Claude Code and Antigravity, newest first, with paging. Jarvis' own hidden chats are left out unless asked for.",
+            "List chats across Claude Code, Antigravity, Gemini, Codex, OpenCode, Terminal, and Jarvis, newest first, with paging. Jarvis' own hidden chats are left out unless asked for.",
             emptyList(),
-            "agent" to prop("string", "Only this agent", listOf("all", "claude", "agy")),
+            "agent" to prop("string", "Only this agent", listOf("all", "claude", "agy", "gemini", "opencode", "codex", "terminal", "jarvis")),
             "running" to prop("boolean", "Only chats that are working right now"),
             "project" to prop("string", "Only chats of a project (part of its name or path)"),
             "query" to prop("string", "Words in the title"),
@@ -185,7 +230,7 @@ object JarvisMcp {
             "Start a new chat. With a message it runs as a watched task (same as jarvis_task_start); without one an empty chat opens on screen. " +
                 "Use it only when the user asked for a new chat; prefer jarvis_task_start for delegated work.",
             emptyList(),
-            "agent" to prop("string", "claude or agy (default: the app's current new-chat agent)", listOf("claude", "agy")),
+            "agent" to prop("string", "claude, agy, gemini, opencode, codex, terminal or jarvis (default: app's new-chat agent)", listOf("claude", "agy", "gemini", "opencode", "codex", "terminal", "jarvis")),
             "message" to prop("string", "The first message / task"),
             "model" to prop("string", "Model id or name (default: the agent's default)"),
             "project" to prop("string", "Project name or path to work in (default: the active project)"),
@@ -207,7 +252,7 @@ object JarvisMcp {
         // ---- models and chat settings
         put(tool("jarvis_list_models",
             "Models available to each agent, marking the selected one.",
-            emptyList(), "agent" to prop("string", "Which agent (default the chat on screen, or both)", listOf("all", "claude", "agy"))))
+            emptyList(), "agent" to prop("string", "Which agent (default chat on screen, or all)", listOf("all", "claude", "agy", "gemini", "opencode", "codex", "terminal", "jarvis"))))
         put(tool("jarvis_set_model",
             "Change the model. With id it changes that chat or task (also one that is not on screen); without id scope=screen changes the chat on screen, " +
                 "scope=jarvis the model of the Jarvis chat itself. The model can be a part of its name. Applies to the chat's next message.",
@@ -263,6 +308,32 @@ object JarvisMcp {
             "Search text in the files of the active project (or another project). Returns file, line number and the line, paged.",
             listOf("query"), "query" to prop("string", "Text to find"),
             "project" to prop("string", "Project name or path (default: the active project)"), limit, offset))
+        // ---- GitHub
+        put(tool("jarvis_github_status",
+            "GitHub account status (PAT and/or gh CLI): signed in user, repo counts, and git commit identity.",
+            emptyList()))
+        put(tool("jarvis_github_list_repos",
+            "List repositories of the signed-in GitHub account (newest first), with optional search and pagination.",
+            emptyList(),
+            "query" to prop("string", "Part of name, description or language"),
+            "reload" to prop("boolean", "Reload fresh list from GitHub (default false)"),
+            limit, offset))
+        put(tool("jarvis_github_clone",
+            "Clone a GitHub repository into the home folder (supports private repos) and optionally open it as the active IDE project.",
+            listOf("repo"),
+            "repo" to prop("string", "Repository name, owner/name, or HTTPS URL"),
+            "folder" to prop("string", "Folder name inside home directory (default: repo name)"),
+            "open" to prop("boolean", "Make it active IDE project (default true)"),
+            "show_ide" to prop("boolean", "Also switch to IDE screen (default false)")))
+        put(tool("jarvis_github_create_repo",
+            "Create a new GitHub repository, link a local project directory as remote origin, and push commits.",
+            listOf("name", "private"),
+            "name" to prop("string", "Repository name, or org/name"),
+            "private" to prop("boolean", "true = private, false = public"),
+            "description" to prop("string", "Short description"),
+            "project" to prop("string", "Project name, path, or \"active\" to link & push"),
+            "push" to prop("boolean", "Push existing commits right away (default true)"),
+            "remote" to prop("string", "Remote name (default origin)")))
         // ---- session and memory
         put(tool("jarvis_new_session",
             "Start a fresh Jarvis chat on the next message (the user asked to start again, or the chat got long). Never do this by yourself while work is running.",
@@ -276,11 +347,20 @@ object JarvisMcp {
 
     // ---------------- dispatcher
 
-    suspend fun call(context: Context, name: String, args: JSONObject): JSONObject {
+    suspend fun call(
+        context: Context,
+        name: String,
+        args: JSONObject,
+        allowWhenVoiceDisabled: Boolean = false
+    ): JSONObject {
         if (!JarvisController.isAttached) return error("The app is still starting. Try again in a moment.")
-        if (!JarvisPreferences.enabled.value) return error("Jarvis is turned off. The user can turn it on in Settings → Jarvis.")
+        if (!allowWhenVoiceDisabled && !JarvisPreferences.enabled.value) {
+            return error("Jarvis is turned off. The user can turn it on in Settings → Jarvis.")
+        }
+        JarvisMissionStore.init(context)
         JarvisController.onToolCall(name)
         friendlyStatus(name, args)?.let { JarvisController.postStatus(it, explicit = false) }
+        val mgrId = JarvisMissionStore.managerIdFromArgs(args)
         return try {
             when (name) {
                 "jarvis_speak" -> {
@@ -330,6 +410,16 @@ object JarvisMcp {
                     JarvisTasks.close(t.id)
                     text("No longer watching ${t.title}.")
                 }
+                "jarvis_mission_set" -> missionSet(mgrId, args)
+                "jarvis_mission_update" -> missionUpdate(mgrId, args)
+                "jarvis_mission_get" -> text(JarvisMissionStore.buildMissionBrief(mgrId))
+                "jarvis_team_create" -> teamCreate(mgrId, args)
+                "jarvis_team_list" -> teamList(mgrId)
+                "jarvis_team_delete" -> {
+                    val tName = args.optString("name").trim()
+                    if (tName.isEmpty()) return error("name is required")
+                    text(if (JarvisMissionStore.deleteTeam(mgrId, tName)) "Removed team $tName." else "No team named $tName.")
+                }
                 "jarvis_set_timer" -> {
                     val total = Math.round(args.optDouble("minutes", 0.0) * 60).toInt() + args.optInt("seconds", 0)
                     if (total !in 1..(24 * 3600)) return error("Give a length between 1 second and 24 hours.")
@@ -355,6 +445,10 @@ object JarvisMcp {
                     text("Opened $u.")
                 }
                 "jarvis_ide_search_code" -> ideSearchCode(args)
+                "jarvis_github_status" -> json(JarvisGitHubHelper.status(context))
+                "jarvis_github_list_repos" -> githubListRepos(context, args)
+                "jarvis_github_clone" -> githubClone(context, args)
+                "jarvis_github_create_repo" -> githubCreateRepo(context, args)
                 "jarvis_stop_all" -> { JarvisController.stopEverything(); text("Stopped.") }
                 "jarvis_get_state" -> getState()
                 "jarvis_app_guide" -> appGuide(args)
@@ -477,6 +571,10 @@ object JarvisMcp {
         "jarvis_task_stop" -> "Stopping the task"
         "jarvis_task_open" -> "Opening the task"
         "jarvis_task_close" -> "Closing the task"
+        "jarvis_mission_set", "jarvis_mission_update", "jarvis_mission_get" -> "Updating mission"
+        "jarvis_team_create", "jarvis_team_list", "jarvis_team_delete" -> "Managing teams"
+        "jarvis_github_status", "jarvis_github_list_repos" -> "Checking GitHub"
+        "jarvis_github_clone", "jarvis_github_create_repo" -> "Running GitHub action"
         "jarvis_app_guide" -> "Looking it up"
         "jarvis_get_config" -> "Reading your setup"
         "jarvis_open_settings" -> "Opening settings"
@@ -622,17 +720,31 @@ object JarvisMcp {
         "gemini" -> AgentKind.GEMINI
         "codex" -> AgentKind.CODEX
         "opencode" -> AgentKind.OPENCODE
+        "terminal" -> AgentKind.TERMINAL
+        "jarvis" -> AgentKind.JARVIS
         else -> vm.newChatAgent.value.takeIf { it in vm.enabledAgents.value } ?: vm.enabledAgents.value.firstOrNull() ?: AgentKind.CLAUDE
     }
 
     private suspend fun taskStart(args: JSONObject): JSONObject {
-        val goal = args.optString("goal").trim()
-        if (goal.isEmpty()) return error("goal is required")
-        val agent = agentArg(args.optString("agent"))
-        if (agent !in vm.enabledAgents.value) return error("${if (agent == AgentKind.CLAUDE) "Claude Code" else "Antigravity"} is turned off (Settings → Agents).")
-        val projectArg = args.optString("project").trim()
+        val rawGoal = args.optString("goal").trim()
+        if (rawGoal.isEmpty()) return error("goal is required")
+        val mgrId = JarvisMissionStore.managerIdFromArgs(args)
+        val teamName = args.optString("team").trim()
+        val team = if (teamName.isNotEmpty()) JarvisMissionStore.getTeam(mgrId, teamName)
+            ?: return error("No team named \"$teamName\". Create it first with jarvis_team_create.")
+        else null
+        val rawAgent = args.optString("agent").trim()
+        val agent = when {
+            rawAgent.isNotEmpty() -> agentArg(rawAgent)
+            team != null -> team.agent
+            else -> agentArg("")
+        }
+        if (agent !in vm.enabledAgents.value) return error("${agent.name.lowercase().replaceFirstChar { it.uppercase() }} is turned off (Settings → Agents).")
+        val projectArg = args.optString("project").trim().ifEmpty { team?.project.orEmpty() }
         val project = if (projectArg.isBlank()) null else findProject(projectArg) ?: return error("No project matches \"$projectArg\". Use jarvis_ide_list_projects.")
-        val model = args.optString("model").trim().takeIf { it.isNotEmpty() }?.let { findModel(it, modelsFor(agent))?.id ?: return error("No ${agent.name.lowercase()} model matches \"$it\".") }
+        val modelArg = args.optString("model").trim().ifEmpty { team?.model.orEmpty() }
+        val model = modelArg.takeIf { it.isNotEmpty() }?.let { findModel(it, modelsFor(agent))?.id ?: return error("No ${agent.name.lowercase()} model matches \"$it\".") }
+        val goal = if (team != null && team.role.isNotBlank()) "[Team: ${team.name} — Role: ${team.role}]\n\n$rawGoal" else rawGoal
         val t = JarvisTasks.start(agent, goal, args.optString("title").ifBlank { null }, model, project?.path)
         if (args.optBoolean("open")) {
             delay(2500)
@@ -640,7 +752,111 @@ object JarvisMcp {
             vm.requestViewMode("CHAT")
         }
         return json(JSONObject().put("task_id", t.id).put("title", t.title).put("agent", agent.name.lowercase()).put("status", "started")
+            .apply { if (team != null) put("team", team.name) }
             .put("note", "The phone will tell you when it finishes or needs something. Tell the user it started, then stop."))
+    }
+
+    private fun missionSet(managerId: String, args: JSONObject): JSONObject {
+        val goal = args.optString("goal").trim()
+        if (goal.isEmpty()) return error("goal is required")
+        JarvisMissionStore.setMission(
+            managerId = managerId,
+            goal = goal,
+            doneWhen = args.optString("done_when"),
+            rawSteps = args.optString("steps"),
+            autopilot = args.optBoolean("autopilot", false)
+        )
+        return text(JarvisMissionStore.buildMissionBrief(managerId))
+    }
+
+    private fun missionUpdate(managerId: String, args: JSONObject): JSONObject {
+        val stepNum = if (args.has("step") && !args.isNull("step")) args.optInt("step", -1).takeIf { it > 0 } else null
+        val stepStatus = args.optString("step_status").ifBlank { null }
+        val stepNote = if (args.has("note") && !args.isNull("note")) args.optString("note") else null
+        val addSteps = args.optString("add_steps").ifBlank { null }
+        val status = args.optString("status").ifBlank { null }
+        val autopilot = if (args.has("autopilot") && !args.isNull("autopilot")) args.optBoolean("autopilot") else null
+        val notes = if (args.has("notes") && !args.isNull("notes")) args.optString("notes") else null
+        JarvisMissionStore.updateMission(managerId, stepNum, stepStatus, stepNote, addSteps, status, autopilot, notes)
+        return text(JarvisMissionStore.buildMissionBrief(managerId))
+    }
+
+    private fun teamCreate(managerId: String, args: JSONObject): JSONObject {
+        val name = args.optString("name").trim()
+        if (name.isEmpty()) return error("name is required")
+        val agent = agentArg(args.optString("agent"))
+        val modelArg = args.optString("model").trim()
+        val resolvedModel = modelArg.takeIf { it.isNotEmpty() }?.let { findModel(it, modelsFor(agent))?.id ?: it }.orEmpty()
+        val projArg = args.optString("project").trim()
+        val team = JarvisMissionStore.upsertTeam(
+            managerId,
+            JarvisMissionStore.Team(
+                name = name,
+                agent = agent,
+                model = resolvedModel,
+                role = args.optString("role").trim(),
+                project = projArg
+            )
+        )
+        return json(team.toJson().put("status", "saved"))
+    }
+
+    private fun teamList(managerId: String): JSONObject {
+        val teams = JarvisMissionStore.getWorkspace(managerId).teams
+        return json(JSONObject().put("teams", JSONArray().apply { teams.forEach { put(it.toJson()) } }))
+    }
+
+    private suspend fun githubListRepos(context: Context, args: JSONObject): JSONObject {
+        val repos = JarvisGitHubHelper.listRepos(
+            context = context,
+            query = args.optString("query"),
+            reload = args.optBoolean("reload", false)
+        ).getOrElse { return error(it.message ?: "Failed to list GitHub repositories.") }
+        return json(pagedJson("repositories", repos.map { r ->
+            JSONObject()
+                .put("full_name", r.fullName)
+                .put("description", r.description)
+                .put("language", r.language)
+                .put("stars", r.stars)
+                .put("clone_url", r.cloneUrl)
+                .put("html_url", r.htmlUrl)
+        }, args))
+    }
+
+    private suspend fun githubClone(context: Context, args: JSONObject): JSONObject {
+        val res = JarvisGitHubHelper.cloneRepo(
+            context = context,
+            repoArg = args.optString("repo"),
+            folderArg = args.optString("folder").ifBlank { null },
+            openProject = if (args.has("open")) args.optBoolean("open", true) else true,
+            showIde = args.optBoolean("show_ide", false),
+            onOpenProject = { p, showIde ->
+                TermuxDaemonManager.setActiveProject(p)
+                vm.onProjectChanged(p.path)
+                if (showIde) vm.requestViewMode("IDE")
+            }
+        ).getOrElse { return error(it.message ?: "Failed to clone repository.") }
+        return json(res)
+    }
+
+    private suspend fun githubCreateRepo(context: Context, args: JSONObject): JSONObject {
+        val projArg = args.optString("project").trim()
+        val resolvedProj = when {
+            projArg.isEmpty() -> null
+            projArg.equals("active", ignoreCase = true) -> TermuxDaemonManager.activeProject.value?.path
+                ?: return error("No active IDE project is selected.")
+            else -> findProject(projArg)?.path ?: return error("No project matches \"$projArg\".")
+        }
+        val res = JarvisGitHubHelper.createRepo(
+            context = context,
+            nameArg = args.optString("name"),
+            isPrivate = args.optBoolean("private", true),
+            description = args.optString("description"),
+            projectDir = resolvedProj,
+            push = if (args.has("push")) args.optBoolean("push", true) else true,
+            remote = args.optString("remote", "origin")
+        ).getOrElse { return error(it.message ?: "Failed to create GitHub repository.") }
+        return json(res)
     }
 
     private fun taskJson(t: JarvisTasks.Task) = JSONObject().apply {
@@ -704,7 +920,8 @@ object JarvisMcp {
                         AgentKind.CODEX -> vm.codexBackend.selectedModelId.value
                         AgentKind.OPENCODE -> vm.openCodeBackend.selectedModelId.value
                         AgentKind.AGY -> vm.agyBackend.selectedModelId.value
-                        AgentKind.TERMINAL, AgentKind.JARVIS -> ""
+                        AgentKind.TERMINAL -> vm.terminalBackend.selectedModelId.value
+                        AgentKind.JARVIS -> vm.jarvisBackend.selectedModelId.value
                     })
             } ?: JSONObject.NULL)
             put("tasks", JSONArray().apply { JarvisTasks.tasks.value.take(8).forEach { put(taskJson(it)) } })
@@ -984,7 +1201,8 @@ object JarvisMcp {
         AgentKind.OPENCODE -> vm.openCodeBackend.availableModels.value
         AgentKind.GEMINI -> vm.geminiBackend.availableModels.value
         AgentKind.AGY -> vm.agyBackend.enabledModels.value
-        AgentKind.TERMINAL, AgentKind.JARVIS -> emptyList()
+        AgentKind.TERMINAL -> vm.terminalBackend.availableModels.value
+        AgentKind.JARVIS -> vm.jarvisBackend.availableModels.value
     }
 
     private fun findModel(text: String, models: List<AiModel>): AiModel? {
@@ -1007,6 +1225,8 @@ object JarvisMcp {
             if (which == "all" || which == "codex") section("codex", AgentKind.CODEX, vm.codexBackend.selectedModelId.value)
             if (which == "all" || which == "opencode") section("opencode", AgentKind.OPENCODE, vm.openCodeBackend.selectedModelId.value)
             if (which == "all" || which == "gemini") section("gemini", AgentKind.GEMINI, vm.geminiBackend.selectedModel.value)
+            if (which == "all" || which == "terminal") section("terminal", AgentKind.TERMINAL, vm.terminalBackend.selectedModelId.value)
+            if (which == "all" || which == "jarvis") section("jarvis", AgentKind.JARVIS, vm.jarvisBackend.selectedModelId.value)
             put("jarvis_chat_model", JarvisPreferences.modelId.value.ifBlank { "default" })
         })
     }
@@ -1025,7 +1245,12 @@ object JarvisMcp {
             val kind = JarvisPreferences.agentKind
             val m = findModel(wanted, modelsFor(kind)) ?: return error("No ${kind.name.lowercase()} model matches \"$wanted\".")
             JarvisPreferences.modelId.set(m.id)
-            if (kind == AgentKind.CLAUDE && JarvisPreferences.currentChatId.value.isNotBlank()) JarvisController.jarvisClaude.selectModel(m.id)
+            when (kind) {
+                AgentKind.CLAUDE -> if (JarvisPreferences.currentChatId.value.isNotBlank()) JarvisController.jarvisClaude.selectModel(m.id)
+                AgentKind.TERMINAL -> vm.terminalBackend.selectModel(m.id)
+                AgentKind.JARVIS -> vm.jarvisBackend.selectModel(m.id)
+                else -> Unit
+            }
             return text("The Jarvis chat now uses ${m.displayName.ifBlank { m.id }}.")
         }
         val conv = vm.currentConversation.value ?: return error("No chat on screen. Pass id to change another chat.")
@@ -1095,16 +1320,19 @@ object JarvisMcp {
             bool("group_chats_by_workspace", "Group the chat list by project", false, { vm.groupChatsByWorkspace.value }, { vm.setGroupChatsByWorkspace(it) }),
             bool("floating_bubble", "Floating chat bubble over other apps", false, { vm.isFloatingBubbleEnabled.value }, { vm.setFloatingBubbleEnabled(it) }),
             bool("vibrate_when_chat_done", "A light buzz when a chat finishes", false, { ChatCompletionMonitor.vibrate.value }, { ChatCompletionMonitor.setVibrate(it) }),
-            Setting("new_chat_agent", "Agent of new chats", "claude|agy|codex|opencode", false, get = { vm.newChatAgent.value.name.lowercase() }, set = { v ->
+            Setting("new_chat_agent", "Agent of new chats", "claude|agy|gemini|codex|opencode|terminal|jarvis", false, get = { vm.newChatAgent.value.name.lowercase() }, set = { v ->
                 val a = when (v.trim().lowercase()) {
                     "claude" -> AgentKind.CLAUDE
                     "agy", "antigravity" -> AgentKind.AGY
+                    "gemini" -> AgentKind.GEMINI
                     "codex" -> AgentKind.CODEX
                     "opencode" -> AgentKind.OPENCODE
+                    "terminal" -> AgentKind.TERMINAL
+                    "jarvis" -> AgentKind.JARVIS
                     else -> null
                 }
                 when {
-                    a == null -> "Use claude, agy, codex or opencode."
+                    a == null -> "Use claude, agy, gemini, codex, opencode, terminal or jarvis."
                     a !in vm.enabledAgents.value -> "That agent is turned off (Settings → Agents)."
                     else -> { vm.setNewChatAgent(a); null }
                 }

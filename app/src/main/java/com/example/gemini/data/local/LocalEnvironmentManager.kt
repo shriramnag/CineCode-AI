@@ -61,10 +61,16 @@ object LocalEnvironmentManager {
     // Minimum 10 MB required for a real Termux bootstrap archive
     private const val MIN_BOOTSTRAP_SIZE_BYTES = 10 * 1024 * 1024L
 
-    const val HARDCODED_ROOTFS_URL = "https://github.com/shriramnag/CineCode-AI/releases/download/rootfs-v1/bootrapz_2026-10-04.zip"
-    const val FALLBACK_ROOTFS_URL = "https://github.com/Santoshkurmi/antigem/releases/download/rootfs-v1/bootrapz_2026-10-04.zip"
-    const val HARDCODED_ROOTFS_TAG = "rootfs-v1"
-    const val HARDCODED_ROOTFS_ASSET = "bootrapz_2026-10-04.zip"
+    const val HARDCODED_ROOTFS_URL = "https://github.com/santoshkurmi/antigem/releases/download/rootfs-v2/bootrapz_2026-11-19.zip"
+    const val FALLBACK_ROOTFS_URL = "https://huggingface.co/datasets/santoshkurmi/rootfs-v2/resolve/main/bootrapz_2026-11-19.zip"
+    const val LEGACY_ROOTFS_URL = "https://github.com/Santoshkurmi/antigem/releases/download/rootfs-v1/bootrapz_2026-10-04.zip"
+    val ROOTFS_MIRROR_URLS = listOf(
+        HARDCODED_ROOTFS_URL,
+        FALLBACK_ROOTFS_URL,
+        LEGACY_ROOTFS_URL
+    )
+    const val HARDCODED_ROOTFS_TAG = "rootfs-v2"
+    const val HARDCODED_ROOTFS_ASSET = "bootrapz_2026-11-19.zip"
     const val HARDCODED_ROOTFS_SIZE_BYTES = 350 * 1024 * 1024L
 
     const val UBUNTU_ROOTFS_URL = "https://github.com/termux/proot-distro/releases/download/v4.30.1/ubuntu-questing-aarch64-pd-v4.30.1.tar.xz"
@@ -224,62 +230,54 @@ object LocalEnvironmentManager {
         val tallocLib = File(libDir, "libtalloc.so.2")
         val tallocBin = File(binDir, "libtalloc.so.2")
 
-        try {
-            if (!prootBin.exists() || prootBin.length() < 10000L) {
+        val bundledBinAssets = runCatching { context.assets.list("bin")?.toSet() }.getOrNull().orEmpty()
+        val bundledLibAssets = runCatching { context.assets.list("lib")?.toSet() }.getOrNull().orEmpty()
+
+        if ("proot" in bundledBinAssets && (!prootBin.exists() || prootBin.length() < 10000L)) {
+            runCatching {
                 context.assets.open("bin/proot").use { input ->
-                    FileOutputStream(prootBin).use { output ->
-                        input.copyTo(output)
-                    }
+                    FileOutputStream(prootBin).use { output -> input.copyTo(output) }
                 }
                 prootBin.setExecutable(true, false)
                 prootBin.setReadable(true, false)
-                try { Os.chmod(prootBin.absolutePath, 493) } catch (_: Exception) {}
+                runCatching { Os.chmod(prootBin.absolutePath, 493) }
+            }.onFailure {
+                Log.w(TAG, "Failed extracting proot from assets: ${it.message}")
             }
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed extracting proot from assets: ${e.message}")
         }
 
-        try {
-            if (!loaderBin.exists() || loaderBin.length() < 1000L) {
+        if ("loader" in bundledBinAssets && (!loaderBin.exists() || loaderBin.length() < 1000L)) {
+            runCatching {
                 context.assets.open("bin/loader").use { input ->
-                    FileOutputStream(loaderBin).use { output ->
-                        input.copyTo(output)
-                    }
+                    FileOutputStream(loaderBin).use { output -> input.copyTo(output) }
                 }
                 loaderBin.setExecutable(true, false)
                 loaderBin.setReadable(true, false)
-                try { Os.chmod(loaderBin.absolutePath, 493) } catch (_: Exception) {}
+                runCatching { Os.chmod(loaderBin.absolutePath, 493) }
+            }.onFailure {
+                Log.w(TAG, "Failed extracting loader from assets: ${it.message}")
             }
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed extracting loader from assets: ${e.message}")
         }
 
-        try {
-            if (!tallocLib.exists() || tallocLib.length() < 1000L) {
-                val assetStream = try {
-                    context.assets.open("lib/libtalloc.so.2")
-                } catch (_: Exception) {
-                    context.assets.open("bin/libtalloc.so.2")
-                }
-                assetStream.use { input ->
-                    FileOutputStream(tallocLib).use { output ->
-                        input.copyTo(output)
-                    }
+        val hasBundledTalloc = "libtalloc.so.2" in bundledLibAssets || "libtalloc.so.2" in bundledBinAssets
+        if (hasBundledTalloc && (!tallocLib.exists() || tallocLib.length() < 1000L)) {
+            runCatching {
+                val assetPath = if ("libtalloc.so.2" in bundledLibAssets) "lib/libtalloc.so.2" else "bin/libtalloc.so.2"
+                context.assets.open(assetPath).use { input ->
+                    FileOutputStream(tallocLib).use { output -> input.copyTo(output) }
                 }
                 tallocLib.setReadable(true, false)
-                try { Os.chmod(tallocLib.absolutePath, 493) } catch (_: Exception) {}
+                runCatching { Os.chmod(tallocLib.absolutePath, 493) }
+            }.onFailure {
+                Log.w(TAG, "Failed extracting talloc from assets: ${it.message}")
             }
-            if (!tallocBin.exists() || tallocBin.length() < 1000L) {
-                if (tallocLib.exists()) {
-                    try {
-                        tallocLib.copyTo(tallocBin, overwrite = true)
-                        tallocBin.setReadable(true, false)
-                        try { Os.chmod(tallocBin.absolutePath, 493) } catch (_: Exception) {}
-                    } catch (_: Exception) {}
-                }
+        }
+        if (tallocLib.exists() && (!tallocBin.exists() || tallocBin.length() < 1000L)) {
+            runCatching {
+                tallocLib.copyTo(tallocBin, overwrite = true)
+                tallocBin.setReadable(true, false)
+                runCatching { Os.chmod(tallocBin.absolutePath, 493) }
             }
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed extracting talloc from assets: ${e.message}")
         }
 
         if (prootBin.exists() && prootBin.length() > 0L) {
@@ -981,26 +979,25 @@ object LocalEnvironmentManager {
                     updateInstallNotification(appContext, "Downloading $titlePrefix", "Connecting...", -1)
 
                     try {
-                        var reqUrl = targetUrl
-                        var response = httpClient.newCall(
-                            Request.Builder()
-                                .url(reqUrl)
-                                .header("User-Agent", "GeminiApp-LocalTerminal/${Build.SUPPORTED_ABIS.firstOrNull() ?: "arm64"}")
-                                .build()
-                        ).execute()
-
-                        if (!response.isSuccessful && response.code == 404 && reqUrl == HARDCODED_ROOTFS_URL) {
-                            response.close()
-                            reqUrl = FALLBACK_ROOTFS_URL
-                            response = httpClient.newCall(
+                        val candidateUrls = if (isTermux) ROOTFS_MIRROR_URLS else listOf(UBUNTU_ROOTFS_URL)
+                        var response: okhttp3.Response? = null
+                        for ((idx, candidate) in candidateUrls.withIndex()) {
+                            log("Requesting rootfs mirror (${idx + 1}/${candidateUrls.size}): $candidate")
+                            val resp = httpClient.newCall(
                                 Request.Builder()
-                                    .url(reqUrl)
+                                    .url(candidate)
                                     .header("User-Agent", "GeminiApp-LocalTerminal/${Build.SUPPORTED_ABIS.firstOrNull() ?: "arm64"}")
                                     .build()
                             ).execute()
+                            if (resp.isSuccessful || idx == candidateUrls.lastIndex) {
+                                response = resp
+                                break
+                            }
+                            Log.w(TAG, "Rootfs mirror returned HTTP ${resp.code}: $candidate")
+                            resp.close()
                         }
 
-                        response.use { resp ->
+                        (response ?: throw IllegalStateException("No rootfs mirror reachable")).use { resp ->
                             if (!resp.isSuccessful) {
                                 val errorMsg = "Download failed: HTTP ${resp.code} from release server."
                                 updateInstallNotification(appContext, "Installation Failed", errorMsg, -2, ongoing = false, force = true)
@@ -1760,6 +1757,14 @@ object LocalEnvironmentManager {
                 )
             } else {
                 configureEnvironmentFiles(appContext, prefixDir, binDir, etcDir, homeDir, projectsDir)
+                log("Adapting rootfs packages, symlinks & apt/dpkg hooks for ${appContext.packageName}...")
+                val stats = TermuxRelocation.applyRelocation(appContext, relocateFiles = true) { scanned ->
+                    _installerState.value = LocalInstallerState.Configuring(
+                        stepDescription = "Adapting rootfs files ($scanned scanned)...",
+                        progressFraction = 0.93f
+                    )
+                }
+                log("Relocation complete: ${stats.rewrittenFiles} files adapted, ${stats.relinkedSymlinks} symlinks relinked")
             }
 
             // STEP 4: Strict Verification
@@ -2491,6 +2496,8 @@ All files created here persist inside the application.
                 Log.w(TAG, "Failed to run ssh-keygen -A: ${e.message}")
             }
         }
+
+        runCatching { TermuxRelocation.setup(context) }
     }
 
     private fun isProcessAliveCompat(process: Process): Boolean {
@@ -3112,6 +3119,7 @@ All files created here persist inside the application.
             ensureGlibcEnvironment(appCtx)
             ensureClaudeWrapper(appCtx)
             ensureTermuxApiDispatcher(appCtx)
+            runCatching { TermuxRelocation.applyRelocation(appCtx, relocateFiles = true) }
             log("Granted 0755 permissions to $fixed binaries/dirs. Re-running shell exec() check...")
 
             if (isInstalled(appCtx)) {

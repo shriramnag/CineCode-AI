@@ -80,6 +80,7 @@ class AntiGemApplication : Application(), coil.ImageLoaderFactory {
         PluginUpdateCheckWorker.schedule(this)
         // Reconnects adb when Wireless debugging turns back on (it gets a new port every time)
         AdbConnectManager.init(this)
+        com.shriram.cinecode.data.adb.DeviceAccess.init(this)
         com.shriram.cinecode.data.ssh.SshSessionFactory.init(this)
         // Ensure local binaries (login, bash, node, bridge) hold 0755 execution permissions on startup
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {

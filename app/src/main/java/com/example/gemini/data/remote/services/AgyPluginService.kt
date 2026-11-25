@@ -109,9 +109,12 @@ class AgyPluginService(
             list.add("file://$h/.gemini/antigravity/mcp_config.json")
         }
 
-        // 3. Android / Termux standard sandboxes
-        list.add("file:///data/data/com.shriram.cinecode/files/home/.gemini/config/mcp_config.json")
-        list.add("file:///data/user/0/com.shriram.cinecode/files/home/.gemini/config/mcp_config.json")
+        // 3. Android / Termux standard sandboxes (dynamic package/files path)
+        val dynPkg = com.shriram.cinecode.data.context.GlobalContext.appPackageName
+        val dynFiles = com.shriram.cinecode.data.context.GlobalContext.filesRootPath.trimEnd('/')
+        list.add("file://$dynFiles/home/.gemini/config/mcp_config.json")
+        list.add("file:///data/data/$dynPkg/files/home/.gemini/config/mcp_config.json")
+        list.add("file:///data/user/0/$dynPkg/files/home/.gemini/config/mcp_config.json")
 
         // 4. Java user.home
         val userHome = System.getProperty("user.home")
@@ -185,16 +188,18 @@ class AgyPluginService(
                     serverSpecObj.put("args", argsArr)
 
                     val envMap = cmdEntry.env.toMutableMap()
+                    val dynFiles = com.shriram.cinecode.data.context.GlobalContext.filesRootPath.trimEnd('/')
+                    val termuxExecPath = "$dynFiles/usr/lib/libtermux-exec.so"
                     // Android / Termux environment loader injection
-                    val isAndroidTermux = java.io.File("/data/data/com.shriram.cinecode/files/usr/lib/libtermux-exec.so").exists() ||
+                    val isAndroidTermux = java.io.File(termuxExecPath).exists() ||
                                           System.getenv("PREFIX") != null ||
                                           (System.getProperty("java.vendor")?.contains("Android", ignoreCase = true) == true)
                     if (isAndroidTermux && !AuthPreferences.currentRemoteMode) {
-                        if (!envMap.containsKey("LD_PRELOAD") && java.io.File("/data/data/com.shriram.cinecode/files/usr/lib/libtermux-exec.so").exists()) {
-                            envMap["LD_PRELOAD"] = "/data/data/com.shriram.cinecode/files/usr/lib/libtermux-exec.so"
+                        if (!envMap.containsKey("LD_PRELOAD") && java.io.File(termuxExecPath).exists()) {
+                            envMap["LD_PRELOAD"] = termuxExecPath
                         }
                         if (!envMap.containsKey("PATH")) {
-                            envMap["PATH"] = "/data/data/com.shriram.cinecode/files/home/.local/bin:/data/data/com.shriram.cinecode/files/usr/bin:/system/bin"
+                            envMap["PATH"] = "$dynFiles/home/.local/bin:$dynFiles/usr/bin:/system/bin"
                         }
                     }
 
