@@ -529,7 +529,7 @@ object BrowserAgentMcp {
                     }
                     val res = BrowserSessionManager.instance.uploadFiles(
                         tabId = tab.id,
-                        filePaths = paths,
+                        paths = paths,
                         selector = args.optString("selector").ifBlank { null },
                         x = x, y = y, fx = fx, fy = fy,
                         method = args.optString("method").ifBlank { "auto" },

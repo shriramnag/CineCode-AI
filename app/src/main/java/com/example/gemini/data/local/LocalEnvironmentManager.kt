@@ -37,7 +37,7 @@ import java.util.zip.ZipInputStream
 data class LocalCommandResult(
     val exitCode: Int,
     val output: String,
-    val durationMs: Long
+    val durationMs: Long = 0L
 )
 
 data class DeviceHardwareInfo(

@@ -106,6 +106,7 @@ object RootShell {
         timeoutMs: Long = 30_000L,
         cwd: String? = null
     ): LocalCommandResult {
+        val started = System.currentTimeMillis()
         val out = ByteArrayOutputStream()
         val code = execStreaming(
             command = command,
@@ -114,7 +115,7 @@ object RootShell {
             stdout = out,
             timeoutMs = timeoutMs
         )
-        return LocalCommandResult(code, out.toString(Charsets.UTF_8.name()))
+        return LocalCommandResult(code, out.toString(Charsets.UTF_8.name()), System.currentTimeMillis() - started)
     }
 
     suspend fun execStreaming(

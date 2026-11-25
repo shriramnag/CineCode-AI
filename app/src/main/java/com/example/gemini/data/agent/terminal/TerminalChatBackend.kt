@@ -384,12 +384,13 @@ class TerminalChatBackend(
         }
 
         if (mode == MODEL_PTY) {
-            val session = LocalTerminalBridge.getSession(null)
+            val bridge = LocalTerminalBridge.instance
+            val session = bridge.getSession(null)
             if (session != null) {
-                val sent = LocalTerminalBridge.sendCommand(session.id, command, appendEnter = true)
+                val sent = bridge.sendCommand(session.id, command, appendEnter = true)
                 if (sent.isSuccess) {
                     delay(1200)
-                    val snap = LocalTerminalBridge.getLastExecution(session.id, 120).getOrNull()
+                    val snap = bridge.getLastExecution(session.id, 120).getOrNull()
                     val output = snap?.optString("output").orEmpty()
                     val stillRunning = snap?.optBoolean("is_running", false) ?: false
                     val note = if (stillRunning) "\n\n_(Command sent to PTY session '${session.name}'; check Terminal tab for live interactive output.)_" else ""
@@ -486,7 +487,7 @@ class TerminalChatBackend(
         activeJob = null
         if (_selectedModelId.value == MODEL_PTY) {
             backendScope.launch {
-                runCatching { LocalTerminalBridge.killProcess(null, "SIGINT") }
+                runCatching { LocalTerminalBridge.instance.killProcess(null, "SIGINT") }
             }
         }
         _isStreaming.value = false

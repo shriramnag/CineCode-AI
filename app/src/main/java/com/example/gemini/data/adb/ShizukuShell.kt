@@ -209,6 +209,7 @@ object ShizukuShell {
         timeoutMs: Long = 30_000L,
         cwd: String? = null
     ): LocalCommandResult {
+        val started = System.currentTimeMillis()
         val out = java.io.ByteArrayOutputStream()
         val code = execStreaming(
             command = command,
@@ -217,7 +218,7 @@ object ShizukuShell {
             stdout = out,
             timeoutMs = timeoutMs
         )
-        return LocalCommandResult(code, out.toString(Charsets.UTF_8.name()))
+        return LocalCommandResult(code, out.toString(Charsets.UTF_8.name()), System.currentTimeMillis() - started)
     }
 
     suspend fun execStreaming(

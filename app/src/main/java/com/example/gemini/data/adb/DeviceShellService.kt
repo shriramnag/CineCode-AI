@@ -20,7 +20,7 @@ import kotlin.concurrent.thread
 class DeviceShellService : Binder() {
 
     private class RunningProcess(
-        val process: Process,
+        val process: java.lang.Process,
         @Volatile var pid: Int = -1
     )
 
