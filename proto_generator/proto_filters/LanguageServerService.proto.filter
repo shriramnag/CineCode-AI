@@ -48,6 +48,7 @@ JetboxSubscribeToSummaries
 GetCascadeTrajectorySteps
 ForkConversation
 DeleteCascadeTrajectory
+UpdateConversationAnnotations
 RevertToCascadeStep
 GetTrajectoryFileDiffs
 GetCodeActionDiff
@@ -108,3 +109,9 @@ GetTranscription
 StreamAudioTranscription
 SendAudioChunk
 EndAudioSession
+ListProjects
+ListResourceProviders
+ListAvailableResources
+ListRemotePlugins
+DisconnectRemotePlugin
+FetchSandboxPort

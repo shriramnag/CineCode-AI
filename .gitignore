@@ -14,11 +14,7 @@
 .cxx
 local.properties
 *.jks
-!cinecode-release.jks
-!cinecode-release.jks.base64
 *.keystore
-!debug.keystore
-!debug.keystore.base64
 release.jks
 
 # Go Daemon & Bridge Build Outputs
@@ -39,8 +35,14 @@ gemini-server
 termux-daemon/daemon
 termux-daemon/server
 app/src/main/assets/bin/agy_ide_bridge
+app/src/main/assets/bin/agy_ide_bridge.xz
+app/src/main/assets/bin/agy_ide_bridge_linux.xz
+termux-am-build/build/
 app/src/main/assets/bin/agy_ide_bridge_linux_amd64
 app/src/main/assets/bin/agy_ide_bridge_linux_arm64
+app/src/main/assets/bin/backup_bootstrap
+app/src/main/assets/bin/backup_chats
+app/src/main/assets/bin/restore_chats
 # Python Cache & Bytecode
 __pycache__/
 *.py[cod]
@@ -63,3 +65,8 @@ output/
 .agents/
 flow_mcp/
 finally.zip
+# STEM & diagrams render bundle (built by scripts/render_bundle/build_render_bundle.sh, uploaded to GitHub releases)
+scripts/render_bundle/out/
+scripts/render_bundle/.work/
+# IDE bridge copy of /version.json (copied by the Gradle build and scripts/agy_ide_bridge_builder.sh)
+agy_ide_bridge/pkg/buildinfo/version.json

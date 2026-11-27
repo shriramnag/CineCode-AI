@@ -63,8 +63,7 @@ type Manager struct {
 	sessions map[string]*Session
 
 	infoMu     sync.Mutex
-	infoCache  json.RawMessage
-	infoAt     time.Time
+	infoCache  map[string]cachedValue // `initialize` by the folder it ran in (its project's skills and commands)
 	usageCache cachedValue
 
 	logins loginRegistry
@@ -341,6 +340,10 @@ func (s *Session) Write(line []byte) error {
 }
 
 func (s *Session) spawnLocked() error {
+	// a subagent's transcript is read-only: Claude cannot resume it
+	if IsSubagentID(s.ID) {
+		return errors.New("a subagent chat is read-only")
+	}
 	bin, err := s.mgr.ResolveBinary()
 	if err != nil {
 		return err
@@ -386,6 +389,16 @@ func (s *Session) spawnLocked() error {
 	// attachments of every chat live under one folder Claude may read without asking
 	if root := s.mgr.attachmentsRoot(); os.MkdirAll(root, 0o700) == nil {
 		args = append(args, "--add-dir", root)
+	}
+	// files the app copied from the phone for its chats (~/.antigem/uploads, where the Files screen's "~" points)
+	if home, err := os.UserHomeDir(); err == nil && home != "" {
+		if uploads := filepath.Join(home, ".antigem", "uploads"); os.MkdirAll(uploads, 0o700) == nil {
+			args = append(args, "--add-dir", uploads)
+		}
+		// Agent memory: memory files and past chats Claude reads when the app tells it about them
+		if mem := filepath.Join(home, ".antigem", "memory"); os.MkdirAll(mem, 0o700) == nil {
+			args = append(args, "--add-dir", mem)
+		}
 	}
 
 	transcript := s.mgr.FindTranscript(s.ID)

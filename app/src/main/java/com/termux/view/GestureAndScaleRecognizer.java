@@ -1,4 +1,4 @@
-package com.shriram.cinecode.view;
+package com.termux.view;
 
 import android.content.Context;
 import android.view.GestureDetector;

@@ -20,11 +20,17 @@ import (
 
 	// DNS for Android (no /etc/resolv.conf there); a package so `go build main.go` includes it too
 	_ "gemini-server/pkg/androiddns"
+	"gemini-server/pkg/checkpoint"
 	"gemini-server/pkg/claude"
+	"gemini-server/pkg/codex"
 	"gemini-server/pkg/config"
 	"gemini-server/pkg/handlers"
 	"gemini-server/pkg/hub"
+	"gemini-server/pkg/memory"
+	"gemini-server/pkg/opencode"
 	"gemini-server/pkg/plugins"
+	"gemini-server/pkg/relocate"
+	"gemini-server/pkg/runlog"
 	"gemini-server/pkg/security"
 	"gemini-server/pkg/ws"
 )
@@ -39,15 +45,19 @@ Flags:
   -u, --unpatch             Unpatch AGY binary back to standard header and exit (do not start server)
   --bin <path>              Custom path to AGY binary (for --unpatch or custom setups)
   --claude-bin <path>       Custom path to the Claude Code CLI (default: claude on PATH)
+  --opencode-bin <path>     Custom path to the OpenCode CLI (default: opencode on PATH or ~/.opencode/bin)
+  --codex-bin <path>        Custom path to the Codex CLI (default: codex on PATH or ~/.local/bin)
   -t, --token <token>       12-character security token for API & AGY CSRF obfuscation
   -f, --force, --f          Force start AGY Hub automatically without prompting
   -p, --port <port>         Port for the Go IDE Server (default: 1234)
-  --bind <address>          Address the IDE Server listens on (default: 0.0.0.0; use 127.0.0.1 behind nginx/Apache)
+  --bind <address>          Address the IDE Server listens on (default: 127.0.0.1; use 0.0.0.0 only to reach it directly from other machines)
   --hub-port <port>         Port for the AGY Hub RPC server (default: 1235)
   --tz-offset <seconds>     Timezone offset in seconds (e.g. 20700 for UTC+05:45)
   --tz <location>           Timezone location name (e.g. Asia/Kathmandu)
   --no-hub                  Skip launching AGY Hub (run IDE server only)
   --no-claude               Disable Claude Code (no /api/claude endpoints, never runs the claude CLI)
+  --no-opencode             Disable OpenCode (no /api/opencode endpoints, never runs the opencode CLI)
+  --no-codex                Disable Codex (no /api/codex endpoints, never runs the codex CLI)
   -d, --dir <path>          Custom workspace directory
   -h, --help                Show help documentation`)
 }
@@ -124,12 +134,22 @@ func formatHumanCrash(p interface{}, rawStack []byte) (reason string, location s
 }
 
 func main() {
+	// `agy_ide_bridge relocate-debs …`: AntiGem's apt hook and dpkg wrapper rewrite Termux .debs with it (see
+	// pkg/relocate); nothing of the bridge itself starts
+	if len(os.Args) > 1 && os.Args[1] == "relocate-debs" {
+		os.Exit(relocate.Main(os.Args[2:], os.Stdin, os.Stdout, os.Stderr))
+	}
+
 	cfg := config.LoadConfig()
 
 	var unpatchOnly bool
 	var customAgyBin string
 	var customClaudeBin string
 	var noClaude bool
+	var customOpenCodeBin string
+	var noOpenCode bool
+	var customCodexBin string
+	var noCodex bool
 	var forceStart bool
 	var skipHub bool
 	var cliToken string
@@ -170,6 +190,24 @@ func main() {
 			skipHub = true
 		case arg == "--no-claude":
 			noClaude = true
+		case strings.HasPrefix(arg, "--opencode-bin="):
+			customOpenCodeBin = strings.TrimPrefix(arg, "--opencode-bin=")
+		case arg == "--opencode-bin":
+			if i+1 < len(os.Args) {
+				customOpenCodeBin = os.Args[i+1]
+				i++
+			}
+		case arg == "--no-opencode":
+			noOpenCode = true
+		case strings.HasPrefix(arg, "--codex-bin="):
+			customCodexBin = strings.TrimPrefix(arg, "--codex-bin=")
+		case arg == "--codex-bin":
+			if i+1 < len(os.Args) {
+				customCodexBin = os.Args[i+1]
+				i++
+			}
+		case arg == "--no-codex":
+			noCodex = true
 		case strings.HasPrefix(arg, "--port="):
 			cfg.Port = strings.TrimPrefix(arg, "--port=")
 		case arg == "-p" || arg == "--port":
@@ -265,12 +303,18 @@ func main() {
 
 	resolvedAgyBin, err := hub.ResolveAgyBinaryInteractive(customAgyBin, forceStart || skipHub)
 	if customAgyBin != "" && err != nil {
-		fmt.Printf(" \033[1;31m✗ Fatal Error:\033[0m %v\n", err)
-		os.Exit(1)
-	}
-	if err != nil && !skipHub {
+		// the app always names the agy to use, also before it is installed (Settings → Antigravity CLI → Install):
+		// keep that path and run without the hub until agy is there
+		resolvedAgyBin = hub.ExpandAgyPath(customAgyBin)
+		if !skipHub {
+			fmt.Printf(" \033[33m[!] agy is not installed at %s yet: the AGY Hub starts once it is installed.\033[0m\n", resolvedAgyBin)
+		}
+	} else if err != nil && !skipHub {
 		fmt.Printf(" \033[31m[!] AGY Discovery Warning:\033[0m %v\n", err)
 	}
+
+	// everything printed from here on also goes to ~/logs/agy-ide-bridge_<date>_<time>.log (one file per start)
+	runLogFile := runlog.Start(cfg.HomeDir)
 
 	// Stylized Banner
 	fmt.Println("\033[1;36m============================================================\033[0m")
@@ -285,6 +329,9 @@ func main() {
 	fmt.Printf("  \033[1;33m• Security Token:\033[0m   %s\n", secToken)
 	fmt.Printf("  \033[1;36m• Framed Header:\033[0m    %s\n", framedHeader)
 	fmt.Printf("  \033[1m• Local Time:\033[0m       %s\n", time.Now().Format("2006-01-02 15:04:05 MST"))
+	if runLogFile != nil {
+		fmt.Printf("  \033[1m• Log File:\033[0m         %s\n", runLogFile.Path)
+	}
 	fmt.Println("\033[1;36m============================================================\033[0m")
 
 	var hubMgr *hub.HubManager
@@ -308,8 +355,51 @@ func main() {
 		mux.Handle("/api/claude/", claudeMgr)
 	}
 
+	// OpenCode: one `opencode serve` for all its chats, relayed under /api/opencode/x/; off with --no-opencode
+	var openCodeMgr *opencode.Manager
+	if noOpenCode {
+		mux.HandleFunc("/api/opencode/", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusServiceUnavailable)
+			_, _ = w.Write([]byte(`{"success":false,"disabled":true,"error":"OpenCode is turned off in the app"}`))
+		})
+	} else {
+		openCodeMgr = opencode.NewManager(cfg.HomeDir, cfg.WorkspaceDir, customOpenCodeBin)
+		mux.Handle("/api/opencode/", openCodeMgr)
+	}
+
+	// Codex: one `codex app-server` (JSON-RPC over stdio, no port) for all its chats; off with --no-codex
+	var codexMgr *codex.Manager
+	if noCodex {
+		mux.HandleFunc("/api/codex/", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusServiceUnavailable)
+			_, _ = w.Write([]byte(`{"success":false,"disabled":true,"error":"Codex is turned off in the app"}`))
+		})
+	} else {
+		codexMgr = codex.NewManager(cfg.HomeDir, cfg.WorkspaceDir, customCodexBin)
+		mux.Handle("/api/codex/", codexMgr)
+	}
+
+	// Project checkpoints: a hidden copy of the project before each chat message (any agent), restore with preview
+	mux.Handle("/api/checkpoints/", checkpoint.NewManager(cfg.HomeDir))
+
+	// Agent memory: memory files and chat history the agents read (~/.antigem/memory), shared by every agent
+	mux.Handle("/api/memory/", memory.NewManager(cfg.HomeDir))
+
 	// Custom AntiGem plugins on disk: list, install (ZIP or GitHub repository), update, remove, export
-	mux.Handle("/api/custom-plugins/", plugins.NewManager(cfg.HomeDir))
+	pluginMgr := plugins.NewManager(cfg.HomeDir)
+	mux.Handle("/api/custom-plugins/", pluginMgr)
+
+	// Each agent's own skills folder (add from GitHub, update, remove) and Antigravity plugins from GitHub
+	mux.Handle("/api/agent-skills/", plugins.NewAgentSkills(pluginMgr, cfg.HomeDir, func() string {
+		if hubMgr != nil {
+			if p := hubMgr.GetAgyBin(); p != "" {
+				return p
+			}
+		}
+		return hub.InstallerAgyPath()
+	}))
 
 	// REST Endpoints
 	mux.HandleFunc("/api/health", h.HealthHandler)
@@ -321,6 +411,10 @@ func main() {
 	mux.HandleFunc("/api/server/info", h.ServerInfoHandler)
 	mux.HandleFunc("/api/agy/cli", h.AgyCliHandler)
 	mux.HandleFunc("/api/agy/cli/install", h.AgyCliInstallHandler)
+	mux.HandleFunc("/api/agy/cli/update", h.AgyCliUpdateHandler)
+	mux.HandleFunc("/api/agy/hub/diag", h.AgyHubDiagHandler)
+	mux.HandleFunc("/api/agy/accounts", h.AgyAccountsHandler)
+	mux.HandleFunc("/api/agy/accounts/", h.AgyAccountsHandler)
 	mux.HandleFunc("/api/models", h.ModelsHandler)
 	mux.HandleFunc("/api/models/refresh", h.ModelsHandler)
 	mux.HandleFunc("/api/quotas", h.QuotasHandler)
@@ -609,6 +703,10 @@ func main() {
 	hubMgr.OnLoginURL = h.HandleLoginURL
 	hubMgr.OnStatusChange = func(status string, csrfToken string, errorMsg string, logs []string) {
 		wsHub.BroadcastHubStatus(status, hubPort, csrfToken, errorMsg, logs)
+		// agy runs, so it is installed: watch its login for account changes (no-op when already watching)
+		if status == hub.HubStatusOnline {
+			h.EnsureAgyAccountWatcher()
+		}
 	}
 	if !skipHub {
 		hubMgr.StartContinuousMonitor()
@@ -624,11 +722,18 @@ func main() {
 	fmt.Println("\n🛑 Shutting down antiGem server gracefully...")
 
 	// 1. Close all active WebSocket client connections immediately
+	h.StopAgyAccountWatcher()
 	wsHub.Close()
 
 	// 2. Stop Claude Code sessions, then the AGY Hub process group and continuous background monitor
 	if claudeMgr != nil {
 		claudeMgr.StopAll()
+	}
+	if openCodeMgr != nil {
+		openCodeMgr.StopAll()
+	}
+	if codexMgr != nil {
+		codexMgr.StopAll()
 	}
 	if hubMgr != nil {
 		hubMgr.Stop()
@@ -641,5 +746,6 @@ func main() {
 	_ = server.Close()
 
 	fmt.Println("✅ antiGem Go server stopped.")
+	runLogFile.Close()
 	os.Exit(0)
 }

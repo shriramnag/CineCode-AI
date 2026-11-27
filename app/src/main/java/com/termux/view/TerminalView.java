@@ -1,4 +1,4 @@
-package com.shriram.cinecode.view;
+package com.termux.view;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
@@ -42,7 +42,7 @@ import androidx.annotation.RequiresApi;
 import com.termux.terminal.KeyHandler;
 import com.termux.terminal.TerminalEmulator;
 import com.termux.terminal.TerminalSession;
-import com.shriram.cinecode.view.textselection.TextSelectionCursorController;
+import com.termux.view.textselection.TextSelectionCursorController;
 
 /** View displaying and interacting with a {@link TerminalSession}. */
 public final class TerminalView extends View {
@@ -809,10 +809,6 @@ public final class TerminalView extends View {
             /* ctrl+space does not work on some ROMs without this workaround.
                However, this breaks it on devices where it works out of the box. */
             return onKeyDown(keyCode, event);
-        } else if (mClient.shouldEnforceCharBasedInput()) {
-            // Avoid issues with some soft keyboards, such as the LG keyboard on the LG G6:
-            // https://github.com/termux/termux-app/issues/403
-            return true;
         }
         return super.onKeyPreIme(keyCode, event);
     }
@@ -1673,7 +1669,7 @@ public final class TerminalView extends View {
 
         if (mTextSelectionCursorController != null) {
             // Might solve the following exception
-            // android.view.WindowLeaked: Activity com.shriram.cinecode.app.TermuxActivity has leaked window android.widget.PopupWindow
+            // android.view.WindowLeaked: Activity com.termux.app.TermuxActivity has leaked window android.widget.PopupWindow
             stopTextSelectionMode();
 
             getViewTreeObserver().removeOnTouchModeChangeListener(mTextSelectionCursorController);

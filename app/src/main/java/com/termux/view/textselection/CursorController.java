@@ -1,9 +1,9 @@
-package com.shriram.cinecode.view.textselection;
+package com.termux.view.textselection;
 
 import android.view.MotionEvent;
 import android.view.ViewTreeObserver;
 
-import com.shriram.cinecode.view.TerminalView;
+import com.termux.view.TerminalView;
 
 /**
  * A CursorController instance can be used to control cursors in the text.

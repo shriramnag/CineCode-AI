@@ -1,4 +1,4 @@
-package com.shriram.cinecode.view.textselection;
+package com.termux.view.textselection;
 
 import android.annotation.SuppressLint;
 import android.graphics.Canvas;
@@ -13,9 +13,9 @@ import android.view.ViewParent;
 import android.view.WindowManager;
 import android.widget.PopupWindow;
 
-import com.shriram.cinecode.R;
-import com.shriram.cinecode.view.TerminalView;
-import com.shriram.cinecode.view.support.PopupWindowCompatGingerbread;
+import ai.antigem.R;
+import com.termux.view.TerminalView;
+import com.termux.view.support.PopupWindowCompatGingerbread;
 
 @SuppressLint("ViewConstructor")
 public class TextSelectionHandleView extends View {

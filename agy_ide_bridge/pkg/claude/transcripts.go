@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"html"
 	"io"
 	"os"
 	"path/filepath"
@@ -43,6 +44,11 @@ type SessionSummary struct {
 	Live       bool   `json:"live"`
 	Busy       bool   `json:"busy"`
 	SizeBytes  int64  `json:"size_bytes"`
+	Archived   bool   `json:"archived"`
+	// Subagent transcripts (read-only): the chat or subagent that started it, and its agent type (e.g. "Explore").
+	Subagent  bool   `json:"subagent,omitempty"`
+	ParentID  string `json:"parent_id,omitempty"`
+	AgentType string `json:"agent_type,omitempty"`
 }
 
 type transcriptLine struct {
@@ -65,6 +71,7 @@ type transcriptLine struct {
 func (m *Manager) ListSessions() []SessionSummary {
 	files, _ := filepath.Glob(filepath.Join(m.ProjectsDir(), "*", "*.jsonl"))
 	live := m.Snapshot()
+	archived := m.ArchivedSessions()
 	out := make([]SessionSummary, 0, len(files))
 	for _, f := range files {
 		name := filepath.Base(f)
@@ -85,18 +92,30 @@ func (m *Manager) ListSessions() []SessionSummary {
 			sum.CreatedAt = sum.UpdatedAt
 		}
 		sum.SizeBytes = fi.Size()
+		_, sum.Archived = archived[sum.ID]
 		if st, ok := live[sum.ID]; ok {
 			sum.Live = st.Live
 			sum.Busy = st.Busy
 		}
 		out = append(out, sum)
 	}
+	// the subagents of the listed chats, nested under them by the app
+	parents := make(map[string]bool, len(out))
+	for _, s := range out {
+		parents[s.ID] = true
+	}
+	out = append(out, m.listSubagents(parents, live)...)
 	// Sessions created in this bridge that have no transcript yet are not listed: the app shows them itself.
 	sort.Slice(out, func(i, j int) bool { return out[i].UpdatedAt > out[j].UpdatedAt })
 	return out
 }
 
 func summarize(path string, size int64) (SessionSummary, bool) {
+	return summarizeFile(path, size, false)
+}
+
+// summarizeFile reads a transcript's summary; [sidechain] = a subagent's transcript, where every line is a sidechain.
+func summarizeFile(path string, size int64, sidechain bool) (SessionSummary, bool) {
 	var sum SessionSummary
 	f, err := os.Open(path)
 	if err != nil {
@@ -115,7 +134,7 @@ func summarize(path string, size int64) (SessionSummary, bool) {
 					sum.CreatedAt = t.UnixMilli()
 				}
 			}
-			if firstPrompt == "" && l.Type == "user" && !l.IsMeta && !l.IsSidechain {
+			if firstPrompt == "" && l.Type == "user" && !l.IsMeta && (sidechain || !l.IsSidechain) {
 				firstPrompt = userText(l.Message)
 			}
 		})
@@ -149,14 +168,16 @@ func summarize(path string, size int64) (SessionSummary, bool) {
 	if firstPrompt == "" && sum.LastPrompt == "" {
 		return sum, false
 	}
+	// an AI title made from a prompt can quote the app's hidden blocks too
+	sum.Title = strings.TrimSpace(stripAppBlocks(sum.Title))
 	if sum.Title == "" {
 		sum.Title = firstPrompt
 		if sum.Title == "" {
-			sum.Title = sum.LastPrompt
+			sum.Title = cleanPrompt(sum.LastPrompt)
 		}
 	}
 	sum.Title = oneLine(sum.Title, 80)
-	sum.LastPrompt = oneLine(sum.LastPrompt, 120)
+	sum.LastPrompt = oneLine(cleanPrompt(sum.LastPrompt), 120)
 	return sum, true
 }
 
@@ -228,7 +249,31 @@ func cleanPrompt(s string) string {
 			return strings.TrimSpace(s[strings.Index(s, ">")+1 : i])
 		}
 	}
-	return strings.TrimSpace(tagBlockRe.ReplaceAllString(s, ""))
+	return strings.TrimSpace(tagBlockRe.ReplaceAllString(stripAppBlocks(s), ""))
+}
+
+// The app's own hidden parts of a prompt (attached files, plugin guides, global context) never belong in a title.
+var (
+	expansionRe     = regexp.MustCompile(`(?s)<antigem-expansion command="([^"]*)">.*?</antigem-expansion>`)
+	attachedFilesRe = regexp.MustCompile(`(?s)<attached-files>.*?</attached-files>`)
+)
+
+// stripAppBlocks keeps only what the user typed: an expanded command shows as the command (a hidden block as nothing),
+// and a block cut off before its end tag is dropped from where it starts.
+func stripAppBlocks(s string) string {
+	if !strings.Contains(s, "<antigem-expansion") && !strings.Contains(s, "<attached-files>") {
+		return s
+	}
+	s = expansionRe.ReplaceAllStringFunc(s, func(m string) string {
+		return html.UnescapeString(expansionRe.FindStringSubmatch(m)[1])
+	})
+	s = attachedFilesRe.ReplaceAllString(s, "")
+	for _, open := range []string{"<antigem-expansion", "<attached-files>"} {
+		if i := strings.Index(s, open); i >= 0 {
+			s = s[:i]
+		}
+	}
+	return s
 }
 
 func oneLine(s string, max int) string {
@@ -261,6 +306,12 @@ func transcriptCwd(path string) string {
 // entry instead of the newest message ("" = no entries): a rewind not followed by a new prompt yet.
 func (m *Manager) History(id string, maxBytes int64, cut *string) ([]json.RawMessage, error) {
 	path := m.FindTranscript(id)
+	// a subagent's own transcript: all of it is a sidechain
+	sidechain := false
+	if path == "" {
+		path = m.findSubagentTranscript(id)
+		sidechain = path != ""
+	}
 	if path == "" {
 		return []json.RawMessage{}, nil
 	}
@@ -288,7 +339,7 @@ func (m *Manager) History(id string, maxBytes int64, cut *string) ([]json.RawMes
 			continue
 		}
 		var l transcriptLine
-		if json.Unmarshal(b, &l) != nil || l.UUID == "" || l.IsSidechain {
+		if json.Unmarshal(b, &l) != nil || l.UUID == "" || (l.IsSidechain && !sidechain) {
 			continue
 		}
 		// every uuid line is part of the parent chain (attachments, progress, …); only messages are returned
@@ -364,6 +415,7 @@ func (m *Manager) DeleteSession(id string) error {
 	m.removeAttachments(id)
 	m.clearRewind(id)
 	m.rememberSessionModel(id, "")
+	_ = m.SetSessionArchived(id, false)
 	path := m.FindTranscript(id)
 	if path == "" {
 		return nil

@@ -1,15 +1,36 @@
 {
-  "version_code": 341162,
-  "version_name": "0.227.579-beta",
-  "min_supported_version_code": 1,
-  "url": "https://github.com/shriramnag/CineCode-AI/releases/download/v0.227.579-beta/CineCode-AI-v0.227.579-beta.apk",
+  "version_code": 137,
+  "version_name": "2.0.4",
+  "min_supported_version_code": 2,
   "changelog": [
-    "fix(core): resolve CI Kotlin compile errors in DeviceAccess, TerminalChatBackend, and BrowserAgentMcp",
-    "feat(core): port Termux relocation, DeviceAccess, Browser MCP, Jarvis MCP, and fix missing assets/paths",
-    "Fix remaining Kotlin compile errors in JarvisTasks and ChatScreen",
-    "ci: trigger automatic APK build on feature/cinecode-v2-upgrade branch",
-    "Fix Kotlin compile errors, exhaustive AgentKind checks, and Gemini state routing",
-    "fix: prevent workflow_dispatch from publishing releases"
+    "Added Shizuku and root next to ADB: choose how agents reach your phone in Settings → ADB Connect. Agents use adb, Shizuku (rish) or root only when you ask",
+    "ADB Connect now reconnects a paired phone by itself when you open it or tap refresh",
+    "Fixed Antigravity sign-in: when your Google account isn't allowed, the app now shows why instead of waiting forever",
+    "Fixed OpenCode custom providers whose models didn't show up in the model list or in chat (newer OpenCode versions)",
+    "Redesigned OpenCode's custom provider editor: full screen, fast with hundreds of models, with search, filters and select all",
+    "Added Images, Reasoning and Tools switches for each model of an OpenCode custom provider; \"Fetch from endpoint\" fills them in from the endpoint, Ollama or models.dev",
+    "Added Effort and Thinking controls to OpenCode chats for models that support them, and a warning when you attach an image to a model that can't read images",
+    "Added a \"Fold after\" option for grouped agent steps: how many steps fold into one pill (2 by default)",
+    "Agent memory is now on by default; saving chats for agents to look up is now off by default",
+    "Added Settings → Updates: get beta updates, and choose how often AntiGem checks for updates in the background",
+    "Fixed the app not starting on Android 7 and 8",
+    "Back on the main chat screen now moves AntiGem to the background instead of closing it",
+    "Fixed a crash on the Claude Code and Codex Plugins pages when the same plugin was installed more than once",
+    "Added a Discord community link in Settings → About"
   ],
-  "is_critical": false
+  "is_critical": false,
+  "beta": {
+    "version_code": 136,
+    "version_name": "2.0.4-beta.2",
+    "changelog": [
+      "Fixed OpenCode custom providers whose models didn't show up in the model list or in chat (newer OpenCode versions)",
+      "Added Images, Reasoning and Tools switches for each model of an OpenCode custom provider",
+      "\"Fetch from endpoint\" now detects which models read images, think or use tools (from the endpoint, Ollama or models.dev)",
+      "Redesigned the custom provider editor: full screen, fast with hundreds of models, with search, filters and select all",
+      "Added Effort and Thinking controls to OpenCode chats for models that support them",
+      "The chat now warns when you attach an image to an OpenCode model that can't read images",
+      "Fixed the app not starting on Android 7 and 8",
+      "Back on the main chat screen now moves AntiGem to the background instead of closing it"
+    ]
+  }
 }

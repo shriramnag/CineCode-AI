@@ -1,4 +1,4 @@
-# ProGuard & R8 optimization rules for CineCode-AI
+# ProGuard & R8 optimization rules for AntiGem
 
 # Kotlin Coroutines
 -keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {}
@@ -21,6 +21,10 @@
     @kotlinx.serialization.SerialName <fields>;
     @kotlinx.serialization.Serializable <fields>;
 }
+
+# TelemetryDeck Kotlin SDK (release minify)
+-keep class com.telemetrydeck.sdk.** { *; }
+-dontwarn com.telemetrydeck.sdk.**
 
 # OkHttp & Okio
 -dontwarn okhttp3.**
@@ -86,11 +90,5 @@
 # WorkManager's Room database is created by reflection; R8 full mode strips its no-arg constructor.
 -keep class * extends androidx.room.RoomDatabase { <init>(); }
 
-# CineCode-AI core services, updater, MCP, Myraa Live Voice, and Wire protobuf models
--keep class com.shriram.cinecode.data.updater.** { *; }
--keep class com.shriram.cinecode.data.remote.** { *; }
--keep class com.shriram.cinecode.data.agent.** { *; }
--keep class com.example.gemini.data.remote.** { *; }
--keep class exa.** { *; }
--keep class com.squareup.wire.** { *; }
--dontwarn com.squareup.wire.**
+# Shizuku starts this class by name (from this APK) in a process of its own
+-keep class ai.antigem.data.adb.DeviceShellService { <init>(...); }
