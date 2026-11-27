@@ -349,7 +349,7 @@ object X11DesktopManager {
     /** Downloads AntiGem's Termux:X11 build and opens the system installer. */
     fun installApp() = runTask(Task.APP) {
         val url = FORK_APK_URL
-        appendLog("Downloading AntiGem's Termux:X11 build…")
+        appendLog("Downloading CineCode-AI's Termux:X11 build…")
         appendLog(url)
         val dir = File(appContext.externalCacheDir ?: appContext.cacheDir, "x11").apply { mkdirs() }
         val apk = File(dir, "termux-x11.apk")
@@ -359,7 +359,7 @@ object X11DesktopManager {
         if (opened) {
             appendLog("Opened the installer. Confirm the install there.")
         } else {
-            report("Allow AntiGem to install apps (the settings page that just opened), then tap Install again.", isError = true)
+            report("Allow CineCode-AI to install apps (the settings page that just opened), then tap Install again.", isError = true)
         }
     }
 
@@ -376,7 +376,7 @@ object X11DesktopManager {
 
     fun installCompanion() = runTask(Task.COMPANION) {
         if (chroot != null) {
-            appendLog("Not needed in the Ubuntu chroot: AntiGem starts the X server itself.")
+            appendLog("Not needed in the Ubuntu chroot: CineCode-AI starts the X server itself.")
             return@runTask
         }
         val enableRepo = "apt-get update && apt-get install -y $KEEP_CONFIGS x11-repo && apt-get update"

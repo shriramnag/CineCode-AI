@@ -17,7 +17,7 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 
 private const val TAG = "AppUpdateManager"
-private const val DEFAULT_VERSION_URL = "https://raw.githubusercontent.com/santoshkurmi/antigem/standalone/version.json"
+private const val DEFAULT_VERSION_URL = "https://raw.githubusercontent.com/shriramnag/CineCode-AI/feature/cinecode-v2-upgrade/version.json"
 // the updater's prefs (UpdateCheckWorker keeps its "last notified" version there too)
 private const val UPDATE_PREFS = "app_update_prefs"
 private const val KEY_BETA_UPDATES = "beta_updates"
@@ -157,7 +157,7 @@ class AppUpdateManager(private val context: Context) {
     }
 
     private fun apkUrl(versionName: String, suffix: String) =
-        "https://github.com/santoshkurmi/antigem/releases/download/v$versionName/AntiGem-v$versionName$suffix.apk"
+        "https://github.com/shriramnag/CineCode-AI/releases/download/v$versionName/CineCode-AI-v$versionName$suffix.apk"
 
     /** Whether the release file is on GitHub (a release is published before CI has uploaded its APKs). */
     private fun isPublished(url: String): Boolean = try {
@@ -194,7 +194,7 @@ class AppUpdateManager(private val context: Context) {
             }.distinct()
             val url = versions.map { apkUrl(it, "-chroot") }.firstOrNull { isPublished(it) }
             if (url != null) Result.success(url)
-            else Result.failure(Exception("The chroot build of AntiGem ${versions.first()} is not on GitHub yet. Try again later, or open the releases page."))
+            else Result.failure(Exception("The chroot build of CineCode-AI ${versions.first()} is not on GitHub yet. Try again later, or open the releases page."))
         } catch (e: Exception) {
             Log.e(TAG, "Chroot build lookup failed: ${e.message}", e)
             Result.failure(e)

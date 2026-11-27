@@ -19,9 +19,9 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.util.Properties
 
-/** PATH for SSH sessions; also finds the tools of AntiGem or Termux when the host is an Android phone. */
+/** PATH for SSH sessions; also finds the tools of CineCode-AI or Termux when the host is an Android phone. */
 const val UNIVERSAL_SSH_PATH =
-    "export PATH=\"\$HOME/.local/bin:\$HOME/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/data/data/ai.antigem/files/usr/bin:/data/data/com.termux/files/usr/bin:\$PATH\"; "
+    "export PATH=\"\$HOME/.local/bin:\$HOME/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/data/data/ai.cinecod/files/usr/bin:/data/data/ai.antigem/files/usr/bin:/data/data/com.termux/files/usr/bin:\$PATH\"; "
 
 data class TmuxWindowInfo(
     val index: Int,

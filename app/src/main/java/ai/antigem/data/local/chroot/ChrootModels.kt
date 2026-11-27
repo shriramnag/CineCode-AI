@@ -23,7 +23,7 @@ enum class ChrootDnsMode(val conf: String) {
 
 /** What happens to the chroot when AntiGem is exited (notification or drawer Exit). */
 enum class ChrootExitBehavior(val label: String, val description: String) {
-    KEEP_RUNNING("Keep running", "The bridge and the agents keep working while AntiGem is closed; AntiGem reconnects when opened."),
+    KEEP_RUNNING("Keep running", "The bridge and the agents keep working while CineCode-AI is closed; CineCode-AI reconnects when opened."),
     STOP_BRIDGE("Stop the bridge and agents", "The chroot's mounts stay, so the next start is quick."),
     STOP_ALL("Stop everything", "Every process of the chroot is stopped and its folders are unmounted.")
 }

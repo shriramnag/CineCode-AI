@@ -176,7 +176,7 @@ fun SetupWithAiDialog(source: String, agent: AgentKind, reason: String?, onDismi
                 }
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "AntiGem couldn't add ${source.trim()} by itself" + (reason?.takeIf { it.isNotBlank() }?.let { ": $it" } ?: ".") +
+                    "CineCode-AI couldn't add ${source.trim()} by itself" + (reason?.takeIf { it.isNotBlank() }?.let { ": $it" } ?: ".") +
                         " An AI agent can read its README and set it up for you.",
                     fontSize = 12.5.sp, lineHeight = 17.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f)
                 )
@@ -253,7 +253,7 @@ fun SetupWithAiDialog(source: String, agent: AgentKind, reason: String?, onDismi
 
 private fun copyText(context: Context, text: String) {
     (context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager)
-        ?.setPrimaryClip(ClipData.newPlainText("AntiGem setup prompt", text))
+        ?.setPrimaryClip(ClipData.newPlainText("CineCode-AI setup prompt", text))
 }
 
 /** A small "Set up with AI" link under an error, to open [SetupWithAiDialog] again. */

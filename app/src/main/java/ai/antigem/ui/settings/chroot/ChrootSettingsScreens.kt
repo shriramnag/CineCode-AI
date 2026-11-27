@@ -106,7 +106,7 @@ fun ChrootRuntimeCard(
     }
     ChrootSection("Ubuntu chroot", when {
             // the normal build has no Linux bridge: the setup page offers the chroot build
-            !ai.antigem.BuildConfig.HAS_CHROOT -> "Needs a rooted phone and the chroot build of AntiGem (the same app with the chroot's bridge, installed over this one)"
+            !ai.antigem.BuildConfig.HAS_CHROOT -> "Needs a rooted phone and the chroot build of CineCode-AI (the same app with the chroot's bridge, installed over this one)"
             installs.isEmpty() -> "Not installed yet: needs a rooted phone (Magisk, KernelSU or APatch)"
             else -> "A real Ubuntu (apt, glibc, sudo) through root. Tap one to manage it: status, mounts, folders, packages"
         },
@@ -164,12 +164,12 @@ fun TermuxRuntimeCard(cardBg: Color, cardBorder: BorderStroke, onInstall: () -> 
     LaunchedEffect(installerState) {
         if (installerState is ai.antigem.data.local.LocalInstallerState.Success) onInstalled()
     }
-    ChrootSection("AntiGem", if (installed) "AntiGem's built-in Linux environment, in its own files: no root needed, packages with pkg install"
-        else "Not installed: AntiGem's built-in Linux environment (no root needed)",
+    ChrootSection("CineCode-AI", if (installed) "CineCode-AI's built-in Linux environment, in its own files: no root needed, packages with pkg install"
+        else "Not installed: CineCode-AI's built-in Linux environment (no root needed)",
         Icons.Outlined.Terminal, AppColors.accentIndigo, cardBg, cardBorder) {
         if (!installed) {
             Button(onClick = onInstall, colors = ButtonDefaults.buttonColors(containerColor = ClaudeTerracotta), shape = RoundedCornerShape(10.dp)) {
-                Text("Install AntiGem's environment")
+                Text("Install CineCode-AI's environment")
             }
         } else {
             OutlinedButton(onClick = onFactoryReset, border = BorderStroke(1.dp, AppColors.danger.copy(alpha = 0.5f)), shape = RoundedCornerShape(10.dp)) {
@@ -329,7 +329,7 @@ fun ChrootManageScreen(
                             onFailure = { Text("Could not check: ${it.message}", fontSize = 12.sp, color = AppColors.danger) }
                         )
                     }
-                    if (isActiveRuntime) ChrootNote("It is in use: the bridge and the agents stop, and the phone goes back to AntiGem's built-in environment. AntiGem reopens when the delete is done.", AppColors.warning)
+                    if (isActiveRuntime) ChrootNote("It is in use: the bridge and the agents stop, and the phone goes back to CineCode-AI's built-in environment. CineCode-AI reopens when the delete is done.", AppColors.warning)
                     Spacer(Modifier.height(10.dp))
                     Text("Type ${install.name} to confirm:", fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold)
                     OutlinedTextField(deleteText, { deleteText = it }, singleLine = true, modifier = Modifier.fillMaxWidth())
@@ -405,7 +405,7 @@ fun ChrootManageScreen(
             }
             Text(install.path, fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = AppColors.textSecondary)
             if (install.legacy) ChrootNote("Installed by the first chroot version. Where agents run → Install another / find existing → Adopt makes " +
-                "AntiGem manage it fully (settings, AntiGem's uid), or delete it below.", AppColors.warning)
+                "CineCode-AI manage it fully (settings, CineCode-AI's uid), or delete it below.", AppColors.warning)
             message?.let { (text, isError) ->
                 Text(text, fontSize = 12.sp, color = if (isError) AppColors.danger else AppColors.success, modifier = Modifier.padding(top = 4.dp))
             }
@@ -549,7 +549,7 @@ fun ChrootManageScreen(
             if (mounted && s?.holderPid == null) ChrootNote("Its mounts are in Android's namespace (global mode or left by an older launcher): Stop it before backing up.", AppColors.warning)
             HorizontalDivider(color = AppColors.border.copy(alpha = 0.35f), modifier = Modifier.padding(vertical = 10.dp))
             Text("Clean image (to share)", fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, color = AppColors.onBackground)
-            ChrootNote("Leaves out the home folders, logins and history, AntiGem's files, logs and the apt lists. Pick a folder: " +
+            ChrootNote("Leaves out the home folders, logins and history, CineCode-AI's files, logs and the apt lists. Pick a folder: " +
                 "${ai.antigem.data.local.chroot.ChrootInstaller.prebuiltAsset()} and its .sha256 are written there, ready for the GitHub release " +
                 "${ai.antigem.data.local.chroot.ChrootInstaller.PREBUILT_TAG} that the \"AntiGem Ubuntu (prebuilt)\" source downloads. Slow (xz): " +
                 "several minutes.")
@@ -564,7 +564,7 @@ fun ChrootManageScreen(
         ChrootUserSection(install, cardBg, cardBorder)
 
         // ---------------- exit
-        ChrootSection("When AntiGem exits", "Exit from the menu or the notification (the Exit dialog can override it once). Swiping the app away keeps everything running.",
+        ChrootSection("When CineCode-AI exits", "Exit from the menu or the notification (the Exit dialog can override it once). Swiping the app away keeps everything running.",
             Icons.Outlined.ExitToApp, AppColors.warning, cardBg, cardBorder) {
             ChrootExitBehavior.entries.forEach { b ->
                 ChrootRadioRow(b.label, b.description, exitBehavior == b) {
@@ -589,7 +589,7 @@ fun ChrootManageScreen(
         }
 
         // ---------------- repair, about
-        ChrootSection("Repair", "Sets up the network groups, the user (AntiGem's uid), DNS and the bridge again", Icons.Outlined.Build, AppColors.accentAlt, cardBg, cardBorder) {
+        ChrootSection("Repair", "Sets up the network groups, the user (CineCode-AI's uid), DNS and the bridge again", Icons.Outlined.Build, AppColors.accentAlt, cardBg, cardBorder) {
             OutlinedButton(onClick = {
                 ChrootManager.runTask(context, "Repairing ${install.name}") { log ->
                     val st = ChrootManager.start(context, install, withBridge = true, onLine = log)
@@ -713,7 +713,7 @@ private fun ChrootPackagesSection(install: ChrootInstall, cardBg: Color, cardBor
 private fun ChrootUserSection(install: ChrootInstall, cardBg: Color, cardBorder: BorderStroke) {
     val context = LocalContext.current
     var password by remember { mutableStateOf("") }
-    ChrootSection("User ${install.user}", "Its uid is AntiGem's own (${android.os.Process.myUid()}), so files it shares with the app belong to both",
+    ChrootSection("User ${install.user}", "Its uid is CineCode-AI's own (${android.os.Process.myUid()}), so files it shares with the app belong to both",
         Icons.Outlined.Person, AppColors.accentPink, cardBg, cardBorder) {
         OutlinedTextField(password, { password = it.replace("\n", "") }, label = { Text("New password") }, singleLine = true,
             visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
@@ -748,8 +748,8 @@ private fun formatAge(sinceEpochSec: Long): String {
 @Composable
 fun TermuxOnlyNotice(title: String, cardBg: Color, cardBorder: BorderStroke, note: String? = null, onOpenEnvironment: () -> Unit) {
     Column(Modifier.fillMaxSize().padding(16.dp)) {
-        ChrootSection("$title works with AntiGem's built-in environment", "This phone runs the Ubuntu chroot right now. " +
-            "$title still uses the tools of AntiGem's built-in environment, so it is off here for now.", Icons.Outlined.Info, AppColors.warning, cardBg, cardBorder) {
+        ChrootSection("$title works with CineCode-AI's built-in environment", "This phone runs the Ubuntu chroot right now. " +
+            "$title still uses the tools of CineCode-AI's built-in environment, so it is off here for now.", Icons.Outlined.Info, AppColors.warning, cardBg, cardBorder) {
             if (note != null) ChrootNote(note, AppColors.info)
             OutlinedButton(onClick = onOpenEnvironment, shape = RoundedCornerShape(10.dp)) { Text("Where agents run") }
         }

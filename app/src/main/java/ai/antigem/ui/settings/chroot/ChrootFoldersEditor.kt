@@ -118,7 +118,7 @@ internal fun ChrootFoldersEditor(user: String, binds: List<ChrootBind>, onChange
         Column(Modifier.padding(12.dp)) {
             Text("1. The folder on the phone", fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = AppColors.onBackground)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                AssistChip(onClick = { choose(home, "/home/$user/antigem_home") }, label = { Text("AntiGem home") })
+                AssistChip(onClick = { choose(home, "/home/$user/antigem_home") }, label = { Text("CineCode-AI home") })
                 AssistChip(onClick = { choose("/storage/emulated/0/Download") }, label = { Text("Download") })
                 AssistChip(onClick = { choose("/storage/emulated/0/Documents") }, label = { Text("Documents") })
                 AssistChip(onClick = { choose("/storage/emulated/0/DCIM") }, label = { Text("DCIM") })

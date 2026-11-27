@@ -135,7 +135,7 @@ android {
     compileSdk = 37
     compileSdkMinor = 1
     defaultConfig {
-        applicationId = "ai.antigem"
+        applicationId = "ai.cinecod"
         minSdk = 24
         targetSdk = 28
         versionCode = appVersionCode
@@ -183,7 +183,7 @@ android {
             buildConfigField("boolean", "HAS_CHROOT", "${hasChroot("release")}")
             isMinifyEnabled = true
             isShrinkResources = true
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = if (file("release.jks").exists()) signingConfigs.getByName("release") else signingConfigs.getByName("debug")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -192,8 +192,8 @@ android {
     }
 
     base {
-        // antiGem, antiGem-chroot or antiGem-x86_64
-        archivesName.set("antiGem$apkSuffix")
+        // cineCode, cineCode-chroot or cineCode-x86_64
+        archivesName.set("cineCode$apkSuffix")
     }
 
     compileOptions {
@@ -757,11 +757,11 @@ androidComponents {
     onVariants { variant ->
         variant.sources.kotlin?.addGeneratedSourceDirectory(generateChangelog, GenerateChangelogTask::outputDir)
 
-        // Debug builds are their own app, ai.antidev ("AntiGem Dev"), so they install next to the release one. It must
+        // Debug builds are their own app, ai.cinedev ("CineCode-AI Dev"), so they install next to the release one. It must
         // have the length of com.termux (10): the Termux packages are rewritten for it byte for byte.
-        // TEMPORARY: x86_64 debug builds stay ai.antigem while the x86_64 rootfs is made on the emulator (its backup
-        // must have ai.antigem paths). Remove `&& !isX86` once that rootfs is hosted.
-        if (variant.buildType == "debug" && !isX86) variant.applicationId.set("ai.antidev")
+        // TEMPORARY: x86_64 debug builds stay ai.cinecod while the x86_64 rootfs is made on the emulator (its backup
+        // must have base paths). Remove `&& !isX86` once that rootfs is hosted.
+        if (variant.buildType == "debug" && !isX86) variant.applicationId.set("ai.cinedev")
 
         val amBuildType = if (variant.buildType == "release") "release" else "debug"
         val termuxAm = tasks.register<TermuxAmAssetTask>("termuxAm${variant.name.replaceFirstChar { it.uppercase() }}") {

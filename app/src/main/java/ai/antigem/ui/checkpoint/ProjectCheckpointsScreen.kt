@@ -71,7 +71,7 @@ fun ProjectCheckpointsScreen() {
         val muted = MaterialTheme.colorScheme.onSurfaceVariant
         Column(Modifier.fillMaxSize().bouncyVerticalScroll(rememberScrollState()).padding(16.dp)) {
             Text(
-                "Before every message you send (Claude Code, Codex, OpenCode or Antigravity), AntiGem saves a hidden copy of " +
+                "Before every message you send (Claude Code, Codex, OpenCode or Antigravity), CineCode-AI saves a hidden copy of " +
                     "the project's files. Each message then gets a restore point: go back to before it, with a preview of every " +
                     "file that changes. Your own git history, branches, staging and stashes are never touched.",
                 fontSize = 12.5.sp, lineHeight = 17.sp, color = muted
@@ -437,7 +437,7 @@ fun TrackProjectDialog(state: CheckpointProjectState, onAnswer: (String?) -> Uni
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
-                    "Before each message, AntiGem saves a hidden copy of this project's files. Every message then gets a restore " +
+                    "Before each message, CineCode-AI saves a hidden copy of this project's files. Every message then gets a restore " +
                         "point: go back to before it, with a preview of each file that changes. Your git history, branches and staging stay untouched.",
                     fontSize = 14.sp, lineHeight = 20.sp
                 )

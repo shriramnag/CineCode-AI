@@ -85,13 +85,13 @@ import ai.antigem.data.daemon.IdeDaemonManager
 import ai.antigem.data.daemon.IdeApiClient
 
 enum class SettingsSection(val title: String, val subtitle: String) {
-    MAIN("Settings & Preferences", "Configure your AntiGem experience"),
+    MAIN("Settings & Preferences", "Configure your CineCode-AI experience"),
     THEMES("Themes", "Light and dark mode, and the theme gallery"),
     APPEARANCE("Appearance", "Chat text size, agent steps, message stats, header icons, the app switcher and Gemmy"),
     STEM_RENDERING("STEM & diagrams", "Chemistry, graphs, geometry, simulations, circuits and offline Mermaid in chats"),
-    SERVERS("Where agents run", "This phone (AntiGem or Ubuntu chroot) or your server, and how the app reaches it"),
+    SERVERS("Where agents run", "This phone (CineCode-AI or Ubuntu chroot) or your server, and how the app reaches it"),
     CONNECT_PC("Connect to PC", "Use the agents on your PC (AntiGem in VS Code) from this phone"),
-    WEBVIEW_EXTENSIONS("Custom AntiGem Plugins", "Install and manage plugins: MCP tools and skills"),
+    WEBVIEW_EXTENSIONS("Custom CineCode-AI Plugins", "Install and manage plugins: MCP tools and skills"),
     SLASH_COMMANDS("Slash Commands", "Your own / commands and what they expand to"),
     MCP("MCP Servers", "Model Context Protocol tools & integrations"),
     SKILLS_PLUGINS("Skills & Plugins", "Agent capabilities, Google plugins, and extensions"),
@@ -143,8 +143,8 @@ enum class SettingsSection(val title: String, val subtitle: String) {
     TERMUX_SUPPORT("Termux Support", "Termux:API and the X11 desktop"),
     TERMUX_API("Termux:API", "How termux-api commands are handled"),
     X11_DESKTOP("X11 Desktop", "Linux desktop apps with Termux:X11"),
-    UPDATES("Updates", "Beta updates, and how often AntiGem checks for a new version"),
-    CHANGELOG("What's new", "Every AntiGem version and what changed"),
+    UPDATES("Updates", "Beta updates, and how often CineCode-AI checks for a new version"),
+    CHANGELOG("What's new", "Every CineCode-AI version and what changed"),
     ABOUT("About & Info", "App version, package details, and bridge export");
 
     /** The Jarvis section this page shows (Settings → Jarvis → …), or null. */
@@ -956,7 +956,7 @@ private fun MainSettingsMenu(
                     when {
                         ai.antigem.data.preferences.AuthPreferences.currentRemoteMode -> "Server"
                         ai.antigem.data.local.chroot.ChrootManager.isActiveNow() -> "Ubuntu chroot"
-                        else -> "AntiGem"
+                        else -> "CineCode-AI"
                     } + if (serverColor == QuotaGreen) "" else " · $serverValue", serverColor),
                 pcRow
             ),
@@ -1315,13 +1315,13 @@ private fun TermuxApiSubScreen(cardBg: Color, cardBorder: BorderStroke) {
                     selected = mode == env.TERMUX_API_PROVIDER_BUILTIN,
                     title = "Built-in",
                     tag = "No app needed",
-                    description = "AntiGem handles clipboard, toast, torch, vibration, text to speech, battery, volume and notifications. Other commands (location, camera, sensors, SMS, …) say they need AntiGem's Termux:API app.",
+                    description = "CineCode-AI handles clipboard, toast, torch, vibration, text to speech, battery, volume and notifications. Other commands (location, camera, sensors, SMS, …) say they need CineCode-AI's Termux:API app.",
                     enabled = true,
                     onClick = { choose(env.TERMUX_API_PROVIDER_BUILTIN) }
                 )
                 TermuxApiModeOption(
                     selected = mode == env.TERMUX_API_PROVIDER_EXTERNAL,
-                    title = "AntiGem's Termux:API app",
+                    title = "CineCode-AI's Termux:API app",
                     tag = if (appInstalled) null else "Install it first",
                     description = "Every termux-* command goes to the app ($apiApp), all of them supported.",
                     enabled = appInstalled || mode == env.TERMUX_API_PROVIDER_EXTERNAL,
@@ -1356,7 +1356,7 @@ private fun TermuxApiSubScreen(cardBg: Color, cardBorder: BorderStroke) {
                     ) { Text("Install", fontSize = 12.sp, fontWeight = FontWeight.SemiBold) }
                 }
                 TermuxApiStatusRow(
-                    title = "AntiGem's Termux:API app",
+                    title = "CineCode-AI's Termux:API app",
                     detail = "Location, camera, sensors, SMS and the other commands ($apiApp)",
                     installed = appInstalled
                 ) {
@@ -1677,7 +1677,7 @@ private fun AppearanceSubScreen(
                         color = ClaudeTerracotta.copy(alpha = 0.15f)
                     ) {
                         Text(
-                            text = "How does AntiGem connect to AGY Hub?",
+                            text = "How does CineCode-AI connect to AGY Hub?",
                             fontSize = (13 * chatFontScale).sp,
                             color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
@@ -1697,7 +1697,7 @@ private fun AppearanceSubScreen(
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             Text(
-                                text = "AntiGem connects via gRPC-Web to stream live agent steps and tool executions.",
+                                text = "CineCode-AI connects via gRPC-Web to stream live agent steps and tool executions.",
                                 fontSize = (13 * chatFontScale).sp,
                                 lineHeight = (18 * chatFontScale).sp,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -2280,7 +2280,7 @@ private fun AppearanceSubScreen(
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
-                                        text = "Modern AntiGem styled icon & name",
+                                        text = "Modern CineCode-AI styled icon & name",
                                         fontSize = 10.5.sp,
                                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                                     )
@@ -2853,7 +2853,7 @@ private fun McpSubScreen(
             val presets = listOf(
                 // No spec: opens the picker for an installed plugin's own MCP
                 McpPreset("Custom Plugin MCP", "Pick an installed plugin", Icons.Outlined.Extension, ClaudeTerracotta, null),
-                McpPreset("Plugin Developer", "Build & test AntiGem plugins", Icons.Outlined.DeveloperMode, GeminiPurple,
+                McpPreset("Plugin Developer", "Build & test CineCode-AI plugins", Icons.Outlined.DeveloperMode, GeminiPurple,
                     localSpec(bridge.DEVELOPER_MCP_NAME, "/extension_developer")),
                 McpPreset("Mini App Developer", "Build, test & sign mini apps", androidx.compose.material.icons.Icons.Outlined.Apps, GeminiBlue,
                     localSpec(bridge.MINI_APP_DEVELOPER_MCP_NAME, "/mini_app_developer")),
@@ -4254,7 +4254,7 @@ private fun TerminalSubScreen(
                 } else if (!remoteMode) {
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
-                        text = "Terminal tabs open a shell where the agents run on this phone: AntiGem's built-in environment or the Ubuntu chroot, chosen (and installed or deleted) in Where agents run.",
+                        text = "Terminal tabs open a shell where the agents run on this phone: CineCode-AI's built-in environment or the Ubuntu chroot, chosen (and installed or deleted) in Where agents run.",
                         fontSize = 11.5.sp,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
@@ -4579,7 +4579,7 @@ internal fun FactoryResetDialogs(show: Boolean, onShown: () -> Unit) {
                     )
 
                     Text(
-                        text = "AntiGem is wiping all local app data, rootfs, and settings.\n\nThe app will automatically close in $countdownSeconds seconds. Simply re-open AntiGem to start fresh.",
+                        text = "CineCode-AI is wiping all local app data, rootfs, and settings.\n\nThe app will automatically close in $countdownSeconds seconds. Simply re-open CineCode-AI to start fresh.",
                         fontSize = 13.5.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -6628,7 +6628,7 @@ private fun DataProtectionSubScreen(
 
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(
-                    text = "Why enable this? AntiGem hosts a full local Linux environment with your Node/Python packages, Git repos, and active coding projects. An accidental drag-to-uninstall from the home screen wipes all of it permanently.\n\nActivating Android Device Administrator greys out the 'Uninstall' button at the OS level across phone launchers. You can safely disable this anytime if you wish to uninstall.",
+                    text = "Why enable this? CineCode-AI hosts a full local Linux environment with your Node/Python packages, Git repos, and active coding projects. An accidental drag-to-uninstall from the home screen wipes all of it permanently.\n\nActivating Android Device Administrator greys out the 'Uninstall' button at the OS level across phone launchers. You can safely disable this anytime if you wish to uninstall.",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     lineHeight = 16.sp
@@ -6773,7 +6773,7 @@ private fun DataProtectionSubScreen(
 
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(
-                    text = "When enabled (default), tapping 'Clear Data' in Android's phone Settings > App Info opens AntiGem's Safe Space Manager instead of wiping everything instantly with one click. This prevents accidental wipes and allows safe cache-only cleanup.\n\nYou can toggle this off anytime if you prefer the standard raw Android 'Clear Data' button.",
+                    text = "When enabled (default), tapping 'Clear Data' in Android's phone Settings > App Info opens CineCode-AI's Safe Space Manager instead of wiping everything instantly with one click. This prevents accidental wipes and allows safe cache-only cleanup.\n\nYou can toggle this off anytime if you prefer the standard raw Android 'Clear Data' button.",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     lineHeight = 16.sp
@@ -6806,7 +6806,7 @@ private fun DataProtectionSubScreen(
             title = { Text("Disable Uninstall Protection?") },
             text = {
                 Text(
-                    "This will remove AntiGem's Device Admin status. The app will become vulnerable to accidental home-screen uninstallation.",
+                    "This will remove CineCode-AI's Device Admin status. The app will become vulnerable to accidental home-screen uninstallation.",
                     fontSize = 13.sp
                 )
             },
@@ -8693,14 +8693,14 @@ private fun AboutSubScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 ai.antigem.ui.components.AppIconImage(
-                    contentDescription = "AntiGem",
+                    contentDescription = "CineCode-AI",
                     modifier = Modifier
                         .size(64.dp)
                         .clip(RoundedCornerShape(16.dp))
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = "AntiGem",
+                    text = "CineCode-AI",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -8921,8 +8921,8 @@ private fun AboutSubScreen(
                                         updateCheckResultText = null
                                     } else {
                                         isUpdateCheckError = false
-                                        updateCheckResultText = "AntiGem is up to date (v${BuildConfig.VERSION_NAME})."
-                                        Toast.makeText(context, "AntiGem is up to date!", Toast.LENGTH_SHORT).show()
+                                        updateCheckResultText = "CineCode-AI is up to date (v${BuildConfig.VERSION_NAME})."
+                                        Toast.makeText(context, "CineCode-AI is up to date!", Toast.LENGTH_SHORT).show()
                                     }
                                 }.onFailure { err ->
                                     isUpdateCheckError = true
@@ -9176,7 +9176,7 @@ private fun AboutSubScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/santoshkurmi/antigem"))
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/shriramnag/CineCode-AI"))
                             context.startActivity(intent)
                         }
                 ) {
@@ -9203,7 +9203,7 @@ private fun AboutSubScreen(
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    text = "github.com/santoshkurmi/antigem",
+                                    text = "github.com/shriramnag/CineCode-AI",
                                     fontSize = 11.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -9224,7 +9224,7 @@ private fun AboutSubScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/santoshkurmi/antigem/releases"))
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/shriramnag/CineCode-AI/releases"))
                             context.startActivity(intent)
                         }
                 ) {

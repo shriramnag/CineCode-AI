@@ -79,8 +79,8 @@ fun AgyVoiceCallSettingsCard(modifier: Modifier = Modifier) {
                 }
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "The Voice call tile in Quick Settings and the \"Voice call\" shortcut (long-press the AntiGem icon) call " +
-                        "Antigravity in the last chat that had a call, or a new chat the first time. When AntiGem is " +
+                    "The Voice call tile in Quick Settings and the \"Voice call\" shortcut (long-press the CineCode-AI icon) call " +
+                        "Antigravity in the last chat that had a call, or a new chat the first time. When CineCode-AI is " +
                         "running the call starts without opening it; otherwise the app opens and calls once the server is up. " +
                         "During a call, a tap on the tile ends it.",
                     fontSize = 12.5.sp, color = subtleText()
@@ -96,7 +96,7 @@ fun AgyVoiceCallSettingsCard(modifier: Modifier = Modifier) {
                     }
                     OutlinedButton(onClick = {
                         if (!VoiceCallLauncher.pinShortcut(context)) {
-                            AppToastHelper.showToast("This launcher can't add shortcuts. Long-press the AntiGem icon instead.", ChatToastType.INFO)
+                            AppToastHelper.showToast("This launcher can't add shortcuts. Long-press the CineCode-AI icon instead.", ChatToastType.INFO)
                         }
                     }) { Text("Add to home screen") }
                 }
@@ -122,7 +122,7 @@ fun AgyVoiceCallSettingsCard(modifier: Modifier = Modifier) {
                 }
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "While a call runs and AntiGem is not on screen, the call shows over other apps: a panel on the lower half " +
+                    "While a call runs and CineCode-AI is not on screen, the call shows over other apps: a panel on the lower half " +
                         "of the screen with the status (and when the agent is working), the voice's orb, live captions and the " +
                         "call's buttons. Minimize it (⌄ or drag it down) to a small circle you can drag anywhere; tap the circle " +
                         "to open the panel again. Calls from the tile or shortcut open as the panel; leaving the app during a " +

@@ -730,7 +730,7 @@ private fun CallLogPanel(log: List<String>, onClose: () -> Unit) {
                     "Copy", color = Color.White.copy(alpha = 0.75f), fontSize = 13.sp, fontWeight = FontWeight.Medium,
                     modifier = Modifier.clip(RoundedCornerShape(50)).clickable {
                         val cm = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                        cm.setPrimaryClip(android.content.ClipData.newPlainText("Voice call log", "AntiGem voice call log\n" + log.joinToString("\n")))
+                        cm.setPrimaryClip(android.content.ClipData.newPlainText("Voice call log", "CineCode-AI voice call log\n" + log.joinToString("\n")))
                         ai.antigem.ui.components.AppToastHelper.showToast("Call log copied", ai.antigem.ui.components.ChatToastType.SUCCESS)
                     }.padding(horizontal = 8.dp, vertical = 4.dp)
                 )

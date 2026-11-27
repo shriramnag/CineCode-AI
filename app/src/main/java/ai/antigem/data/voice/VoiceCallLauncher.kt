@@ -112,7 +112,7 @@ object VoiceCallLauncher {
                 AgyVoiceCall.state.first { it.phase == AgyVoiceCall.Phase.LIVE || it.phase == AgyVoiceCall.Phase.FAILED || !it.active }
             } ?: return@launch
             if (st.phase == AgyVoiceCall.Phase.FAILED && !_appVisible.value) {
-                Toast.makeText(app, "Voice call failed: " + (st.error ?: "open AntiGem for details"), Toast.LENGTH_LONG).show()
+                Toast.makeText(app, "Voice call failed: " + (st.error ?: "open CineCode-AI for details"), Toast.LENGTH_LONG).show()
             }
         }
     }

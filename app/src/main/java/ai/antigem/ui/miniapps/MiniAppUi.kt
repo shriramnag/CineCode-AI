@@ -248,7 +248,7 @@ private fun McpCallDialog(d: NativeDialog.McpCall) {
         title = { Text("${d.app.name} wants to use ${d.tool}") },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
-                Text("AntiGem tools: ${d.server}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("CineCode-AI tools: ${d.server}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (d.description.isNotBlank()) Text(d.description.take(300), style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 4.dp))
                 if (d.args.isNotBlank() && d.args != "{}") {
                     Text("With", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 12.dp, bottom = 4.dp))
@@ -429,7 +429,7 @@ fun AppInfoSheet(app: MiniApp, onDismiss: () -> Unit, onClearData: () -> Unit) {
             // AntiGem tools (MCP): whether each call needs the user's OK first
             val mcpServers = remember(app) { MiniAppMcpAccess.servers(app) }
             if (mcpServers.isNotEmpty()) {
-                Text("AntiGem tools", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 16.dp, bottom = 4.dp))
+                Text("CineCode-AI tools", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 16.dp, bottom = 4.dp))
                 mcpServers.forEach { sv ->
                     val ask = remember(tick) { MiniAppMcpAccess.askSwitch(context, app, sv) }
                     Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -446,7 +446,7 @@ fun AppInfoSheet(app: MiniApp, onDismiss: () -> Unit, onClearData: () -> Unit) {
             BackgroundSection(app, tick) { tick++ }
 
             Text("Storage", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 20.dp, bottom = 4.dp))
-            Text((if (app.signed) "Code: installed by AntiGem (read-only, checked against its signature)" else "Code: ~/mini-apps/${app.folder.name}") + "\nData: ~/.antigem/mini-apps/${app.id}",
+            Text((if (app.signed) "Code: installed by CineCode-AI (read-only, checked against its signature)" else "Code: ~/mini-apps/${app.folder.name}") + "\nData: ~/.antigem/mini-apps/${app.id}",
                 style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurfaceVariant)
             app.sharedId?.let { sid ->
                 val group = remember(app) { MiniApps.sharedGroup(context, app, fresh = true) }
@@ -565,7 +565,7 @@ private fun BackgroundSection(app: MiniApp, tick: Int, refresh: () -> Unit) {
     }
     if ((reminders.length() > 0 || tasks.length() > 0) && !MiniAppScheduler.canExact(context)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Reminders may come late: AntiGem has no \"Alarms & reminders\" access.", style = MaterialTheme.typography.bodySmall,
+            Text("Reminders may come late: CineCode-AI has no \"Alarms & reminders\" access.", style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error, modifier = Modifier.weight(1f))
             TextButton(onClick = {
                 runCatching { context.startActivity(Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, android.net.Uri.parse("package:${context.packageName}"))) }
@@ -579,7 +579,7 @@ private fun BackgroundSection(app: MiniApp, tick: Int, refresh: () -> Unit) {
         val pm = context.getSystemService(android.os.PowerManager::class.java)
         if (!pm.isIgnoringBatteryOptimizations(context.packageName)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Android may delay or skip background tasks while AntiGem's battery use is optimized.", style = MaterialTheme.typography.bodySmall,
+                Text("Android may delay or skip background tasks while CineCode-AI's battery use is optimized.", style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error, modifier = Modifier.weight(1f))
                 @android.annotation.SuppressLint("BatteryLife")
                 val allow = {
@@ -617,7 +617,7 @@ private fun McpTypedConfirmDialog(app: MiniApp, name: String, onResult: (Boolean
                 Text(
                     "Through $server an app can run commands, tap and type on your phone, or read and act in the browser, depending on the tool. " +
                         "A mistake or a bad app can delete things, send messages or leak what's on screen. Only continue if you trust this app completely. " +
-                        "By default AntiGem still asks you before each call (App info → Ask before each call).",
+                        "By default CineCode-AI still asks you before each call (App info → Ask before each call).",
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text("Type ${MiniAppPermissions.DANGER_PHRASE} to confirm:", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 16.dp, bottom = 8.dp))

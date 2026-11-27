@@ -283,7 +283,7 @@ object ChrootManager {
         val process = try {
             ProcessBuilder("su", "-c", line).start()
         } catch (e: IOException) {
-            return@withContext SuResult(-1, emptyList(), "su is not available: this phone is not rooted, or AntiGem has no root access")
+            return@withContext SuResult(-1, emptyList(), "su is not available: this phone is not rooted, or CineCode-AI has no root access")
         }
         val out = Collections.synchronizedList(mutableListOf<String>())
         val err = StringBuffer()
@@ -332,7 +332,7 @@ object ChrootManager {
     suspend fun probe(context: Context): ChrootProbe {
         if (!checkRoot()) {
             return ChrootProbe(false, null, null, false, null, null, null,
-                "No root access. A rooted phone (Magisk, KernelSU or APatch) that grants AntiGem root is needed.").also { _probe.value = it }
+                "No root access. A rooted phone (Magisk, KernelSU or APatch) that grants CineCode-AI root is needed.").also { _probe.value = it }
         }
         val r = runCtl(context, listOf("probe"), timeoutMs = 30_000L)
         val v = r.values()
@@ -475,7 +475,7 @@ object ChrootManager {
         if (withBridge) {
             val bridge = linuxBridgeFile(context) ?: return StartResult(false,
                 if (ai.antigem.BuildConfig.HAS_CHROOT) "This app has no Linux bridge inside."
-                else "This is the normal build of AntiGem, without the Ubuntu chroot. Install the chroot build: " +
+                else "This is the normal build of CineCode-AI, without the Ubuntu chroot. Install the chroot build: " +
                     "Settings → Where agents run → Ubuntu chroot → Get the chroot build (it keeps your data).", false, null)
             args += listOf("--bridge", bridge.absolutePath)
         }

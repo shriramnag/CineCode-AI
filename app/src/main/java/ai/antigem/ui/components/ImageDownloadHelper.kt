@@ -116,7 +116,7 @@ object ImageDownloadHelper {
                 val values = ContentValues().apply {
                     put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
                     put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
-                    put(MediaStore.MediaColumns.RELATIVE_PATH, "${Environment.DIRECTORY_DOWNLOADS}/AntiGem")
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, "${Environment.DIRECTORY_DOWNLOADS}/CineCode-AI")
                     put(MediaStore.MediaColumns.IS_PENDING, 1)
                 }
                 val resolver = context.contentResolver
@@ -128,7 +128,7 @@ object ImageDownloadHelper {
                     resolver.update(uri, values, null, null)
                 }
             } else {
-                val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "AntiGem").apply { mkdirs() }
+                val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "CineCode-AI").apply { mkdirs() }
                 val target = File(dir, fileName)
                 target.outputStream().use { out -> stream.copyTo(out) }
                 Uri.fromFile(target)
@@ -172,7 +172,7 @@ object ImageDownloadHelper {
                 val contentValues = ContentValues().apply {
                     put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
                     put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
-                    put(MediaStore.MediaColumns.RELATIVE_PATH, "${Environment.DIRECTORY_DOWNLOADS}/AntiGem")
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, "${Environment.DIRECTORY_DOWNLOADS}/CineCode-AI")
                     put(MediaStore.MediaColumns.IS_PENDING, 1)
                 }
 
@@ -191,7 +191,7 @@ object ImageDownloadHelper {
 
                 Pair(itemUri, mimeType)
             } else {
-                val downloadsDir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "AntiGem")
+                val downloadsDir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "CineCode-AI")
                 if (!downloadsDir.exists()) downloadsDir.mkdirs()
                 val targetFile = File(downloadsDir, fileName)
                 targetFile.writeBytes(bytes)

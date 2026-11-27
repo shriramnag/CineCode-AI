@@ -174,7 +174,7 @@ internal fun UpdateSettingsScreen(cardBg: Color, cardBorder: BorderStroke) {
             CardTitle(Icons.Outlined.Schedule, "Background checks")
             SwitchRow(
                 title = "Check in the background",
-                subtitle = "Notifies you when a new version is out, even when AntiGem is closed.",
+                subtitle = "Notifies you when a new version is out, even when CineCode-AI is closed.",
                 checked = backgroundOn,
                 onCheckedChange = { on ->
                     backgroundOn = on
@@ -221,8 +221,8 @@ internal fun UpdateSettingsScreen(cardBg: Color, cardBorder: BorderStroke) {
                 )
             }
             Text(
-                text = if (backgroundOn) "AntiGem checks ${describe(every, unit)} in the background, and every time you open it."
-                else "No background checks. AntiGem still checks every time you open it.",
+                text = if (backgroundOn) "CineCode-AI checks ${describe(every, unit)} in the background, and every time you open it."
+                else "No background checks. CineCode-AI still checks every time you open it.",
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 lineHeight = 16.sp

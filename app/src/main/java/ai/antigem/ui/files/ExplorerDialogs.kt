@@ -252,8 +252,8 @@ internal fun openOptionsFor(entry: ExplorerEntry, ideAvailable: Boolean, content
     val preview = when {
         !allowPreview -> null
         k == FileKind.MARKDOWN -> OpenOption(OpenChoice.PREVIEW, Icons.Outlined.Visibility, "Preview", "Rendered Markdown", recommended = false)
-        k == FileKind.VIDEO -> OpenOption(OpenChoice.PREVIEW, Icons.Outlined.SmartDisplay, "Play in AntiGem", "Built-in player: full screen, seek, speed", recommended = true)
-        k == FileKind.IMAGE && !textual -> OpenOption(OpenChoice.PREVIEW, Icons.Outlined.Image, "View in AntiGem", "Built-in viewer: zoom, save, share", recommended = true)
+        k == FileKind.VIDEO -> OpenOption(OpenChoice.PREVIEW, Icons.Outlined.SmartDisplay, "Play in CineCode-AI", "Built-in player: full screen, seek, speed", recommended = true)
+        k == FileKind.IMAGE && !textual -> OpenOption(OpenChoice.PREVIEW, Icons.Outlined.Image, "View in CineCode-AI", "Built-in viewer: zoom, save, share", recommended = true)
         FileKinds.isBrowsableArchive(entry.name) -> OpenOption(OpenChoice.PREVIEW, Icons.Outlined.Inventory2, "View contents", "See what is inside, then extract", recommended = k == FileKind.ARCHIVE)
         else -> null
     }

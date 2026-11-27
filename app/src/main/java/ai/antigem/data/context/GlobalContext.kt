@@ -137,7 +137,7 @@ object GlobalContext {
         append("$h Where you run\n")
         when (runPlace) {
             RunPlace.ANTIGEM -> {
-                append("- Android, in the AntiGem app's built-in Linux environment (Termux packages), as the app's own user. There is no sudo; /tmp, /usr and /etc are not usable.\n")
+                append("- Android, in the CineCode-AI app's built-in Linux environment (Termux packages), as the app's own user. There is no sudo; /tmp, /usr and /etc are not usable.\n")
                 append("- Temporary files: use \$TMPDIR ($filesDir/usr/tmp), never /tmp. Install packages with `pkg install <name>`.\n")
                 append("- Home is \$HOME ($filesDir/home); phone storage is /sdcard.\n")
                 append("- Root & phone access: the phone may be rooted (`su -c '…'`), connected to adb (`adb shell …`) or have Shizuku (`rish -c '…'`). Never use any of them on your own; only when the user asks you to.\n\n")
@@ -152,7 +152,7 @@ object GlobalContext {
                 append("- Android's own tools (`termux-*`, `am`, `pm`) are not available here. The phone may be reachable through adb (`adb shell …`), Shizuku (`rish -c '…'`) or its root (`android-su -c '…'`): use them only when the user asks you to.\n\n")
             }
             RunPlace.SERVER -> {
-                append("- On the user's own server (not the phone): the user reads and answers in the AntiGem app on their phone. Paths are paths on the server.\n")
+                append("- On the user's own server (not the phone): the user reads and answers in the CineCode-AI app on their phone. Paths are paths on the server.\n")
                 append(ROOT_RULE)
                 append("\n")
             }
@@ -220,9 +220,9 @@ object GlobalContext {
             if (sendFirst) {
                 append(
                     when {
-                        fresh -> "[AntiGem app context: from the app the user chats through, not written by the user. Follow it for this whole chat; it is not repeated.]"
-                        known != null -> "[AntiGem app context, updated: it replaces the earlier copy in this chat. Follow it from now on.]"
-                        else -> "[AntiGem app context: from the app the user chats through. Follow it from now on in this chat.]"
+                        fresh -> "[CineCode-AI app context: from the app the user chats through, not written by the user. Follow it for this whole chat; it is not repeated.]"
+                        known != null -> "[CineCode-AI app context, updated: it replaces the earlier copy in this chat. Follow it from now on.]"
+                        else -> "[CineCode-AI app context: from the app the user chats through. Follow it from now on in this chat.]"
                     }
                 ).append("\n\n").append(first)
             }
@@ -272,7 +272,7 @@ object GlobalContext {
     /** A section of the Jarvis guide (first message of a Jarvis chat): the built-in context and the user's Jarvis-enabled first-message entries. */
     fun jarvisGuideSection(): String? {
         val parts = mutableListOf<String>()
-        if (_builtInEnabled.value) parts += "## AntiGem app context (for you and every chat you start)\n" + builtInText("###")
+        if (_builtInEnabled.value) parts += "## CineCode-AI app context (for you and every chat you start)\n" + builtInText("###")
         val own = active().filter { it.forJarvis && !it.everyMessage }
         if (own.isNotEmpty()) parts += "## The user's own instructions\n$JARVIS_PRIORITY\n\n" + entriesBlock(own)
         return parts.takeIf { it.isNotEmpty() }?.joinToString("\n\n")
@@ -293,7 +293,7 @@ object GlobalContext {
     /** The context for a chat Jarvis starts for a task: the built-in context and the user's Jarvis-enabled entries. */
     fun taskBody(): String? {
         val parts = mutableListOf<String>()
-        if (_builtInEnabled.value) parts += "[AntiGem app context: from the app, not the user. Follow it for this whole chat.]\n\n" + builtInText()
+        if (_builtInEnabled.value) parts += "[CineCode-AI app context: from the app, not the user. Follow it for this whole chat.]\n\n" + builtInText()
         val own = active().filter { it.forJarvis }
         if (own.isNotEmpty()) parts += "## The user's own instructions\n" + entriesBlock(own)
         return parts.takeIf { it.isNotEmpty() }?.joinToString("\n\n")

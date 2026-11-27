@@ -336,7 +336,7 @@ private fun BackupKeyDialog(afterCreate: Boolean, onResult: (String?) -> Unit) {
         title = { Text(if (afterCreate) "Back up your new key" else "Back up the key") },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
-                Text("The key is saved, locked with this password, to Download/AntiGem on this phone: it stays there even if AntiGem is " +
+                Text("The key is saved, locked with this password, to Download/CineCode-AI on this phone: it stays there even if CineCode-AI is " +
                     "uninstalled. Then you can also send it to Drive or email. If the key is lost, apps signed with it can never be updated.",
                     style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 12.dp))
                 OutlinedTextField(pw, { pw = it }, singleLine = true, label = { Text("Password (8+ characters)") }, modifier = Modifier.fillMaxWidth(),
@@ -419,7 +419,7 @@ fun DeveloperKeyDialog(onDismiss: () -> Unit, pickKeyFile: (onPicked: (Uri?) -> 
                     Text(MiniAppSigning.shortFingerprint(i.second), fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                     val b = backup
-                    if (b == null) Text("Not backed up. If this key is lost (AntiGem uninstalled, data cleared, phone lost), apps signed with it can never be updated.",
+                    if (b == null) Text("Not backed up. If this key is lost (CineCode-AI uninstalled, data cleared, phone lost), apps signed with it can never be updated.",
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
                     else Text("Backed up ${java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT).format(java.util.Date(b.at))}\n${b.path}",
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 8.dp))

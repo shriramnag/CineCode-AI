@@ -342,7 +342,7 @@ object RenderBundle {
         // Mermaid always renders (bundled copy, or the same version from the internet)
         lines += "- ```mermaid: Mermaid ${RenderComponent.MERMAID.version}" + if (RenderComponent.MERMAID in on) " (offline)" else " (loaded from the internet)"
         return buildString {
-            append("## Extra blocks this chat renders (AntiGem $BUNDLE_TAG)\n")
+            append("## Extra blocks this chat renders (CineCode-AI $BUNDLE_TAG)\n")
             append(lines.joinToString("\n"))
             if (canReadFiles && _installed.value && guideFile().isFile) {
                 append("\nFull syntax, examples and limits: ${guideFile().absolutePath} (read it before writing a block you are unsure of).")

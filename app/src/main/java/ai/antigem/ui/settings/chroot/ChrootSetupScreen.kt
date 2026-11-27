@@ -284,7 +284,7 @@ fun ChrootSetupScreen(
                                     Text(f.os.ifBlank { "Linux" }, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, color = AppColors.onBackground, modifier = Modifier.weight(1f))
                                     if (f.running) ChrootTag("running", AppColors.success)
                                     else if (f.mounted) ChrootTag("mounted, nothing running", AppColors.warning)
-                                    if (!f.hasManifest) { Spacer(Modifier.width(4.dp)); ChrootTag("not AntiGem's yet", AppColors.warning) }
+                                    if (!f.hasManifest) { Spacer(Modifier.width(4.dp)); ChrootTag("not CineCode-AI's yet", AppColors.warning) }
                                 }
                                 Text("${f.path} · ${f.arch}", fontSize = 11.5.sp, fontFamily = FontFamily.Monospace, color = AppColors.textSecondary)
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 6.dp)) {
@@ -331,7 +331,7 @@ fun ChrootSetupScreen(
                 // ---------------- source
                 ChrootSection("Source", "Where the Ubuntu rootfs comes from", Icons.Outlined.Cloud) {
                     ChrootRadioRow(
-                        "AntiGem Ubuntu (prebuilt)",
+                        "CineCode-AI Ubuntu (prebuilt)",
                         "Ubuntu 24.04 with sudo, git, curl, Node.js, Python and the Android fixes already set up: the quickest start.",
                         selected = source == SourceChoice.PREBUILT,
                         enabled = prebuiltAvailable == true,
@@ -350,7 +350,7 @@ fun ChrootSetupScreen(
                         OutlinedTextField(sha, { sha = it }, label = { Text("sha256 (optional)") }, singleLine = true,
                             modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
                     }
-                    ChrootRadioRow("A file on this phone", "An AntiGem backup (keeps its user, home, settings and packages), or any rootfs .tar.gz / .tar.xz", source == SourceChoice.FILE) {
+                    ChrootRadioRow("A file on this phone", "A CineCode-AI backup (keeps its user, home, settings and packages), or any rootfs .tar.gz / .tar.xz", source == SourceChoice.FILE) {
                         if (fileUri == null) filePicker.launch(arrayOf("*/*")) else source = SourceChoice.FILE
                     }
                     if (source == SourceChoice.FILE) {
@@ -364,9 +364,9 @@ fun ChrootSetupScreen(
 
                 // ---------------- location
                 ChrootSection("Location", "The rootfs needs Linux permissions, so it lives on /data (never on /sdcard)", Icons.Outlined.Storage) {
-                    ChrootRadioRow("${ChrootManager.BASE_DIR}/<name>", "Stays when AntiGem is uninstalled or its data is cleared, and is found again after a reinstall.",
+                    ChrootRadioRow("${ChrootManager.BASE_DIR}/<name>", "Stays when CineCode-AI is uninstalled or its data is cleared, and is found again after a reinstall.",
                         location == LocationChoice.DEFAULT, tag = "recommended") { location = LocationChoice.DEFAULT }
-                    ChrootRadioRow("AntiGem's app storage", "Removed together with the app (uninstall or Clear data). Private mount namespace only.",
+                    ChrootRadioRow("CineCode-AI's app storage", "Removed together with the app (uninstall or Clear data). Private mount namespace only.",
                         location == LocationChoice.APP) { location = LocationChoice.APP; nsMode = ChrootNsMode.PRIVATE }
                     ChrootRadioRow("Another folder on /data", null, location == LocationChoice.CUSTOM) { location = LocationChoice.CUSTOM }
                     if (location == LocationChoice.CUSTOM) {
@@ -380,12 +380,12 @@ fun ChrootSetupScreen(
                     val pathError = ChrootManager.validateRootPath(path)
                         ?: if (location != LocationChoice.CUSTOM && !ChrootManager.isInstallName(name)) "The name may use letters, digits, . _ and -." else null
                     if (pathError != null) ChrootNote(pathError, AppColors.danger)
-                    if (installs.any { it.path == path }) ChrootNote("AntiGem already has an install there: pick another name.", AppColors.danger)
+                    if (installs.any { it.path == path }) ChrootNote("CineCode-AI already has an install there: pick another name.", AppColors.danger)
                 }
 
                 // ---------------- user
-                ChrootSection("User", "The normal user the bridge, the agents and the terminal run as (it gets AntiGem's own uid)", Icons.Outlined.Person) {
-                    if (source == SourceChoice.FILE) ChrootNote("Restoring an AntiGem backup keeps the backup's own user (and its settings): these fields are used for other rootfs files.", AppColors.info)
+                ChrootSection("User", "The normal user the bridge, the agents and the terminal run as (it gets CineCode-AI's own uid)", Icons.Outlined.Person) {
+                    if (source == SourceChoice.FILE) ChrootNote("Restoring an CineCode-AI backup keeps the backup's own user (and its settings): these fields are used for other rootfs files.", AppColors.info)
                     OutlinedTextField(user, { user = it.trim().lowercase() }, label = { Text("User name") }, singleLine = true,
                         isError = !ChrootManager.isUserName(user), modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
                     Spacer(Modifier.height(6.dp))
@@ -549,7 +549,7 @@ private fun AdoptPanel(found: ChrootFound, busy: Boolean, error: String?, onAdop
     Surface(shape = RoundedCornerShape(12.dp), color = AppColors.surface, border = BorderStroke(1.dp, AppColors.border.copy(alpha = 0.5f)),
         modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
         Column(Modifier.padding(12.dp)) {
-            Text("AntiGem writes its manifest and settings into this rootfs and gives its user AntiGem's uid " +
+            Text("CineCode-AI writes its manifest and settings into this rootfs and gives its user CineCode-AI's uid " +
                 "(files in that user's home move with it). Its running processes are stopped first.",
                 fontSize = 11.5.sp, lineHeight = 15.sp, color = AppColors.textSecondary)
             Spacer(Modifier.height(8.dp))

@@ -29,7 +29,7 @@ import java.util.TimeZone
  */
 object JarvisMcp {
 
-    const val INSTRUCTIONS = "Jarvis controls the AntiGem app and leads teams of sub-agents. The first message of a Jarvis chat " +
+    const val INSTRUCTIONS = "Jarvis controls the CineCode-AI app and leads teams of sub-agents. The first message of a Jarvis chat " +
         "has the full guide and tool list; jarvis_help repeats it. Call these tools directly by name (no searching, no config reading). " +
         "In the voice chat everything the user should hear goes through jarvis_speak; in a Jarvis text chat you write normal replies. " +
         "Big jobs go to jarvis_task_start (its own watched chat, optionally a team); pass your manager_id. Never wait or poll for tasks: " +
@@ -798,7 +798,7 @@ object JarvisMcp {
 
     /** Hidden in front of every task's goal: how a sub-agent of Jarvis works and reports, and its team's role. */
     private fun subAgentBrief(team: JarvisManagers.Team?): String = buildString {
-        append("You are a sub-agent of Jarvis, the lead agent of the AntiGem app, which delegated this task to you. Work on it on your own until it is ")
+        append("You are a sub-agent of Jarvis, the lead agent of the CineCode-AI app, which delegated this task to you. Work on it on your own until it is ")
         append("completely done: do not stop halfway to ask for confirmation, and ask a question only when you are truly blocked (it reaches Jarvis). ")
         append("Verify your work (build, tests, or running it) where that makes sense. Finish with a short report: what you did, the files you changed, ")
         append("how you verified it, and anything left open, risky or needing a decision. ")

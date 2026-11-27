@@ -477,7 +477,7 @@ object AndroidDevManager {
                     android.content.Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, android.net.Uri.parse("package:${ctx.packageName}"))
                         .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
                 )
-                report("Allow AntiGem to install apps, then tap Install again.")
+                report("Allow CineCode-AI to install apps, then tap Install again.")
                 return
             }
             val uri = androidx.core.content.FileProvider.getUriForFile(ctx, "${ctx.packageName}.fileprovider", File(path))

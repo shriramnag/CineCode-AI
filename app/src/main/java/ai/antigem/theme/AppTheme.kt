@@ -70,7 +70,7 @@ object ThemeTokens {
     /** AntiGem's own colors (cards, chat, code, status). */
     val app = listOf(
         Token("card", "surface", "Cards and panels (settings cards, pickers, bottom sheets)"),
-        Token("text_secondary", "text", "Secondary text in AntiGem's own screens"),
+        Token("text_secondary", "text", "Secondary text in CineCode-AI's own screens"),
         Token("user_bubble", "chat", "Your messages in the chat"),
         Token("thinking_bg", "chat", "Thinking / summary blocks in the chat"),
         Token("code_bg", "code", "Code block background in chats"),
@@ -91,7 +91,7 @@ object ThemeTokens {
         Token("syntax_control", "code", "Code: control keywords (return, if, for); default = syntax_keyword"),
         Token("syntax_tag", "code", "Code: HTML/XML tags"),
         Token("syntax_attribute", "code", "Code: attributes and properties"),
-        Token("border", "line", "Borders of cards, inputs and chips in AntiGem's own screens"),
+        Token("border", "line", "Borders of cards, inputs and chips in CineCode-AI's own screens"),
         Token("fill", "surface", "Subtle fills: icon circles, inactive chips, hovered rows"),
         Token("success_container", "status", "Soft success background (added files, OK banners)"),
         Token("warning_container", "status", "Soft warning background (modified files, notices)"),
@@ -323,7 +323,7 @@ object BuiltInThemes {
         id = if (dark) ANTIGEM_DARK else LIGHT_DEFAULT,
         name = if (dark) "Amber Night" else "Porcelain",
         dark = dark, builtIn = true,
-        about = if (dark) "AntiGem's original warm dark look with the amber accent" else "AntiGem's original clean light look with the amber accent",
+        about = if (dark) "CineCode-AI's original warm dark look with the amber accent" else "CineCode-AI's original clean light look with the amber accent",
         colors = buildMap {
             put("primary", 0xFFD97706); put("secondary", 0xFFB45309); put("on_primary", 0xFFFFFFFF)
             if (dark) {
@@ -444,7 +444,7 @@ object BuiltInThemes {
                 0xFF0D0E12, 0xFF0D0E12, 0xFF16181D, 0xFF1F2229, 0xFFECEDF0, 0xFF9297A3,
                 0xFF8B9CFF, 0xFF6E7FF3, 0xFFC4A1FF, 0xFF4ADE80, 0xFFF5B454, 0xFFF87171, 0xFF60A5FA,
                 0xFF111318, listOf(0xFFC4A1FF, 0xFF7DD3FC, 0xFF9FE2B0, 0xFFF9B98A, 0xFF5E6573, 0xFF8BB4FF, 0xFFF5D08A, 0xFFB8BDC8)),
-            seeded("graphite", "Graphite", "Warm charcoal with a glowing amber accent: AntiGem's look, refined", true,
+            seeded("graphite", "Graphite", "Warm charcoal with a glowing amber accent: CineCode-AI's look, refined", true,
                 0xFF121212, 0xFF121212, 0xFF1B1B1C, 0xFF262628, 0xFFEDEBE8, 0xFFA29E98,
                 0xFFF0A04B, 0xFFD9822B, 0xFFB794F4, 0xFF5BD18A, 0xFFF4C152, 0xFFEF6B6B, 0xFF6CB4F2,
                 0xFF161616, listOf(0xFFC678DD, 0xFFE5C07B, 0xFF98C379, 0xFFD19A66, 0xFF6B717D, 0xFF61AFEF, 0xFFE5C07B, 0xFFABB2BF)),

@@ -148,7 +148,7 @@ class CrashActivity : ComponentActivity() {
     private fun copy(text: String) {
         runCatching {
             (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
-                .setPrimaryClip(ClipData.newPlainText("AntiGem crash report", text))
+                .setPrimaryClip(ClipData.newPlainText("CineCode-AI crash report", text))
         }
     }
 
@@ -157,7 +157,7 @@ class CrashActivity : ComponentActivity() {
             startActivity(
                 Intent.createChooser(
                     Intent(Intent.ACTION_SEND).setType("text/plain")
-                        .putExtra(Intent.EXTRA_SUBJECT, "AntiGem crash report")
+                        .putExtra(Intent.EXTRA_SUBJECT, "CineCode-AI crash report")
                         .putExtra(Intent.EXTRA_TEXT, text),
                     "Share crash report"
                 )
@@ -204,7 +204,7 @@ private fun CrashScreen(
         Spacer(Modifier.height(12.dp))
         DizzyBlob(Modifier.size(190.dp))
         Text(
-            "Oops! AntiGem tripped over something",
+            "Oops! CineCode-AI tripped over something",
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center

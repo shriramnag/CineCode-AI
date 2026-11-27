@@ -66,7 +66,7 @@ private fun ModePicker(mode: DeviceAccess.Mode, cardBg: Color, cardBorder: Borde
     val su = if (AdbConnectManager.inChroot) "android-su -c" else "su -c"
     Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = cardBg), border = cardBorder) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("How AntiGem reaches this phone", fontSize = 14.5.sp, fontWeight = FontWeight.Bold)
+            Text("How CineCode-AI reaches this phone", fontSize = 14.5.sp, fontWeight = FontWeight.Bold)
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                 modes.forEachIndexed { i, m ->
                     SegmentedButton(
@@ -78,7 +78,7 @@ private fun ModePicker(mode: DeviceAccess.Mode, cardBg: Color, cardBorder: Borde
             }
             Hint(
                 when (mode) {
-                    DeviceAccess.Mode.ADB -> "adb over Wireless debugging: pair once, then AntiGem connects by itself. Runs as the shell user."
+                    DeviceAccess.Mode.ADB -> "adb over Wireless debugging: pair once, then CineCode-AI connects by itself. Runs as the shell user."
                     DeviceAccess.Mode.SHIZUKU -> "Through the Shizuku app, as the shell user (or root, if Shizuku runs as root). No pairing here."
                     DeviceAccess.Mode.ROOT -> "Through the phone's su (Magisk, KernelSU, APatch), as root. For rooted phones."
                 }
@@ -180,7 +180,7 @@ private fun AdbSection(cardBg: Color, cardBorder: BorderStroke) {
                 when {
                     !devOptionsOn -> "Open About phone and tap Build number 7 times to unlock Developer options."
                     !wirelessOn -> "In Developer options, turn on Wireless debugging. Your phone must be on Wi-Fi."
-                    else -> "Ready. Wireless debugging uses a new port each time it turns on; AntiGem finds it for you."
+                    else -> "Ready. Wireless debugging uses a new port each time it turns on; CineCode-AI finds it for you."
                 }
             )
             if (!wirelessReady) OutlinedButton(onClick = { AdbConnectManager.openWirelessDebuggingSettings(context) }) {
@@ -259,7 +259,7 @@ private fun AdbSection(cardBg: Color, cardBorder: BorderStroke) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text("Reconnect automatically", fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
-                    Hint("When Wireless debugging turns on again, for example after Wi-Fi reconnects, AntiGem finds the new port and connects while it's running.")
+                    Hint("When Wireless debugging turns on again, for example after Wi-Fi reconnects, CineCode-AI finds the new port and connects while it's running.")
                 }
                 Spacer(Modifier.width(8.dp))
                 Switch(checked = state.autoReconnect, onCheckedChange = AdbConnectManager::setAutoReconnect)
@@ -269,8 +269,8 @@ private fun AdbSection(cardBg: Color, cardBorder: BorderStroke) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text("Turn Wireless debugging on by itself", fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
-                        Hint("After a reboot or when Wi-Fi comes back, AntiGem switches Wireless debugging on again (while it runs), " +
-                            "so adb reconnects without opening Settings. Turning this on grants AntiGem a system permission " +
+                        Hint("After a reboot or when Wi-Fi comes back, CineCode-AI switches Wireless debugging on again (while it runs), " +
+                            "so adb reconnects without opening Settings. Turning this on grants CineCode-AI a system permission " +
                             "(WRITE_SECURE_SETTINGS) once, through adb, Shizuku or root. On a Wi-Fi network you haven't allowed " +
                             "before, Android asks you first.")
                     }
@@ -325,7 +325,7 @@ private fun ShizukuSection(cardBg: Color, cardBorder: BorderStroke) {
         !status.installed -> Quad(Icons.Outlined.Download, Amber, "Shizuku not installed", "Install it below to get started")
         !status.running -> Quad(Icons.Outlined.PowerSettingsNew, Amber, "Shizuku not running", "Start it in the Shizuku app")
         status.tooOld -> Quad(Icons.Outlined.ErrorOutline, MaterialTheme.colorScheme.error, "Shizuku too old", "Update Shizuku (v11 or newer)")
-        !status.granted -> Quad(Icons.Outlined.Lock, Amber, "Permission needed", "Allow AntiGem below")
+        !status.granted -> Quad(Icons.Outlined.Lock, Amber, "Permission needed", "Allow CineCode-AI below")
         else -> Quad(Icons.Outlined.PhonelinkSetup, QuotaGreen, "Ready", "Commands run as ${status.userLabel} (Shizuku ${status.version})")
     }
     HeaderCard(icon, tint, title, subtitle, cardBg, cardBorder) { ShizukuShell.refresh() }
@@ -341,18 +341,18 @@ private fun ShizukuSection(cardBg: Color, cardBorder: BorderStroke) {
             "reboot: start it there again.")
         if (status.installed && !status.running) OutlinedButton(onClick = { ShizukuShell.openShizuku(context) }) { Text("Open Shizuku") }
     }
-    StepCard(3, "Allow AntiGem", if (status.granted) "Allowed" else null, cardBg, cardBorder) {
-        Hint("Shizuku asks you once whether AntiGem may use it.")
-        if (status.denied) Text("Denied. Tap Allow again, or allow AntiGem in the Shizuku app's list of apps.", fontSize = 12.sp,
+    StepCard(3, "Allow CineCode-AI", if (status.granted) "Allowed" else null, cardBg, cardBorder) {
+        Hint("Shizuku asks you once whether CineCode-AI may use it.")
+        if (status.denied) Text("Denied. Tap Allow again, or allow CineCode-AI in the Shizuku app's list of apps.", fontSize = 12.sp,
             color = MaterialTheme.colorScheme.error)
         if (!status.granted) Button(enabled = status.running && !status.tooOld, onClick = { ShizukuShell.requestPermission() }) {
-            Text("Allow AntiGem")
+            Text("Allow CineCode-AI")
         }
     }
     if (status.ready) TestCard(DeviceAccess.Mode.SHIZUKU, cardBg, cardBorder)
     TerminalCard(
         "rish -c 'pm list packages'\nrish dumpsys battery\nrish            # interactive",
-        "rish runs commands on the phone as ${if (status.uid == 0) "root" else "the shell user"}, through AntiGem (it must be running). " +
+        "rish runs commands on the phone as ${if (status.uid == 0) "root" else "the shell user"}, through CineCode-AI (it must be running). " +
             if (AdbConnectManager.inChroot) "It works the same in the Ubuntu chroot." else "It's also installed in the Ubuntu chroot when that is your runtime.",
         cardBg, cardBorder
     )
@@ -366,7 +366,7 @@ private fun RootSection(cardBg: Color, cardBorder: BorderStroke) {
     val (icon, tint, title, subtitle) = when (state.check) {
         RootShell.Check.GRANTED -> Quad(Icons.Outlined.PhonelinkSetup, QuotaGreen, "Root granted", "Commands run as root through su")
         RootShell.Check.CHECKING -> Quad(Icons.Outlined.Sync, MaterialTheme.colorScheme.primary, "Checking…", "Answer your root manager's prompt")
-        RootShell.Check.DENIED -> Quad(Icons.Outlined.Block, MaterialTheme.colorScheme.error, "Root denied", "Allow AntiGem in your root manager")
+        RootShell.Check.DENIED -> Quad(Icons.Outlined.Block, MaterialTheme.colorScheme.error, "Root denied", "Allow CineCode-AI in your root manager")
         RootShell.Check.NO_SU -> Quad(Icons.Outlined.ErrorOutline, MaterialTheme.colorScheme.error, "No su", "This phone isn't rooted")
         RootShell.Check.UNKNOWN -> Quad(Icons.Outlined.Lock, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f), "Not checked", "Check root below")
     }
@@ -383,9 +383,9 @@ private fun RootSection(cardBg: Color, cardBorder: BorderStroke) {
         }
     }
 
-    StepCard(1, "Allow AntiGem root", if (state.check == RootShell.Check.GRANTED) "Granted" else null, cardBg, cardBorder) {
+    StepCard(1, "Allow CineCode-AI root", if (state.check == RootShell.Check.GRANTED) "Granted" else null, cardBg, cardBorder) {
         Hint("Tap Check root: your root manager (Magisk, KernelSU, APatch) asks you to allow AntiGem. If it shows a message every " +
-            "time AntiGem uses root, you can turn those off for AntiGem in the root manager.")
+            "time CineCode-AI uses root, you can turn those off for CineCode-AI in the root manager.")
         state.message?.let { Text(it, fontSize = 12.sp, color = if (state.check == RootShell.Check.GRANTED) QuotaGreen else MaterialTheme.colorScheme.error) }
         Button(enabled = state.check != RootShell.Check.CHECKING, onClick = { scope.launch { RootShell.check() } }) {
             Text(if (state.check == RootShell.Check.GRANTED) "Check again" else "Check root")
@@ -396,7 +396,7 @@ private fun RootSection(cardBg: Color, cardBorder: BorderStroke) {
         TerminalCard(
             "android-su -c 'pm list packages'\nandroid-su            # interactive",
             "In the Ubuntu chroot, su and sudo are Ubuntu's (no Android commands there): android-su runs commands as root on " +
-                "the phone itself, through AntiGem (it must be running).",
+                "the phone itself, through CineCode-AI (it must be running).",
             cardBg, cardBorder
         )
     } else {
@@ -533,7 +533,7 @@ private fun PairingSteps() {
         listOf(
             "Tap Start pairing. A notification appears and Wireless debugging opens.",
             "Tap \"Pair device with pairing code\".",
-            "Pull down the notification shade and type the 6-digit code into the AntiGem notification.",
+            "Pull down the notification shade and type the 6-digit code into the CineCode-AI notification.",
         ).forEachIndexed { i, text -> Hint("${i + 1}. $text") }
         Text(
             "Stay in Settings while you do this. Android closes the pairing dialog as soon as you leave it.",

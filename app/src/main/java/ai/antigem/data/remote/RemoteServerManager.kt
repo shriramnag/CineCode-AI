@@ -642,7 +642,7 @@ object RemoteServerManager {
             _detail.value = "Connecting to ${pc.pcName}…"
             val s = session()
             syncTunnels(s)
-            _detail.value = "Checking AntiGem on ${pc.pcName}…"
+            _detail.value = "Checking CineCode-AI on ${pc.pcName}…"
             var up = false
             for (i in 0 until 12) {
                 if (bridgeReachable()) { up = true; break }

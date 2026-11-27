@@ -51,7 +51,7 @@ class JarvisService : Service() {
                 synchronized(lock) { pending = false; stopWhenStarted = false }
                 if (JarvisController.isAttached) {
                     JarvisController.setHandsFree(false)
-                    JarvisController.showProblem("Hands-free couldn't start: Android doesn't let AntiGem open the microphone from the background. Open AntiGem and turn it on again.")
+                    JarvisController.showProblem("Hands-free couldn't start: Android doesn't let CineCode-AI open the microphone from the background. Open CineCode-AI and turn it on again.")
                 }
             }
             stopSelf()

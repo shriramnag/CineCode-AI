@@ -136,13 +136,13 @@ fun TerminalLauncherOnboardingDialog(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     ai.antigem.ui.components.AppIconImage(
-                                        contentDescription = "AntiGem",
+                                        contentDescription = "CineCode-AI",
                                         modifier = Modifier.matchParentSize()
                                     )
                                 }
                                 Spacer(modifier = Modifier.height(6.dp))
                                 Text(
-                                    text = "AntiGem",
+                                    text = "CineCode-AI",
                                     fontSize = 11.5.sp,
                                     fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.onSurface
@@ -318,7 +318,7 @@ fun TerminalLauncherOnboardingDialog(
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
-                                        text = "Modern unified icon matching AntiGem",
+                                        text = "Modern unified icon matching CineCode-AI",
                                         fontSize = 11.sp,
                                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                                     )

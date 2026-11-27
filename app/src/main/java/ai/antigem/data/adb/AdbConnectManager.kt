@@ -226,7 +226,7 @@ object AdbConnectManager {
         }
         prefs.edit().putBoolean("auto_wireless", true).apply()
         _state.update { it.copy(autoWireless = true, secureSettings = true) }
-        report("Wireless debugging will be turned back on by itself while AntiGem runs.")
+        report("Wireless debugging will be turned back on by itself while CineCode-AI runs.")
         maybeTurnOnWireless()
     }
 
@@ -603,7 +603,7 @@ object AdbConnectManager {
         val device = _state.value.connectedDevice?.serial
         postResult(
             if (connected) "ADB connected" else "ADB paired",
-            if (connected) "Connected to $device. Use adb in the terminal." else "Paired. Open AntiGem → Settings → ADB Connect to connect."
+            if (connected) "Connected to $device. Use adb in the terminal." else "Paired. Open CineCode-AI → Settings → ADB Connect to connect."
         )
         if (!connected) report("Paired, but couldn't find the Wireless debugging port yet. Tap Connect.", true)
         if (pairingServiceRunning) stopPairing(context)

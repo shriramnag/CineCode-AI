@@ -78,7 +78,7 @@ fun StemRenderingScreen() {
                 Spacer(Modifier.height(8.dp))
                 Text(
                     "SmilesDrawer, function-plot, JSXGraph, Matter.js, TikZJax (TeX with circuitikz, pgfplots, chemfig) and " +
-                        "Mermaid, at fixed versions, from AntiGem's GitHub release. Checked against a fixed checksum, then kept in the app's private storage.",
+                        "Mermaid, at fixed versions, from CineCode-AI's GitHub release. Checked against a fixed checksum, then kept in the app's private storage.",
                     fontSize = 13.sp, lineHeight = 18.sp
                 )
                 Spacer(Modifier.height(10.dp))

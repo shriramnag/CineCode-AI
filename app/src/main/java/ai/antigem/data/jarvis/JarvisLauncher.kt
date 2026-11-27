@@ -124,7 +124,7 @@ object JarvisLauncher {
         }
     }
 
-    private const val REFUSED = "Android didn't let Jarvis use the microphone from here. Open AntiGem, or turn on hands-free mode."
+    private const val REFUSED = "Android didn't let Jarvis use the microphone from here. Open CineCode-AI, or turn on hands-free mode."
 
     /** [JarvisTalkActivity] is in front: talk now, or open the app when Jarvis isn't ready for that. */
     fun launch(activity: Activity) {

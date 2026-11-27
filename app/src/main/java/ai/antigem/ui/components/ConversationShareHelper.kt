@@ -134,12 +134,12 @@ object ConversationShareHelper {
             val shareIntent = Intent(Intent.ACTION_SEND).apply {
                 type = "application/octet-stream"
                 putExtra(Intent.EXTRA_STREAM, uri)
-                putExtra(Intent.EXTRA_SUBJECT, "$title (AntiGem Trajectory)")
-                putExtra(Intent.EXTRA_TEXT, "AntiGem Chat Trajectory: $title")
+                putExtra(Intent.EXTRA_SUBJECT, "$title (CineCode-AI Trajectory)")
+                putExtra(Intent.EXTRA_TEXT, "CineCode-AI Chat Trajectory: $title")
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            val chooser = Intent.createChooser(shareIntent, "Share AntiGem Chat").apply {
+            val chooser = Intent.createChooser(shareIntent, "Share CineCode-AI Chat").apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             context.startActivity(chooser)

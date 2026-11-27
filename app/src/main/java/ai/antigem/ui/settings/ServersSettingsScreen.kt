@@ -433,7 +433,7 @@ internal fun ServersSubScreen(
         AlertDialog(
             onDismissRequest = { showRestartDialog = false },
             icon = { Icon(Icons.Outlined.RestartAlt, null, tint = ClaudeTerracotta, modifier = Modifier.size(28.dp)) },
-            title = { Text("Reopen AntiGem?", fontWeight = FontWeight.Bold, fontSize = 17.sp) },
+            title = { Text("Reopen CineCode-AI?", fontWeight = FontWeight.Bold, fontSize = 17.sp) },
             text = {
                 Text(
                     if (remote) "Settings saved. Reopening the app connects over SSH, starts the bridge that is already on the server and opens the connections with the new settings."
@@ -632,7 +632,7 @@ internal fun ServersSubScreen(
                         Text(
                             when {
                                 !remote && phoneChroot -> "This phone, in the rooted Ubuntu chroot: the bridge, the agents and the terminal (apt, glibc, sudo)."
-                                !remote -> "This phone, in AntiGem's built-in environment: the bridge, the agents and the terminal (no root needed)."
+                                !remote -> "This phone, in CineCode-AI's built-in environment: the bridge, the agents and the terminal (no root needed)."
                                 tunnel -> "On your server, reached through the SSH connection: no open ports, no domain, no reverse proxy."
                                 else -> "The bridge and the agents run on your server, reached by a domain or open ports. The app manages them over SSH."
                             },
@@ -644,7 +644,7 @@ internal fun ServersSubScreen(
                 Text("This phone", fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = subtle)
                 Spacer(Modifier.height(4.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    ModeOption("AntiGem", !remote && !phoneChroot, Modifier.weight(1f)) { selectPhone(false) }
+                    ModeOption("CineCode-AI", !remote && !phoneChroot, Modifier.weight(1f)) { selectPhone(false) }
                     ModeOption("Ubuntu chroot", !remote && phoneChroot, Modifier.weight(1f)) { selectPhone(true) }
                 }
                 Spacer(Modifier.height(8.dp))
@@ -1074,7 +1074,7 @@ internal fun ServersSubScreen(
                         fontSize = 11.sp, color = subtle)
                     Text("• Installing from the app (Settings → each agent → Install) uses the agents' official Linux installers, which put them at these defaults.",
                         fontSize = 11.sp, color = subtle)
-                    Text("• IDE Bridge: AntiGem puts this app version's bridge at ${ai.antigem.data.local.chroot.ChrootManager.BRIDGE_IN_CHROOT} at every start. Another path runs your own bridge instead.",
+                    Text("• IDE Bridge: CineCode-AI puts this app version's bridge at ${ai.antigem.data.local.chroot.ChrootManager.BRIDGE_IN_CHROOT} at every start. Another path runs your own bridge instead.",
                         fontSize = 11.sp, color = subtle)
                     Spacer(Modifier.height(10.dp))
                     OutlinedButton(
@@ -1099,7 +1099,7 @@ internal fun ServersSubScreen(
                         Icon(Icons.Outlined.Terminal, null, tint = ClaudeTerracotta, modifier = Modifier.size(22.dp))
                         Spacer(Modifier.width(10.dp))
                         Column(Modifier.weight(1f)) {
-                            Text("Agent paths in AntiGem", fontSize = 14.5.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                            Text("Agent paths in CineCode-AI", fontSize = 14.5.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                             Text("For advanced use only: leave them empty and the defaults (shown in grey) are used", fontSize = 11.5.sp, color = subtle)
                         }
                     }
@@ -1124,7 +1124,7 @@ internal fun ServersSubScreen(
                         fontSize = 11.sp, color = subtle
                     )
                     Text(
-                        "• Claude Code: the default is AntiGem's launcher, which runs the newest official Claude version through the bundled glibc. Claude updates never replace it.",
+                        "• Claude Code: the default is CineCode-AI's launcher, which runs the newest official Claude version through the bundled glibc. Claude updates never replace it.",
                         fontSize = 11.sp, color = subtle
                     )
                     Text(

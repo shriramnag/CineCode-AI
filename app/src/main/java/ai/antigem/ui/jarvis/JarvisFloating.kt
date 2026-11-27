@@ -218,7 +218,7 @@ object JarvisFloating : LifecycleOwner, SavedStateRegistryOwner, OnBackPressedDi
     /** The orb was dropped on ✕: hidden until the user talks to Jarvis in the app. */
     private fun hideOrb() {
         JarvisPreferences.floatingHidden.set(true)
-        app?.let { Toast.makeText(it, "Jarvis is hidden. Talk to Jarvis in AntiGem to bring it back.", Toast.LENGTH_LONG).show() }
+        app?.let { Toast.makeText(it, "Jarvis is hidden. Talk to Jarvis in CineCode-AI to bring it back.", Toast.LENGTH_LONG).show() }
     }
 
     // ------------------------------------------------------------------------------------------------ windows
@@ -442,7 +442,7 @@ object JarvisFloating : LifecycleOwner, SavedStateRegistryOwner, OnBackPressedDi
             ) { Icon(Icons.Filled.Close, "Hide Jarvis", tint = Color.White, modifier = Modifier.size(28.dp)) }
             Spacer(Modifier.height(8.dp))
             Text(
-                "Hide until you talk to Jarvis in AntiGem",
+                "Hide until you talk to Jarvis in CineCode-AI",
                 color = Color.White, fontSize = 11.5.sp,
                 modifier = Modifier.clip(RoundedCornerShape(50)).background(Color(0xCC101827)).padding(horizontal = 10.dp, vertical = 4.dp)
             )

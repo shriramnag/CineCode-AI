@@ -259,7 +259,7 @@ object ChrootInstaller {
         val file = File(dir, "rootfs.$ext")
         val part = File(dir, "rootfs.$ext.part")
         val response = try {
-            http.newCall(Request.Builder().url(url).header("User-Agent", "AntiGem-Chroot").build()).execute()
+            http.newCall(Request.Builder().url(url).header("User-Agent", "CineCode-AI-Chroot").build()).execute()
         } catch (e: IOException) {
             throw InstallError("Download failed: ${e.message}")
         }
@@ -311,7 +311,7 @@ object ChrootInstaller {
     }
 
     private fun httpText(url: String): String? = try {
-        http.newCall(Request.Builder().url(url).header("User-Agent", "AntiGem-Chroot").build()).execute().use {
+        http.newCall(Request.Builder().url(url).header("User-Agent", "CineCode-AI-Chroot").build()).execute().use {
             if (it.isSuccessful) it.body?.string() else null
         }
     } catch (_: Exception) {
@@ -394,7 +394,7 @@ object ChrootInstaller {
         val f = ChrootManager.scan(context, req.path).firstOrNull { it.path == req.path }
         restoredBackup = f?.takeIf { it.hasManifest && it.manifest["INSTALLING"] == null && !it.manifest["USER"].isNullOrBlank() }
         restoredBackup?.let {
-            log("This is an AntiGem backup of ${it.manifest["NAME"] ?: "an Ubuntu chroot"} (user ${it.manifest["USER"]}): " +
+            log("This is an CineCode-AI backup of ${it.manifest["NAME"] ?: "an Ubuntu chroot"} (user ${it.manifest["USER"]}): " +
                 "its user, home, settings and packages are kept; the user moves to this app's uid.")
         }
     }

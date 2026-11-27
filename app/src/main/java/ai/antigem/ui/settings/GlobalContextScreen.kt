@@ -88,7 +88,7 @@ fun GlobalContextScreen() {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Outlined.Lock, null, tint = muted, modifier = Modifier.size(12.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text("By AntiGem · read-only · first message", fontSize = 12.sp, color = muted)
+                            Text("By CineCode-AI · read-only · first message", fontSize = 12.sp, color = muted)
                         }
                     }
                     Switch(checked = builtInOn, onCheckedChange = { GlobalContext.setBuiltInEnabled(it) })
@@ -96,7 +96,7 @@ fun GlobalContextScreen() {
                 Spacer(Modifier.height(8.dp))
                 Text(
                     "Tells the agent where it runs (" + when (GlobalContext.runPlace) {
-                        GlobalContext.RunPlace.ANTIGEM -> "AntiGem's built-in environment on this phone: \$TMPDIR, not /tmp; pkg, not sudo"
+                        GlobalContext.RunPlace.ANTIGEM -> "CineCode-AI's built-in environment on this phone: \$TMPDIR, not /tmp; pkg, not sudo"
                         GlobalContext.RunPlace.CHROOT -> "the Ubuntu chroot on this phone: apt, and sudo is root of the whole phone"
                         GlobalContext.RunPlace.SERVER -> "your server"
                         GlobalContext.RunPlace.PC -> "your computer, through Connect to PC"

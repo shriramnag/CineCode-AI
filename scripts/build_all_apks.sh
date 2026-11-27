@@ -24,21 +24,21 @@ for arg in "$@"; do
 done
 # file names: the arm64 build has none of these suffixes (the in-app updater asks for the name of its own build)
 SUFFIX=""
-ARCHIVE="antiGem"
+ARCHIVE="cineCode"
 BRIDGE_ARCH="arm64"
 GRADLE_ARGS=(-Pabi="${ABI}")
 if [[ "${ABI}" == "x86_64" ]]; then
     SUFFIX="-x86_64"
-    ARCHIVE="antiGem-x86_64"
+    ARCHIVE="cineCode-x86_64"
     BRIDGE_ARCH="amd64"
 elif [[ "${CHROOT}" == "true" ]]; then
     SUFFIX="-chroot"
-    ARCHIVE="antiGem-chroot"
+    ARCHIVE="cineCode-chroot"
     GRADLE_ARGS+=(-Pchroot=true)
 fi
 
 echo "================================================================="
-echo "🚀 Building AntiGem Packages in [${MODE^^}] mode for ${ABI}${SUFFIX:+ (${SUFFIX#-})}"
+echo "🚀 Building CineCode-AI Packages in [${MODE^^}] mode for ${ABI}${SUFFIX:+ (${SUFFIX#-})}"
 echo "================================================================="
 
 # The version from version.json: the newer of its stable release and its beta, like the Gradle build. A missing or
@@ -54,12 +54,12 @@ APKS_SRC="${ROOT_DIR}/app/build/outputs/apk"
 if [[ "${MODE}" == "release" ]]; then
     echo "🔨 Compiling Release (:app:assembleRelease)..."
     "${ROOT_DIR}/gradlew" -p "${ROOT_DIR}" :app:assembleRelease "${GRADLE_ARGS[@]}"
-    # the release asset; the in-app updater downloads releases/download/v<version>/AntiGem-v<version><suffix>.apk
-    cp "${APKS_SRC}/release/${ARCHIVE}-release.apk" "${OUTPUT_DIR}/AntiGem-v${VERSION_NAME}${SUFFIX}.apk"
+    # the release asset; the in-app updater downloads releases/download/v<version>/CineCode-AI-v<version><suffix>.apk
+    cp "${APKS_SRC}/release/${ARCHIVE}-release.apk" "${OUTPUT_DIR}/CineCode-AI-v${VERSION_NAME}${SUFFIX}.apk"
 else
     echo "🔨 Compiling Debug (:app:assembleDebug)..."
     "${ROOT_DIR}/gradlew" -p "${ROOT_DIR}" :app:assembleDebug "${GRADLE_ARGS[@]}"
-    cp "${APKS_SRC}/debug/${ARCHIVE}-debug.apk" "${OUTPUT_DIR}/AntiGem-v${VERSION_NAME}${SUFFIX}-debug.apk"
+    cp "${APKS_SRC}/debug/${ARCHIVE}-debug.apk" "${OUTPUT_DIR}/CineCode-AI-v${VERSION_NAME}${SUFFIX}-debug.apk"
 
     # the APK ships the bridge xz-compressed; the uncompressed build is kept under app/build
     if [[ -f "${ROOT_DIR}/app/build/intermediates/agyIdeBridge/agy_ide_bridge" ]]; then

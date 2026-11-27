@@ -61,7 +61,7 @@ object CrashHandler {
         val rt = Runtime.getRuntime()
         val mb = 1024 * 1024
         val report = buildString {
-            appendLine("AntiGem crash report")
+            appendLine("CineCode-AI crash report")
             appendLine("Time: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z", Locale.US).format(Date())}")
             appendLine("App: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}) ${BuildConfig.APPLICATION_ID} ${BuildConfig.BUILD_TYPE}")
             appendLine("Package: ${context.packageName}")

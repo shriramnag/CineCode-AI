@@ -491,7 +491,7 @@ fun ChatHistoryDrawer(
             },
             title = {
                 Text(
-                    text = "Exit AntiGem?",
+                    text = "Exit CineCode-AI?",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -515,7 +515,7 @@ fun ChatHistoryDrawer(
                             Checkbox(checked = stopChrootOnExit, onCheckedChange = { stopChrootOnExit = it })
                             Text(
                                 if (stopChrootOnExit) "Also stop the Ubuntu chroot (its bridge and agents)"
-                                else "Also stop the Ubuntu chroot (off: agents keep working while AntiGem is closed)",
+                                else "Also stop the Ubuntu chroot (off: agents keep working while CineCode-AI is closed)",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -677,7 +677,7 @@ fun ChatHistoryDrawer(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "AntiGem",
+                    text = "CineCode-AI",
                     fontSize = 19.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = (-0.3).sp,
