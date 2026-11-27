@@ -7,9 +7,10 @@
   ],
   "is_critical": false,
   "beta": {
-    "version_code": 341164,
-    "version_name": "2.0.5-beta.1",
+    "version_code": 341165,
+    "version_name": "2.0.5-beta.2",
     "changelog": [
+      "chore(branding): set package ID ai.cinecod, CineCode-AI branding/logo, and enable CI APK build",
       "CineCode-AI v2.0.5-beta.1: AntiGem 2.0.4 core with ai.cinecod package ID, CineCode-AI branding, and CI build support"
     ]
   }
