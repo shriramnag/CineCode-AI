@@ -7,9 +7,10 @@
   ],
   "is_critical": false,
   "beta": {
-    "version_code": 341165,
-    "version_name": "2.0.5-beta.2",
+    "version_code": 341166,
+    "version_name": "2.0.5-beta.3",
     "changelog": [
+      "chore(clean-brand): apply CineCode-AI app name, logo, ai.cinecod ID, and CI build on unmodified 2.0.4 core",
       "CineCode-AI clean build: unmodified AntiGem 2.0.4 code with CineCode-AI app name, logo, and ai.cinecod package ID"
     ]
   }
