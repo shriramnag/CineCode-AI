@@ -20,7 +20,14 @@ android {
         targetSdk = 27
         versionCode = 2
         versionName = "0.8.1"
-        buildConfigField("String", "TERMUX_PACKAGE_NAME", "\"ai.antigem\"")
+    }
+    buildTypes {
+        getByName("debug") {
+            buildConfigField("String", "TERMUX_PACKAGE_NAME", "\"ai.cinedev\"")
+        }
+        getByName("release") {
+            buildConfigField("String", "TERMUX_PACKAGE_NAME", "\"ai.cinecod\"")
+        }
     }
     buildFeatures {
         buildConfig = true
